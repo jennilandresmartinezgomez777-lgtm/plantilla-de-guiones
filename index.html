@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plantilla de creación de contenido</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            },
+            accent: {
+              500: '#8b5cf6',
+              600: '#7c3aed',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="h-full font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-brand-500 selection:text-white flex flex-col">
+
+  <!-- PRINT ONLY HEADER -->
+  <div class="hidden print:block mb-6 pb-4 border-b border-slate-300">
+    <h1 class="text-2xl font-bold text-slate-900">Plantilla de creación de contenido</h1>
+    <p class="text-sm text-slate-600" id="printSubheading">Reporte de Guiones</p>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app" class="flex-1 flex flex-col min-h-0 print:block">
+    
+    <!-- TOP NAVBAR -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 print:hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] py-2 sm:py-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-600 flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0">
+            <i data-lucide="video" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base sm:text-lg md:text-xl leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent whitespace-nowrap">Plantilla de creación de contenido</h1>
+            <p class="text-xs text-slate-400">Gestión & Guiones</p>
+          </div>
+        </div>
+
+        <!-- Client Selector & Actions -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <!-- Client Selector -->
+          <div class="relative">
+            <select id="clientFilter" class="bg-slate-800 border border-slate-700 text-xs sm:text-sm font-semibold rounded-lg px-3 py-2 text-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none cursor-pointer pr-8 appearance-none">
+              <option value="ALL">🏢 Todos los Clientes</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
+
+          <!-- New Client Button -->
+          <button id="btnNewClient" title="Agregar Cliente" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition flex items-center justify-center">
+            <i data-lucide="folder-plus" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Quick Idea Button -->
+          <button id="btnQuickIdea" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-amber-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i>
+            <span class="hidden sm:inline">Nueva Idea</span>
+          </button>
+
+          <!-- Primary Add Script Button -->
+          <button id="btnNewScript" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-semibold px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm shadow-md shadow-brand-900/40 transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Nuevo Guión</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- SUBHEADER / TOOLBAR -->
+    <div class="bg-slate-900/60 border-b border-slate-800/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 sticky top-16 z-20 print:hidden">
+      <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-4">
+        
+        <!-- View Tabs -->
+        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80 w-full lg:w-auto overflow-x-auto shrink-0">
+          <button id="tabMatrix" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap">
+            <i data-lucide="table" class="w-4 h-4"></i>
+            <span>Matriz</span>
+          </button>
+          <button id="tabCards" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            <span>Tarjetas</span>
+          </button>
+          <button id="tabTeleprompter" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap">
+            <i data-lucide="clapperboard" class="w-4 h-4"></i>
+            <span>Set / Grabación</span>
+          </button>
+        </div>
+
+        <!-- Filters & Tools -->
+        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-between lg:justify-end shrink-0">
+          
+          <!-- Search input -->
+          <div class="relative flex-1 sm:w-64 lg:flex-none">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="searchInput" placeholder="Buscar guión, gancho..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+
+          <!-- Status Filter -->
+          <select id="statusFilter" class="bg-slate-950 border border-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 text-slate-300 outline-none cursor-pointer">
+            <option value="ALL">Todos los estados</option>
+            <option value="Idea">💡 Idea</option>
+            <option value="Redactado">📝 Redactado</option>
+            <option value="Por Grabar">🎬 Por Grabar</option>
+            <option value="En Edición">🖥️ En Edición</option>
+            <option value="Editado">✂️ Editado</option>
+            <option value="Publicado">🚀 Publicado</option>
+          </select>
+
+          <!-- Export, Print & Fullscreen Actions -->
+          <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
+            <button id="btnFullScreen" onclick="toggleFullScreen()" title="Pantalla Completa" class="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="maximize" class="w-4 h-4"></i>
+            </button>
+            <button id="btnPrint" title="Imprimir / Exportar a PDF" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+            </button>
+            <button id="btnExportJSON" title="Respaldar Datos (JSON)" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </button>
+            <button id="btnImportJSON" title="Restaurar Datos (JSON)" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+            </button>
+            <input type="file" id="importFileInput" accept=".json" class="hidden">
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CONTENT CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
+      
+      <!-- STATS BAR (Interactive Status Header Bar) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-6 print:hidden">
+        <!-- Total -->
+        <div id="cardStatTotal" onclick="filterByStatusFromCard('ALL')" title="Ver todos los guiones" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-slate-600 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-400">Total</p>
+            <p id="statTotal" class="text-xl font-bold text-white mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+        
+        <!-- Ideas -->
+        <div id="cardStatIdea" onclick="filterByStatusFromCard('Idea')" title="Filtrar por 'Idea'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-amber-400">💡 Ideas</p>
+            <p id="statIdea" class="text-xl font-bold text-amber-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+            <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- Redactados -->
+        <div id="cardStatRedactados" onclick="filterByStatusFromCard('Redactado')" title="Filtrar por 'Redactado'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-blue-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-blue-400">📝 Redactados</p>
+            <p id="statRedactados" class="text-xl font-bold text-blue-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- Por Grabar -->
+        <div id="cardStatPorGrabar" onclick="filterByStatusFromCard('Por Grabar')" title="Filtrar por 'Por Grabar'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-orange-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-orange-400">🎬 Por Grabar</p>
+            <p id="statPorGrabar" class="text-xl font-bold text-orange-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400">
+            <i data-lucide="clapperboard" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- En Edición -->
+        <div id="cardStatEnEdicion" onclick="filterByStatusFromCard('En Edición')" title="Filtrar por 'En Edición'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-purple-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-purple-400">💻 En Edición</p>
+            <p id="statEnEdicion" class="text-xl font-bold text-purple-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+            <i data-lucide="laptop" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- Editados -->
+        <div id="cardStatEditado" onclick="filterByStatusFromCard('Editado')" title="Filtrar por 'Editado'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-indigo-400">✂️ Editados</p>
+            <p id="statEditado" class="text-xl font-bold text-indigo-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+            <i data-lucide="scissors" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+
+        <!-- Publicados -->
+        <div id="cardStatPublicados" onclick="filterByStatusFromCard('Publicado')" title="Filtrar por 'Publicado'" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+          <div>
+            <p class="text-[11px] font-semibold text-emerald-400">🚀 Publicados</p>
+            <p id="statPublicados" class="text-xl font-bold text-emerald-300 mt-0.5">0</p>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 1: MATRIX / TABLE VIEW (PRIMARY VIEW) -->
+      <section id="viewMatrix" class="space-y-4">
+        
+        <!-- Published Analytics & Ranking Panel (Rendered dynamically when activeStatus is 'Publicado' or 'ALL') -->
+        <div id="publishedAnalyticsContainer"></div>
+
+        <!-- Matrix Toolbar & Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl print:hidden">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Matriz de Guiones</span>
+            <span id="matrixCounter" class="bg-slate-800 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-md border border-slate-700">0 guiones</span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button id="btnClearAllScripts" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+              <span>Vaciar Plantilla Completa</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Matrix Table Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr class="bg-slate-950/80 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <th class="py-3.5 px-3 w-12 text-center">✓</th>
+                  <th class="py-3.5 px-3 w-12 text-center">#</th>
+                  <th class="py-3.5 px-4">Cliente</th>
+                  <th class="py-3.5 px-4">Título / Idea Ganadora</th>
+                  <th class="py-3.5 px-4">Formato / Objetivo</th>
+                  <th class="py-3.5 px-4">Actor</th>
+                  <th id="thRendimiento" class="py-3.5 px-4 hidden">📊 Rendimiento</th>
+                  <th class="py-3.5 px-4">Estado</th>
+                  <th class="py-3.5 px-4 text-right print:hidden">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="matrixTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: CARDS VIEW -->
+      <section id="viewCards" class="hidden space-y-6">
+        <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          <!-- Cards injected via JS -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: TELEPROMPTER / SET MODE -->
+      <section id="viewTeleprompter" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl print:hidden">
+          <div class="flex items-center gap-3">
+            <i data-lucide="clapperboard" class="w-5 h-5 text-amber-400"></i>
+            <div>
+              <h2 class="font-bold text-white">Modo Grabación / Teleprónter</h2>
+              <p class="text-xs text-slate-400">Selecciona un guión para visualizarlo en pantalla completa con fuente gigante.</p>
+            </div>
+          </div>
+          <select id="teleprompterSelect" class="bg-slate-950 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 text-slate-200 outline-none max-w-xs">
+            <!-- Options injected via JS -->
+          </select>
+        </div>
+
+        <div id="teleprompterDisplay" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8 min-h-[500px]">
+          <!-- Prompter content injected via JS -->
+        </div>
+      </section>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" class="hidden py-16 text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
+          <i data-lucide="file-x-2" class="w-8 h-8"></i>
+        </div>
+        <h3 id="emptyStateTitle" class="text-lg font-semibold text-slate-300">No se encontraron guiones</h3>
+        <p id="emptyStateText" class="text-sm text-slate-500 max-w-md mx-auto">No hay guiones registrados con los filtros seleccionados. Crea uno nuevo o limpia la búsqueda.</p>
+        <div class="flex items-center justify-center gap-3">
+          <button onclick="filterByStatusFromCard('ALL')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2 rounded-lg text-sm border border-slate-700 transition">
+            <i data-lucide="layers" class="w-4 h-4"></i> Mostrar Todos los Guiones
+          </button>
+          <button onclick="openNewScriptModal()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> Crear Guión
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- MODAL: CREATE / EDIT SCRIPT -->
+  <div id="scriptModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <h3 id="modalTitle" class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-5 h-5 text-brand-500"></i>
+          Nuevo Guión
+        </h3>
+        <button id="btnCloseModal" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form id="scriptForm" class="p-6 space-y-5 overflow-y-auto flex-1 text-sm">
+        <input type="hidden" id="scriptId">
+
+        <!-- Row 1: Client, Number, Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente *</label>
+            <input type="text" id="formClient" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Número #</label>
+            <input type="number" id="formNumber" min="1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Estado</label>
+            <select id="formStatus" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+              <option value="Idea">💡 Idea</option>
+              <option value="Redactado">📝 Redactado</option>
+              <option value="Por Grabar">🎬 Por Grabar</option>
+              <option value="En Edición">🖥️ En Edición</option>
+              <option value="Editado">✂️ Editado</option>
+              <option value="Publicado">🚀 Publicado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Idea Ganadora & Formato & Objetivo -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Formato *</label>
+            <select id="formFormato" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+              <option value="ENTREVISTA">🎤 Entrevista</option>
+              <option value="ENTREVISTA CALLE">🎙️ Entrevista Calle</option>
+              <option value="SELFIE">🤳 Selfie</option>
+              <option value="VOICE EN OFF">🎧 Voice en Off</option>
+              <option value="DINÁMICO">⚡ Dinámico</option>
+              <option value="PERSONAJES">🎭 Personajes</option>
+              <option value="VLOG">📹 Vlog</option>
+              <option value="HABLANDO A CÁMARA">🗣️ Hablando a Cámara</option>
+              <option value="MIRANDO A LA NADA">👁️ Mirando a la Nada</option>
+              <option value="PANTALLA DIVIDIDA">📱 Pantalla Dividida</option>
+              <option value="PANTALLA VERDE">🟩 Pantalla Verde</option>
+              <option value="PRIMA PREGUNTA">❓ Prima Pregunta</option>
+            </select>
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Objetivo *</label>
+            <select id="formObjetivo" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+              <option value="VENTA">💰 VENTA</option>
+              <option value="SEGUIDORES">👥 SEGUIDORES</option>
+              <option value="AUTORIDAD">🎓 AUTORIDAD / EDUCACIÓN</option>
+              <option value="VIRAL">🔥 VIRALIDAD</option>
+            </select>
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Actor / Talento</label>
+            <select id="formActor" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <!-- Populated dynamically from registered clients -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Idea Ganadora -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-amber-400">💡 Idea Ganadora *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <input type="text" id="formIdeaGanadora" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+        <!-- Enlace / Link de Referencia -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-sky-400">🔗 Link de Referencia</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <input type="url" id="formLinkReferencia" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+        <!-- Gancho (Hook) -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-amber-400">🪝 Gancho *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <textarea id="formGancho" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+
+        <!-- Historia - Contexto -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-emerald-400">📖 Historia - Contexto *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <textarea id="formHistoria" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+
+        <!-- Moraleja / Valor -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-rose-400">💡 Moraleja / Valor *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <textarea id="formMoraleja" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+
+        <!-- CTA (Call to Action) -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-blue-400">📣 CTA (Llamado a la Acción) *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <textarea id="formCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+
+        <!-- Contexto Adicional de Grabación -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-slate-400">📍 Contexto Adicional / Notas</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <input type="text" id="formContextoAdicional" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+      </form>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-end gap-3">
+        <button type="button" id="btnCancelModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition font-medium">
+          Cancelar
+        </button>
+        <button type="submit" form="scriptForm" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 py-2 rounded-lg transition shadow-md shadow-brand-900/50 flex items-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i> Guardar Guión
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: MANAGE CLIENTS -->
+  <div id="clientModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="users" class="w-5 h-5 text-brand-500"></i>
+          Gestión de Clientes / Marcas
+        </h3>
+        <button id="btnCancelClientModal" class="p-1 text-slate-400 hover:text-white rounded-lg transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Add New Client Form -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-400">Agregar Nuevo Cliente</label>
+        <div class="flex gap-2">
+          <input type="text" id="newClientNameInput" placeholder="Ej: Jennil, Natalia..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <button id="btnSaveClient" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1">
+            <i data-lucide="plus" class="w-4 h-4"></i> Agregar
+          </button>
+        </div>
+      </div>
+
+      <!-- Clients List -->
+      <div class="space-y-2 pt-2 border-t border-slate-800">
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Clientes Registrados</label>
+        <div id="clientsManageList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <!-- Client rows injected via JS -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button id="btnCloseClientModal" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold px-4 py-2 rounded-lg transition">
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: PRINT / PDF SELECTION -->
+  <div id="printModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="printer" class="w-5 h-5 text-brand-500"></i>
+          Opciones de Impresión / PDF
+        </h3>
+        <button id="btnClosePrintModal" class="p-1 text-slate-400 hover:text-white rounded-lg transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Format Selection -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-400">Estilo de Impresión</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-brand-500 transition">
+            <input type="radio" name="printFormat" value="cards" checked class="text-brand-500 focus:ring-brand-500">
+            <div>
+              <p class="text-xs font-bold text-white">🎴 Fichas Detalladas</p>
+              <p class="text-[11px] text-slate-400">1 guión completo por hoja</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-brand-500 transition">
+            <input type="radio" name="printFormat" value="matrix" class="text-brand-500 focus:ring-brand-500">
+            <div>
+              <p class="text-xs font-bold text-white">📊 Matriz Resumida</p>
+              <p class="text-[11px] text-slate-400">Tabla con todos los títulos</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Script Selection Controls -->
+      <div class="space-y-3 pt-2 border-t border-slate-800">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-400">Seleccionar Guiones a Imprimir</label>
+          <div class="flex items-center gap-2">
+            <button id="btnSelectAllPrint" class="text-xs text-brand-400 hover:underline font-semibold">Seleccionar Todos</button>
+            <span class="text-slate-600">•</span>
+            <button id="btnDeselectAllPrint" class="text-xs text-slate-400 hover:underline">Desmarcar Todos</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Checkbox List -->
+        <div id="printScriptsList" class="space-y-2 max-h-64 overflow-y-auto pr-1 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+          <!-- Checkbox items injected via JS -->
+        </div>
+
+        <p id="printSelectionCounter" class="text-xs text-slate-400 font-medium text-right">
+          Se imprimirán 0 guiones
+        </p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <button id="btnCancelPrintModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-sm">
+          Cancelar
+        </button>
+        <button id="btnExecutePrint" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition shadow-md shadow-brand-900/50 flex items-center gap-2">
+          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Exportar PDF
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: QUICK IDEA CAPTURE -->
+  <div id="quickIdeaModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="lightbulb" class="w-5 h-5 text-amber-400"></i>
+          Capturar Nueva Idea Ganadora
+        </h3>
+        <button id="btnCloseQuickIdeaModal" class="p-1 text-slate-400 hover:text-white rounded-lg transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Quick Form -->
+      <form id="quickIdeaForm" class="space-y-4">
+        <!-- Client -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente *</label>
+          <select id="quickIdeaClient" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+            <!-- Options injected via JS -->
+          </select>
+        </div>
+
+        <!-- Idea Ganadora -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-amber-400">💡 Idea Ganadora *</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('quickIdeaTitle', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('quickIdeaTitle', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <input type="text" id="quickIdeaTitle" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+        <!-- Reference Link -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-sky-400">🔗 Link de Referencia</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('quickIdeaLink', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('quickIdeaLink', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <input type="url" id="quickIdeaLink" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+        <!-- Quick Notes -->
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label class="block text-xs font-semibold text-slate-400">📝 Notas</label>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="copyField('quickIdeaNotes', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+              <button type="button" onclick="pasteField('quickIdeaNotes', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+            </div>
+          </div>
+          <textarea id="quickIdeaNotes" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <button id="btnCancelQuickIdeaModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-sm">
+          Cancelar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: FOCUS / AMPLIAR GUIÓN -->
+  <div id="focusScriptModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Focus Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="maximize-2" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-400 block">Modo Enfoque de Grabación</span>
+            <h3 id="focusModalTitle" class="text-lg font-bold text-white truncate">Guión #1</h3>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnCopyFocusScript" type="button" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Copiar Guión</span>
+          </button>
+          <button id="btnPrintFocusScript" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Imprimir</span>
+          </button>
+          <button id="btnEditFocusScript" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Editar</span>
+          </button>
+          <button id="btnCloseFocusModal" onclick="closeFocusModal()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition ml-1" title="Cerrar / Reducir">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Focus Modal Body -->
+      <div id="focusModalBody" class="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1 text-slate-200">
+        <!-- Injected via JS -->
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
