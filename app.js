@@ -2426,10 +2426,11 @@ function setupViralCalcEventListeners() {
     btnClearHist.addEventListener('click', clearViralHistory);
   }
 
-  const details = document.getElementById('viralHistoryDetails');
-  if (details) {
-    details.addEventListener('toggle', () => {
-      refreshLucideIcons();
+  const btnToggle = document.getElementById('btnToggleViralHistory');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleViralHistory();
     });
   }
 
@@ -2698,7 +2699,7 @@ function saveCurrentViralEvaluation() {
   renderViralHistoryTable();
   
   // Auto-expand history so user sees newly added entry
-  toggleViralHistoryCollapse(true);
+  toggleViralHistory(true);
 
   // Button feedback
   const btnSave = document.getElementById('btnSaveViralEvaluation');
@@ -2715,18 +2716,36 @@ function saveCurrentViralEvaluation() {
   }
 }
 
-function toggleViralHistoryCollapse(forceOpen = null) {
-  const details = document.getElementById('viralHistoryDetails');
-  if (!details) return;
+function toggleViralHistory(forceState = null) {
+  const content = document.getElementById('viralHistoryContent');
+  const btnText = document.getElementById('viralHistoryBtnText');
+  const btnIcon = document.getElementById('viralHistoryBtnIcon');
+  if (!content) return;
 
-  if (forceOpen !== null) {
-    details.open = forceOpen;
+  const isCurrentlyHidden = (content.style.display === 'none');
+  const shouldShow = (forceState !== null) ? forceState : isCurrentlyHidden;
+
+  if (shouldShow) {
+    content.style.display = 'block';
+    if (btnText) btnText.textContent = 'Ocultar Historial';
+    if (btnIcon) {
+      btnIcon.classList.add('rotate-180');
+    }
   } else {
-    details.open = !details.open;
+    content.style.display = 'none';
+    if (btnText) btnText.textContent = 'Ver Historial';
+    if (btnIcon) {
+      btnIcon.classList.remove('rotate-180');
+    }
   }
   refreshLucideIcons();
 }
 
+function toggleViralHistoryCollapse(forceOpen = null) {
+  toggleViralHistory(forceOpen);
+}
+
+window.toggleViralHistory = toggleViralHistory;
 window.toggleViralHistoryCollapse = toggleViralHistoryCollapse;
 
 function renderViralHistoryTable() {
