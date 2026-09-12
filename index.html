@@ -79,10 +79,11 @@
             <i data-lucide="folder-plus" class="w-4 h-4"></i>
           </button>
 
-          <!-- Notes Button -->
-          <button id="btnNotes" title="Bloc de Notas por Cliente" class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-sky-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+          <!-- Notes Button with Counter Badge -->
+          <button id="btnNotes" title="Bloc de Notas por Cliente" class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-sky-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
             <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
-            <span class="hidden sm:inline">Notas</span>
+            <span>Notas</span>
+            <span id="notesCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">0</span>
           </button>
 
           <!-- Quick Idea Button -->
@@ -1312,7 +1313,8 @@
           </div>
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              Bloc de Notas de Clientes
+              <span>Bloc de Notas de Clientes</span>
+              <span id="notesModalHeaderBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">0 notas</span>
             </h3>
             <p class="text-xs text-slate-400">Guarda anotaciones, ideas y directrices específicas para cada cliente.</p>
           </div>

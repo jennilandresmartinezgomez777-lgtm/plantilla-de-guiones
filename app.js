@@ -596,6 +596,7 @@ function renderAll() {
   renderMatrixView(filtered);
   renderCardsView(filtered);
   renderTeleprompterView(filtered);
+  updateNotesHeaderBadge();
   refreshLucideIcons();
 }
 
@@ -2161,6 +2162,25 @@ function handleImportJSON(e) {
 }
 
 // CLIENT NOTES MODULE
+function updateNotesHeaderBadge() {
+  const badgeNav = document.getElementById('notesCountBadge');
+  const badgeModal = document.getElementById('notesModalHeaderBadge');
+
+  let totalNotes = 0;
+  if (state.notes && typeof state.notes === 'object') {
+    Object.values(state.notes).forEach(list => {
+      if (Array.isArray(list)) totalNotes += list.length;
+    });
+  }
+
+  if (badgeNav) {
+    badgeNav.textContent = totalNotes;
+  }
+  if (badgeModal) {
+    badgeModal.textContent = `${totalNotes} nota${totalNotes === 1 ? '' : 's'}`;
+  }
+}
+
 function openNotesModal(clientName = null) {
   const notesModal = document.getElementById('notesModal');
   if (!notesModal) return;
@@ -2173,6 +2193,7 @@ function openNotesModal(clientName = null) {
     state.activeNotesClient = state.clients[0] || 'Jennil';
   }
 
+  updateNotesHeaderBadge();
   renderNotesClientTabs();
   renderNotesForActiveClient();
   notesModal.classList.remove('hidden');
@@ -2237,6 +2258,7 @@ function renderNotesForActiveClient() {
   }
 
   const notesList = state.notes[client];
+  updateNotesHeaderBadge();
 
   if (notesList.length === 0) {
     body.innerHTML = `
@@ -2262,26 +2284,32 @@ function renderNotesForActiveClient() {
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
           <div class="flex-1 min-w-[200px]">
             <input 
+              id="noteTitle-${note.id}"
               type="text" 
-              value="${escapeHtml(note.title || 'Nota sin título')}" 
+              value="${escapeHtml(note.title || '')}" 
               placeholder="Título de la nota..." 
               oninput="updateNoteTitle('${note.id}', this.value)"
               class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg px-3 py-1.5 text-sm font-bold text-white placeholder-slate-500 outline-none transition"
             >
           </div>
-          <div class="flex items-center gap-1.5 shrink-0">
+          <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
             ${formattedDate ? `<span class="text-[11px] text-slate-500 hidden sm:inline mr-1">🕒 ${formattedDate}</span>` : ''}
-            <button onclick="copyNoteContent('${note.id}', this)" title="Copiar texto de la nota" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs cursor-pointer">
+            <button onclick="saveNoteExplicit('${note.id}', this)" title="Guardar nota" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>Guardar</span>
+            </button>
+            <button onclick="copyNoteContent('${note.id}', this)" title="Copiar texto de la nota" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs cursor-pointer">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i>
               <span class="hidden md:inline">Copiar</span>
             </button>
-            <button onclick="deleteNote('${note.id}')" title="Eliminar nota" class="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition cursor-pointer">
+            <button onclick="deleteNote('${note.id}')" title="Eliminar nota" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 font-semibold p-1.5 rounded-lg border border-slate-700 hover:border-rose-800/50 transition cursor-pointer">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
         </div>
         <div>
           <textarea 
+            id="noteContent-${note.id}"
             rows="4" 
             placeholder="Escribe aquí las notas, ideas o apuntes para ${client}..." 
             oninput="updateNoteContent('${note.id}', this.value)"
@@ -2312,6 +2340,7 @@ function addNewNoteForActiveClient() {
 
   state.notes[client].unshift(newNote);
   saveState();
+  updateNotesHeaderBadge();
   renderNotesClientTabs();
   renderNotesForActiveClient();
 }
@@ -2340,6 +2369,37 @@ function updateNoteContent(noteId, content) {
   }
 }
 
+function saveNoteExplicit(noteId, btnElement) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (!note) return;
+
+  const titleInput = document.getElementById(`noteTitle-${noteId}`);
+  const contentInput = document.getElementById(`noteContent-${noteId}`);
+
+  if (titleInput) note.title = titleInput.value.trim() || 'Nota sin título';
+  if (contentInput) note.content = contentInput.value;
+
+  note.updatedAt = new Date().toISOString();
+  saveState();
+  updateNotesHeaderBadge();
+  renderNotesClientTabs();
+
+  if (btnElement) {
+    const originalHTML = btnElement.innerHTML;
+    btnElement.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> ¡Guardada!`;
+    btnElement.classList.add('bg-emerald-500');
+    refreshLucideIcons();
+    setTimeout(() => {
+      btnElement.innerHTML = originalHTML;
+      btnElement.classList.remove('bg-emerald-500');
+      refreshLucideIcons();
+    }, 1800);
+  }
+}
+
 function deleteNote(noteId) {
   const client = state.activeNotesClient;
   if (!state.notes[client]) return;
@@ -2347,6 +2407,7 @@ function deleteNote(noteId) {
   if (confirm('¿Deseas eliminar esta nota?')) {
     state.notes[client] = state.notes[client].filter(n => n.id !== noteId);
     saveState();
+    updateNotesHeaderBadge();
     renderNotesClientTabs();
     renderNotesForActiveClient();
   }
