@@ -219,15 +219,120 @@ const INITIAL_NOTES = {
   ]
 };
 
+const INITIAL_VIRAL_EVALUATIONS = [
+  {
+    id: "viral-1",
+    title: "¿Cuánto gastas al mes en Miami?",
+    client: "USACREDITO",
+    link: "",
+    criteria: {
+      nino: true,
+      cincuenta: true,
+      refViral: true,
+      mercadoViral: true,
+      tendencia: false,
+      controversia: true
+    },
+    format: "entrevista",
+    criteriaScore: 8.5,
+    formatScore: 3.0,
+    totalScore: 11.5,
+    potential: "Muy Alto / Viral",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "viral-2",
+    title: "Deja de pagar por tu tarjeta hasta que no hagas esto",
+    client: "Jennil",
+    link: "",
+    criteria: {
+      nino: false,
+      cincuenta: true,
+      refViral: true,
+      mercadoViral: true,
+      tendencia: false,
+      controversia: false
+    },
+    format: "entrevista",
+    criteriaScore: 5.0,
+    formatScore: 3.0,
+    totalScore: 8.0,
+    potential: "Medio",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "viral-3",
+    title: "Cómo no engordar en navidad comiendo lo que quieras",
+    client: "Natalia",
+    link: "",
+    criteria: {
+      nino: true,
+      cincuenta: true,
+      refViral: false,
+      mercadoViral: true,
+      tendencia: true,
+      controversia: true
+    },
+    format: "vlog",
+    criteriaScore: 8.0,
+    formatScore: 4.0,
+    totalScore: 12.0,
+    potential: "Muy Alto / Viral",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "viral-4",
+    title: "3 Secretos para conseguir $1,000 en 30 días",
+    client: "USACREDITO",
+    link: "",
+    criteria: {
+      nino: true,
+      cincuenta: true,
+      refViral: true,
+      mercadoViral: true,
+      tendencia: false,
+      controversia: false
+    },
+    format: "vlog",
+    criteriaScore: 7.5,
+    formatScore: 4.0,
+    totalScore: 11.5,
+    potential: "Muy Alto / Viral",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "viral-5",
+    title: "Estrategia de crédito para negocios",
+    client: "USACREDITO",
+    link: "",
+    criteria: {
+      nino: false,
+      cincuenta: true,
+      refViral: true,
+      mercadoViral: true,
+      tendencia: false,
+      controversia: false
+    },
+    format: "talking_head",
+    criteriaScore: 5.0,
+    formatScore: 1.0,
+    totalScore: 6.0,
+    potential: "Bajo",
+    createdAt: new Date().toISOString()
+  }
+];
+
 // STATE
 const savedClients = JSON.parse(localStorage.getItem('css_clients'));
 const savedScripts = JSON.parse(localStorage.getItem('css_scripts'));
 const savedNotes = JSON.parse(localStorage.getItem('css_notes'));
+const savedViralEvals = JSON.parse(localStorage.getItem('css_viral_evaluations'));
 
 let state = {
   clients: (savedClients && savedClients.length > 0) ? savedClients : INITIAL_CLIENTS,
   scripts: (savedScripts && savedScripts.length > 0) ? savedScripts : INITIAL_SCRIPTS,
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
+  viralEvaluations: (savedViralEvals && Array.isArray(savedViralEvals)) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
@@ -244,10 +349,12 @@ const clientFilterSelect = document.getElementById('clientFilter');
 const statusFilterSelect = document.getElementById('statusFilter');
 const searchInput = document.getElementById('searchInput');
 
+const tabViralCalc = document.getElementById('tabViralCalc');
 const tabCards = document.getElementById('tabCards');
 const tabMatrix = document.getElementById('tabMatrix');
 const tabTeleprompter = document.getElementById('tabTeleprompter');
 
+const viewViralCalc = document.getElementById('viewViralCalc');
 const viewCards = document.getElementById('viewCards');
 const viewMatrix = document.getElementById('viewMatrix');
 const viewTeleprompter = document.getElementById('viewTeleprompter');
@@ -309,6 +416,8 @@ const importFileInput = document.getElementById('importFileInput');
 document.addEventListener('DOMContentLoaded', () => {
   renderClientSelect();
   renderAll();
+  calculateViralScore();
+  renderViralHistoryTable();
   setupEventListeners();
   refreshLucideIcons();
 });
@@ -317,6 +426,7 @@ function saveState() {
   localStorage.setItem('css_clients', JSON.stringify(state.clients));
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
   localStorage.setItem('css_notes', JSON.stringify(state.notes));
+  localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
 }
 
 function refreshLucideIcons() {
@@ -388,6 +498,16 @@ function populateActorOptions(selectedActor = '') {
   }
 }
 
+function populateViralClientSelect() {
+  const viralSelect = document.getElementById('viralIdeaClient');
+  if (!viralSelect) return;
+  const currentVal = viralSelect.value;
+  viralSelect.innerHTML = state.clients.map(c => `<option value="${c}">👤 ${c}</option>`).join('');
+  if (currentVal && state.clients.includes(currentVal)) {
+    viralSelect.value = currentVal;
+  }
+}
+
 function renderClientSelect() {
   clientFilterSelect.innerHTML = `<option value="ALL">🏢 Todos los Clientes</option>`;
   state.clients.forEach(c => {
@@ -398,6 +518,7 @@ function renderClientSelect() {
   });
   clientFilterSelect.value = state.clients.includes(state.activeClient) ? state.activeClient : 'ALL';
   populateActorOptions();
+  populateViralClientSelect();
 }
 
 function renderAll() {
@@ -1126,6 +1247,7 @@ function showPasteSuccess(btnElement) {
 // EVENT HANDLERS & MODALS
 function setupEventListeners() {
   // Tab Switching
+  if (tabViralCalc) tabViralCalc.addEventListener('click', () => switchView('viral_calc'));
   tabMatrix.addEventListener('click', () => switchView('matrix'));
   tabCards.addEventListener('click', () => switchView('cards'));
   tabTeleprompter.addEventListener('click', () => switchView('teleprompter'));
@@ -1205,6 +1327,9 @@ function setupEventListeners() {
       if (e.target === focusModal) closeFocusModal();
     });
   }
+
+  // Viral Calculator Listeners
+  setupViralCalcEventListeners();
 }
 
 function toggleFullScreen() {
@@ -1226,17 +1351,26 @@ function toggleFullScreen() {
 function switchView(viewName) {
   state.currentView = viewName;
   
+  if (viewViralCalc) viewViralCalc.classList.add('hidden');
   viewMatrix.classList.add('hidden');
   viewCards.classList.add('hidden');
   viewTeleprompter.classList.add('hidden');
 
-  tabMatrix.className = "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white";
-  tabCards.className = "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white";
-  tabTeleprompter.className = "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white";
+  const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
+  const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
+  const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
 
-  const activeBtnClass = "flex-1 md:flex-none px-4 py-1.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md";
+  if (tabViralCalc) tabViralCalc.className = inactiveBtnClass;
+  tabMatrix.className = inactiveBtnClass;
+  tabCards.className = inactiveBtnClass;
+  tabTeleprompter.className = inactiveBtnClass;
 
-  if (viewName === 'matrix') {
+  if (viewName === 'viral_calc') {
+    if (viewViralCalc) viewViralCalc.classList.remove('hidden');
+    if (tabViralCalc) tabViralCalc.className = activeViralBtnClass;
+    calculateViralScore();
+    renderViralHistoryTable();
+  } else if (viewName === 'matrix') {
     viewMatrix.classList.remove('hidden');
     tabMatrix.className = activeBtnClass;
   } else if (viewName === 'cards') {
@@ -1246,6 +1380,7 @@ function switchView(viewName) {
     viewTeleprompter.classList.remove('hidden');
     tabTeleprompter.className = activeBtnClass;
   }
+  refreshLucideIcons();
 }
 
 // TOGGLE COMPLETED & BULK ACTIONS
@@ -1888,7 +2023,8 @@ function handleExportJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
     clients: state.clients,
     scripts: state.scripts,
-    notes: state.notes
+    notes: state.notes,
+    viralEvaluations: state.viralEvaluations
   }, null, 2));
   
   const downloadAnchor = document.createElement('a');
@@ -1915,9 +2051,15 @@ function handleImportJSON(e) {
         if (data.notes && typeof data.notes === 'object') {
           state.notes = data.notes;
         }
+        if (data.viralEvaluations && Array.isArray(data.viralEvaluations)) {
+          state.viralEvaluations = data.viralEvaluations;
+        }
         saveState();
         renderClientSelect();
         renderAll();
+        if (state.currentView === 'viral_calc') {
+          renderViralHistoryTable();
+        }
         alert('¡Datos importados con éxito!');
       } else {
         alert('El archivo JSON no tiene un formato válido.');
@@ -2130,4 +2272,603 @@ function copyNoteContent(noteId, btnElement) {
     const textToCopy = `${note.title ? note.title + '\n\n' : ''}${note.content || ''}`;
     copyTextToClipboard(textToCopy, btnElement);
   }
+}
+
+// ==========================================
+// CALCULADORA DE VIRALIDAD DE CONTENIDO
+// ==========================================
+
+function setupViralCalcEventListeners() {
+  const criteriaIds = [
+    'viralCritNino',
+    'viralCrit50de100',
+    'viralCritRefViral',
+    'viralCritMercadoViral',
+    'viralCritTendencia',
+    'viralCritControversia'
+  ];
+
+  criteriaIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', calculateViralScore);
+    }
+  });
+
+  const formatRadios = document.querySelectorAll('input[name="viralFormatoRadio"]');
+  formatRadios.forEach(radio => {
+    radio.addEventListener('change', calculateViralScore);
+  });
+
+  const presetSelect = document.getElementById('viralPresetSelect');
+  if (presetSelect) {
+    presetSelect.addEventListener('change', (e) => handleViralPresetChange(e.target.value));
+  }
+
+  const btnReset = document.getElementById('btnResetViralCalc');
+  if (btnReset) {
+    btnReset.addEventListener('click', resetViralCalculator);
+  }
+
+  const btnSave = document.getElementById('btnSaveViralEvaluation');
+  if (btnSave) {
+    btnSave.addEventListener('click', saveCurrentViralEvaluation);
+  }
+
+  const btnConvert = document.getElementById('btnConvertViralToScript');
+  if (btnConvert) {
+    btnConvert.addEventListener('click', () => convertViralEvalToScript());
+  }
+
+  const btnCopy = document.getElementById('btnCopyViralCalcSummary');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', function() {
+      copyViralSummary(this);
+    });
+  }
+
+  const btnExportCSV = document.getElementById('btnExportViralCSV');
+  if (btnExportCSV) {
+    btnExportCSV.addEventListener('click', exportViralEvaluationsCSV);
+  }
+
+  const btnClearHist = document.getElementById('btnClearViralHistory');
+  if (btnClearHist) {
+    btnClearHist.addEventListener('click', clearViralHistory);
+  }
+
+  // Live title typing doesn't require recalculating score, but ensures smooth experience
+  const titleInput = document.getElementById('viralIdeaTitle');
+  if (titleInput) {
+    titleInput.addEventListener('input', () => {});
+  }
+}
+
+function getCurrentViralFormData() {
+  const titleInput = document.getElementById('viralIdeaTitle');
+  const clientSelect = document.getElementById('viralIdeaClient');
+  const linkInput = document.getElementById('viralIdeaLink');
+
+  const title = titleInput ? titleInput.value.trim() : '';
+  const client = clientSelect ? clientSelect.value : (state.clients[0] || 'USACREDITO');
+  const link = linkInput ? linkInput.value.trim() : '';
+
+  const nino = document.getElementById('viralCritNino')?.checked || false;
+  const cincuenta = document.getElementById('viralCrit50de100')?.checked || false;
+  const refViral = document.getElementById('viralCritRefViral')?.checked || false;
+  const mercadoViral = document.getElementById('viralCritMercadoViral')?.checked || false;
+  const tendencia = document.getElementById('viralCritTendencia')?.checked || false;
+  const controversia = document.getElementById('viralCritControversia')?.checked || false;
+
+  const selectedFormatRadio = document.querySelector('input[name="viralFormatoRadio"]:checked');
+  const format = selectedFormatRadio ? selectedFormatRadio.value : 'otro';
+
+  // Criteria score calculation (Max 10.0 pts)
+  let criteriaScore = 0;
+  if (nino) criteriaScore += 2.5;
+  if (cincuenta) criteriaScore += 2.5;
+  if (refViral) criteriaScore += 2.0;
+  if (mercadoViral) criteriaScore += 0.5;
+  if (tendencia) criteriaScore += 1.5;
+  if (controversia) criteriaScore += 1.0;
+
+  // Format bonus calculation (Max 4.0 pts)
+  let formatScore = 0;
+  if (format === 'vlog') formatScore = 4.0;
+  else if (format === 'entrevista') formatScore = 3.0;
+  else if (format === 'talking_head') formatScore = 1.0;
+  else formatScore = 0.0;
+
+  const totalScore = parseFloat((criteriaScore + formatScore).toFixed(1));
+
+  let potential = "Bajo";
+  if (totalScore >= 10.0) {
+    potential = "Muy Alto / Viral";
+  } else if (totalScore >= 7.0) {
+    potential = "Medio";
+  }
+
+  return {
+    title,
+    client,
+    link,
+    criteria: {
+      nino,
+      cincuenta,
+      refViral,
+      mercadoViral,
+      tendencia,
+      controversia
+    },
+    format,
+    criteriaScore: parseFloat(criteriaScore.toFixed(1)),
+    formatScore: parseFloat(formatScore.toFixed(1)),
+    totalScore,
+    potential
+  };
+}
+
+function calculateViralScore() {
+  const data = getCurrentViralFormData();
+
+  const scoreDisplay = document.getElementById('viralScoreDisplay');
+  const percentBadge = document.getElementById('viralScorePercentBadge');
+  const progressBar = document.getElementById('viralScoreProgressBar');
+  const verdictContainer = document.getElementById('viralVerdictContainer');
+  const verdictIcon = document.getElementById('viralVerdictIcon');
+  const verdictTitle = document.getElementById('viralVerdictTitle');
+  const verdictDesc = document.getElementById('viralVerdictDesc');
+  const breakdownCriterios = document.getElementById('viralBreakdownCriterios');
+  const breakdownFormato = document.getElementById('viralBreakdownFormato');
+  const tipsContainer = document.getElementById('viralTipsContainer');
+
+  if (!scoreDisplay) return;
+
+  const percent = Math.min(100, Math.round((data.totalScore / 14.0) * 100));
+
+  scoreDisplay.textContent = data.totalScore.toFixed(1);
+  if (percentBadge) percentBadge.textContent = `${percent}%`;
+  if (progressBar) progressBar.style.width = `${percent}%`;
+
+  if (breakdownCriterios) {
+    breakdownCriterios.textContent = `${data.criteriaScore.toFixed(1)} / 10.0 pts`;
+  }
+  if (breakdownFormato) {
+    breakdownFormato.textContent = `${data.formatScore.toFixed(1)} / 4.0 pts`;
+  }
+
+  // Verdict box styling
+  if (verdictContainer && verdictTitle && verdictDesc && verdictIcon) {
+    if (data.totalScore >= 10.0) {
+      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-emerald-950/30 border-emerald-500/40";
+      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-emerald-500/20 text-emerald-400";
+      verdictIcon.innerHTML = "✓";
+      verdictTitle.className = "text-sm sm:text-base font-bold text-emerald-300";
+      verdictTitle.textContent = "🟢 Potencial Muy Alto / Viral (10.0 - 14.0 pts)";
+      verdictDesc.textContent = "¡Candidato óptimo a escalar y volverse viral! Cumple con la mayoría de pilares de atracción masiva, retención y distribución algorítmica. Muy recomendado para grabar de inmediato.";
+    } else if (data.totalScore >= 7.0) {
+      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-amber-950/30 border-amber-500/40";
+      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-amber-500/20 text-amber-400";
+      verdictIcon.innerHTML = "★";
+      verdictTitle.className = "text-sm sm:text-base font-bold text-amber-300";
+      verdictTitle.textContent = "🟡 Potencial Medio (7.0 - 9.5 pts)";
+      verdictDesc.textContent = "Buen contenido para audiencia cautiva o nicho específico. Aportará gran valor y retención, aunque su distribución orgánica masiva a audiencia fría es moderada.";
+    } else {
+      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-rose-950/30 border-rose-500/40";
+      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-rose-500/20 text-rose-400";
+      verdictIcon.innerHTML = "!";
+      verdictTitle.className = "text-sm sm:text-base font-bold text-rose-300";
+      verdictTitle.textContent = "🔴 Potencial Bajo (0.0 - 6.5 pts)";
+      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato más dinámico (Vlog/Entrevista) o validar referencias virales previas.";
+    }
+  }
+
+  // Generate dynamic optimization tips
+  if (tipsContainer) {
+    const tips = [];
+    if (!data.criteria.nino) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.5 pts:</span> <span>Simplifica la idea para que un <strong>niño de 5 años</strong> la comprenda sin tecnicismos.</span></div>`);
+    }
+    if (!data.criteria.cincuenta) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.5 pts:</span> <span>Amplía el ángulo para que le interese a <strong>50 de 100 personas</strong> (apela al bolsillo, curiosidad o salud).</span></div>`);
+    }
+    if (!data.criteria.refViral) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.0 pts:</span> <span>Busca una <strong>referencia viral previa</strong> en TikTok/Reels que valide el formato o gancho.</span></div>`);
+    }
+    if (data.format !== 'vlog' && data.format !== 'entrevista') {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-brand-400 font-bold">📹 +2.0 a +4.0 pts:</span> <span>Graba en formato <strong>Vlog (+4.0)</strong> o <strong>Entrevista (+3.0)</strong> para disparar la retención visual.</span></div>`);
+    }
+    if (!data.criteria.tendencia) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.5 pts:</span> <span>Conecta el tema con una <strong>tendencia actual</strong> o fecha coyuntural relevante.</span></div>`);
+    }
+    if (!data.criteria.controversia) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.0 pts:</span> <span>Añade una pregunta polarizante al final para generar <strong>debate en comentarios</strong>.</span></div>`);
+    }
+
+    if (tips.length === 0) {
+      tipsContainer.innerHTML = `<p class="text-emerald-400 font-semibold">🔥 ¡Puntuación perfecta de 14.0/14.0 pts! Esta idea tiene todos los componentes de un video viral masivo.</p>`;
+    } else {
+      tipsContainer.innerHTML = tips.slice(0, 3).join('');
+    }
+  }
+}
+
+function handleViralPresetChange(presetKey) {
+  if (!presetKey) return;
+
+  const presets = {
+    'example-miami': {
+      title: '¿Cuánto gastas al mes en Miami?',
+      client: 'USACREDITO',
+      criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: true },
+      format: 'entrevista'
+    },
+    'example-tarjeta': {
+      title: 'Deja de pagar por tu tarjeta hasta que no hagas esto',
+      client: 'Jennil',
+      criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
+      format: 'entrevista'
+    },
+    'example-navidad': {
+      title: 'Cómo no engordar en navidad comiendo lo que quieras',
+      client: 'Natalia',
+      criteria: { nino: true, cincuenta: true, refViral: false, mercadoViral: true, tendencia: true, controversia: true },
+      format: 'vlog'
+    },
+    'example-1000': {
+      title: '3 Secretos para conseguir $1,000 en 30 días',
+      client: 'USACREDITO',
+      criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
+      format: 'vlog'
+    },
+    'example-credito': {
+      title: 'Estrategia de crédito para negocios',
+      client: 'USACREDITO',
+      criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
+      format: 'talking_head'
+    }
+  };
+
+  const preset = presets[presetKey];
+  if (!preset) return;
+
+  if (document.getElementById('viralIdeaTitle')) {
+    document.getElementById('viralIdeaTitle').value = preset.title;
+  }
+  if (document.getElementById('viralIdeaClient') && state.clients.includes(preset.client)) {
+    document.getElementById('viralIdeaClient').value = preset.client;
+  }
+
+  document.getElementById('viralCritNino').checked = preset.criteria.nino;
+  document.getElementById('viralCrit50de100').checked = preset.criteria.cincuenta;
+  document.getElementById('viralCritRefViral').checked = preset.criteria.refViral;
+  document.getElementById('viralCritMercadoViral').checked = preset.criteria.mercadoViral;
+  document.getElementById('viralCritTendencia').checked = preset.criteria.tendencia;
+  document.getElementById('viralCritControversia').checked = preset.criteria.controversia;
+
+  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${preset.format}"]`);
+  if (targetRadio) {
+    targetRadio.checked = true;
+  }
+
+  calculateViralScore();
+}
+
+function resetViralCalculator() {
+  if (document.getElementById('viralIdeaTitle')) document.getElementById('viralIdeaTitle').value = '';
+  if (document.getElementById('viralIdeaLink')) document.getElementById('viralIdeaLink').value = '';
+  if (document.getElementById('viralPresetSelect')) document.getElementById('viralPresetSelect').value = '';
+
+  document.getElementById('viralCritNino').checked = false;
+  document.getElementById('viralCrit50de100').checked = false;
+  document.getElementById('viralCritRefViral').checked = false;
+  document.getElementById('viralCritMercadoViral').checked = false;
+  document.getElementById('viralCritTendencia').checked = false;
+  document.getElementById('viralCritControversia').checked = false;
+
+  const defaultRadio = document.querySelector('input[name="viralFormatoRadio"][value="otro"]');
+  if (defaultRadio) defaultRadio.checked = true;
+
+  calculateViralScore();
+}
+
+function saveCurrentViralEvaluation() {
+  const data = getCurrentViralFormData();
+
+  if (!data.title) {
+    alert('Por favor, escribe un título o idea para guardar la evaluación.');
+    const titleInput = document.getElementById('viralIdeaTitle');
+    if (titleInput) titleInput.focus();
+    return;
+  }
+
+  const newEval = {
+    id: 'viral-' + Date.now(),
+    title: data.title,
+    client: data.client,
+    link: data.link,
+    criteria: data.criteria,
+    format: data.format,
+    criteriaScore: data.criteriaScore,
+    formatScore: data.formatScore,
+    totalScore: data.totalScore,
+    potential: data.potential,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!state.viralEvaluations) {
+    state.viralEvaluations = [];
+  }
+
+  // Prepend to list
+  state.viralEvaluations.unshift(newEval);
+  saveState();
+  renderViralHistoryTable();
+
+  // Button feedback
+  const btnSave = document.getElementById('btnSaveViralEvaluation');
+  if (btnSave) {
+    const originalHTML = btnSave.innerHTML;
+    btnSave.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> ¡Guardado en Historial!`;
+    btnSave.classList.add('bg-emerald-500', 'text-slate-950');
+    refreshLucideIcons();
+    setTimeout(() => {
+      btnSave.innerHTML = originalHTML;
+      btnSave.classList.remove('bg-emerald-500', 'text-slate-950');
+      refreshLucideIcons();
+    }, 2000);
+  }
+}
+
+function renderViralHistoryTable() {
+  const tableBody = document.getElementById('viralHistoryTableBody');
+  const counter = document.getElementById('viralHistoryCounter');
+  if (!tableBody) return;
+
+  const evals = state.viralEvaluations || [];
+
+  if (counter) {
+    counter.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'} evaluada(s) (ordenadas por mayor puntuación)`;
+  }
+
+  if (evals.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-10 text-slate-500 text-xs">
+          No hay evaluaciones guardadas en el historial. Evalúa una idea arriba y haz clic en "Guardar Evaluación".
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Sort descending by score
+  const sorted = [...evals].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+  tableBody.innerHTML = sorted.map((item, index) => {
+    let potentialBadgeClass = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+    if (item.totalScore >= 10.0) {
+      potentialBadgeClass = "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-bold";
+    } else if (item.totalScore >= 7.0) {
+      potentialBadgeClass = "bg-amber-500/15 text-amber-300 border-amber-500/30 font-bold";
+    }
+
+    const formatLabels = {
+      vlog: '📹 Vlog (+4.0)',
+      entrevista: '🎙️ Entrevista (+3.0)',
+      talking_head: '🗣️ Hablando a cámara (+1.0)',
+      otro: '⚡ Otro (0.0)'
+    };
+
+    const criteriaTags = [];
+    if (item.criteria?.nino) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Niño de 5 años">👶 Niño</span>');
+    if (item.criteria?.cincuenta) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="50 de 100">👥 50/100</span>');
+    if (item.criteria?.refViral) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Referencia viral">🚀 Ref</span>');
+    if (item.criteria?.mercadoViral) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Mercado viral">🌐 Mercado</span>');
+    if (item.criteria?.tendencia) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Tendencia">📈 Trend</span>');
+    if (item.criteria?.controversia) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Controversia">🔥 Debate</span>');
+
+    return `
+      <tr class="hover:bg-slate-800/40 transition">
+        <td class="py-3 px-3 text-center font-bold text-slate-400">#${index + 1}</td>
+        <td class="py-3 px-3 whitespace-nowrap">
+          <span class="text-sm font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+            ${(item.totalScore || 0).toFixed(1)} <span class="text-[10px] text-slate-400 font-normal">/14</span>
+          </span>
+        </td>
+        <td class="py-3 px-4 font-semibold text-white max-w-xs">
+          <div class="truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+          ${item.link ? `<a href="${item.link}" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1 mt-0.5"><i data-lucide="external-link" class="w-3 h-3"></i> Referencia</a>` : ''}
+        </td>
+        <td class="py-3 px-3 whitespace-nowrap">
+          <span class="text-xs font-semibold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">${item.client || 'General'}</span>
+        </td>
+        <td class="py-3 px-3 whitespace-nowrap text-xs text-slate-300">
+          ${formatLabels[item.format] || item.format}
+        </td>
+        <td class="py-3 px-3">
+          <div class="flex flex-wrap gap-1 max-w-xs">
+            ${criteriaTags.length > 0 ? criteriaTags.join('') : '<span class="text-slate-600 text-[10px]">Ninguno</span>'}
+          </div>
+        </td>
+        <td class="py-3 px-3 whitespace-nowrap">
+          <span class="text-xs px-2 py-0.5 rounded-full border ${potentialBadgeClass}">
+            ${item.potential}
+          </span>
+        </td>
+        <td class="py-3 px-3 text-right whitespace-nowrap">
+          <div class="flex items-center justify-end gap-1">
+            <button onclick="convertViralEvalToScriptById('${item.id}')" title="Convertir a Guión" class="p-1.5 text-brand-400 hover:text-white hover:bg-brand-600/30 rounded-lg transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            </button>
+            <button onclick="loadViralEvaluationIntoCalc('${item.id}')" title="Cargar en Calculadora" class="p-1.5 text-amber-400 hover:text-white hover:bg-amber-600/30 rounded-lg transition">
+              <i data-lucide="edit-2" class="w-4 h-4"></i>
+            </button>
+            <button onclick="copyViralEvaluationRow('${item.id}', this)" title="Copiar resumen" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteViralEvaluation('${item.id}')" title="Eliminar evaluación" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+function loadViralEvaluationIntoCalc(evalId) {
+  const evals = state.viralEvaluations || [];
+  const item = evals.find(e => e.id === evalId);
+  if (!item) return;
+
+  if (document.getElementById('viralIdeaTitle')) {
+    document.getElementById('viralIdeaTitle').value = item.title || '';
+  }
+  if (document.getElementById('viralIdeaLink')) {
+    document.getElementById('viralIdeaLink').value = item.link || '';
+  }
+  if (document.getElementById('viralIdeaClient') && state.clients.includes(item.client)) {
+    document.getElementById('viralIdeaClient').value = item.client;
+  }
+
+  document.getElementById('viralCritNino').checked = !!item.criteria?.nino;
+  document.getElementById('viralCrit50de100').checked = !!item.criteria?.cincuenta;
+  document.getElementById('viralCritRefViral').checked = !!item.criteria?.refViral;
+  document.getElementById('viralCritMercadoViral').checked = !!item.criteria?.mercadoViral;
+  document.getElementById('viralCritTendencia').checked = !!item.criteria?.tendencia;
+  document.getElementById('viralCritControversia').checked = !!item.criteria?.controversia;
+
+  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${item.format}"]`);
+  if (targetRadio) {
+    targetRadio.checked = true;
+  }
+
+  calculateViralScore();
+
+  // Smooth scroll to top of calculator
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteViralEvaluation(evalId) {
+  if (confirm('¿Deseas eliminar esta evaluación del historial?')) {
+    state.viralEvaluations = (state.viralEvaluations || []).filter(e => e.id !== evalId);
+    saveState();
+    renderViralHistoryTable();
+  }
+}
+
+function clearViralHistory() {
+  if (confirm('⚠️ ¿Estás seguro de que deseas vaciar todo el historial de ideas evaluadas?')) {
+    state.viralEvaluations = [];
+    saveState();
+    renderViralHistoryTable();
+  }
+}
+
+function convertViralEvalToScript(evalData = null) {
+  const data = evalData || getCurrentViralFormData();
+  const ideaTitle = data.title || 'Nueva Idea Viral';
+  const clientName = data.client || (state.clients[0] || 'USACREDITO');
+  
+  let mappedFormat = 'REEL';
+  if (data.format === 'vlog') mappedFormat = 'VLOG';
+  else if (data.format === 'entrevista') mappedFormat = 'ENTREVISTA';
+  else if (data.format === 'talking_head') mappedFormat = 'TUTORIAL';
+
+  openNewScriptModal();
+  if (document.getElementById('formIdeaGanadora')) {
+    document.getElementById('formIdeaGanadora').value = ideaTitle;
+  }
+  if (document.getElementById('formClient')) {
+    document.getElementById('formClient').value = clientName;
+    populateActorOptions(clientName);
+  }
+  if (document.getElementById('formFormato')) {
+    document.getElementById('formFormato').value = mappedFormat;
+  }
+  if (document.getElementById('formLinkReferencia') && data.link) {
+    document.getElementById('formLinkReferencia').value = data.link;
+  }
+  if (document.getElementById('formGancho')) {
+    document.getElementById('formGancho').value = ideaTitle;
+  }
+  if (document.getElementById('formContextoAdicional')) {
+    document.getElementById('formContextoAdicional').value = `Score de Viralidad: ${data.totalScore}/14.0 pts (${data.potential})`;
+  }
+}
+
+function convertViralEvalToScriptById(evalId) {
+  const item = (state.viralEvaluations || []).find(e => e.id === evalId);
+  if (item) {
+    convertViralEvalToScript(item);
+  }
+}
+
+function copyViralSummary(btnElement) {
+  const data = getCurrentViralFormData();
+  const summary = `🔥 EVALUACIÓN DE VIRALIDAD - BLEX STUDIO
+💡 Idea: "${data.title || 'Idea sin título'}"
+👤 Cliente: ${data.client}
+📊 Puntuación Total: ${data.totalScore} / 14.0 pts (${Math.round((data.totalScore/14)*100)}%)
+🎯 Clasificación: Potencial ${data.potential}
+📹 Formato: ${data.format} (+${data.formatScore} pts)
+Desglose Criterios:
+• Niño de 5 años: ${data.criteria.nino ? 'SÍ (+2.5)' : 'NO (0)'}
+• 50 de cada 100: ${data.criteria.cincuenta ? 'SÍ (+2.5)' : 'NO (0)'}
+• Referencia Viral Previa: ${data.criteria.refViral ? 'SÍ (+2.0)' : 'NO (0)'}
+• Mercado Viral: ${data.criteria.mercadoViral ? 'SÍ (+0.5)' : 'NO (0)'}
+• Tendencia Actual: ${data.criteria.tendencia ? 'SÍ (+1.5)' : 'NO (0)'}
+• Controversia / Debate: ${data.criteria.controversia ? 'SÍ (+1.0)' : 'NO (0)'}`;
+
+  copyTextToClipboard(summary, btnElement);
+}
+
+function copyViralEvaluationRow(evalId, btnElement) {
+  const item = (state.viralEvaluations || []).find(e => e.id === evalId);
+  if (!item) return;
+
+  const summary = `🔥 EVALUACIÓN DE VIRALIDAD: "${item.title}" | Score: ${item.totalScore}/14.0 pts (${item.potential}) | Cliente: ${item.client} | Formato: ${item.format}`;
+  copyTextToClipboard(summary, btnElement);
+}
+
+function exportViralEvaluationsCSV() {
+  const evals = state.viralEvaluations || [];
+  if (evals.length === 0) {
+    alert('No hay evaluaciones guardadas para exportar.');
+    return;
+  }
+
+  const headers = ["Ranking", "Titulo", "Cliente", "Puntaje_Total", "Potencial", "Formato", "Puntos_Formato", "Nino_5_Anos", "50_de_100", "Ref_Viral", "Mercado_Viral", "Tendencia", "Controversia", "Fecha"];
+  
+  const sorted = [...evals].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+
+  const rows = sorted.map((item, idx) => [
+    idx + 1,
+    `"${(item.title || '').replace(/"/g, '""')}"`,
+    `"${item.client || ''}"`,
+    item.totalScore,
+    `"${item.potential}"`,
+    `"${item.format}"`,
+    item.formatScore,
+    item.criteria?.nino ? 'SI (+2.5)' : 'NO (0)',
+    item.criteria?.cincuenta ? 'SI (+2.5)' : 'NO (0)',
+    item.criteria?.refViral ? 'SI (+2.0)' : 'NO (0)',
+    item.criteria?.mercadoViral ? 'SI (+0.5)' : 'NO (0)',
+    item.criteria?.tendencia ? 'SI (+1.5)' : 'NO (0)',
+    item.criteria?.controversia ? 'SI (+1.0)' : 'NO (0)',
+    `"${item.createdAt ? new Date(item.createdAt).toISOString().slice(0, 10) : ''}"`
+  ]);
+
+  const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `calculadora_viralidad_blex_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
