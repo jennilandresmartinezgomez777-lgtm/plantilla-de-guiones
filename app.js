@@ -2367,6 +2367,8 @@ function copyNoteContent(noteId, btnElement) {
 // CALCULADORA DE VIRALIDAD DE CONTENIDO
 // ==========================================
 
+let currentViralDateFilter = 'ALL';
+
 function setupViralCalcEventListeners() {
   const criteriaIds = [
     'viralCritNino',
@@ -2388,11 +2390,6 @@ function setupViralCalcEventListeners() {
   formatRadios.forEach(radio => {
     radio.addEventListener('change', calculateViralScore);
   });
-
-  const presetSelect = document.getElementById('viralPresetSelect');
-  if (presetSelect) {
-    presetSelect.addEventListener('change', (e) => handleViralPresetChange(e.target.value));
-  }
 
   const btnReset = document.getElementById('btnResetViralCalc');
   if (btnReset) {
@@ -2416,6 +2413,14 @@ function setupViralCalcEventListeners() {
     });
   }
 
+  const dateFilter = document.getElementById('viralDateFilter');
+  if (dateFilter) {
+    dateFilter.addEventListener('change', (e) => {
+      currentViralDateFilter = e.target.value;
+      renderViralHistoryTable();
+    });
+  }
+
   const btnExportCSV = document.getElementById('btnExportViralCSV');
   if (btnExportCSV) {
     btnExportCSV.addEventListener('click', exportViralEvaluationsCSV);
@@ -2426,33 +2431,7 @@ function setupViralCalcEventListeners() {
     btnClearHist.addEventListener('click', clearViralHistory);
   }
 
-  const btnToggle = document.getElementById('btnToggleViralHistory');
-  if (btnToggle) {
-    btnToggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleViralHistory();
-    });
-  }
-
-  const headerBar = document.getElementById('viralHistoryHeaderBar');
-  if (headerBar) {
-    headerBar.addEventListener('click', (e) => {
-      if (!e.target.closest('#btnExportViralCSV') && !e.target.closest('#btnClearViralHistory') && !e.target.closest('#btnToggleViralHistory')) {
-        toggleViralHistory();
-      }
-    });
-  }
-
-  const btnOpenFromForm = document.getElementById('btnOpenViralHistoryFromForm');
-  if (btnOpenFromForm) {
-    btnOpenFromForm.addEventListener('click', (e) => {
-      e.preventDefault();
-      toggleViralHistory(true);
-    });
-  }
-
-  // Live title typing doesn't require recalculating score, but ensures smooth experience
+  // Live title typing
   const titleInput = document.getElementById('viralIdeaTitle');
   if (titleInput) {
     titleInput.addEventListener('input', () => {});
@@ -2487,7 +2466,7 @@ function getCurrentViralFormData() {
   if (tendencia) criteriaScore += 1.5;
   if (controversia) criteriaScore += 1.0;
 
-  // Format bonus calculation (Max 4.0 pts)
+  // Format bonus calculation (Max 4.5 pts)
   const formatScore = getPointsForFormat(format);
 
   const totalScore = parseFloat((criteriaScore + formatScore).toFixed(1));
@@ -2551,26 +2530,26 @@ function calculateViralScore() {
   // Verdict box styling
   if (verdictContainer && verdictTitle && verdictDesc && verdictIcon) {
     if (data.totalScore >= 10.0) {
-      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-emerald-950/30 border-emerald-500/40";
-      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-emerald-500/20 text-emerald-400";
+      verdictContainer.className = "p-3 rounded-xl border transition space-y-1.5 bg-emerald-950/30 border-emerald-500/40";
+      verdictIcon.className = "w-5 h-5 rounded-full flex items-center justify-center text-xs font-black bg-emerald-500/20 text-emerald-400";
       verdictIcon.innerHTML = "✓";
-      verdictTitle.className = "text-sm sm:text-base font-bold text-emerald-300";
+      verdictTitle.className = "text-xs sm:text-sm font-bold text-emerald-300";
       verdictTitle.textContent = "🟢 Potencial Muy Alto / Viral (10.0 - 14.5 pts)";
-      verdictDesc.textContent = "¡Candidato óptimo a escalar y volverse viral! Cumple con los pilares de atracción masiva, alta retención e inmersión psicológica. Muy recomendado para grabar de inmediato.";
+      verdictDesc.textContent = "¡Candidato óptimo a escalar y volverse viral! Cumple con atracción masiva, alta retención e inmersión psicológica.";
     } else if (data.totalScore >= 7.0) {
-      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-amber-950/30 border-amber-500/40";
-      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-amber-500/20 text-amber-400";
+      verdictContainer.className = "p-3 rounded-xl border transition space-y-1.5 bg-amber-950/30 border-amber-500/40";
+      verdictIcon.className = "w-5 h-5 rounded-full flex items-center justify-center text-xs font-black bg-amber-500/20 text-amber-400";
       verdictIcon.innerHTML = "★";
-      verdictTitle.className = "text-sm sm:text-base font-bold text-amber-300";
+      verdictTitle.className = "text-xs sm:text-sm font-bold text-amber-300";
       verdictTitle.textContent = "🟡 Potencial Medio (7.0 - 9.5 pts)";
-      verdictDesc.textContent = "Buen contenido para audiencia cautiva o nicho específico. Aportará gran valor y retención, aunque su distribución orgánica masiva a audiencia fría es moderada.";
+      verdictDesc.textContent = "Buen contenido para comunidad o nicho específico. Para tráfico frío, prueba subir la inmersión de formato.";
     } else {
-      verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-rose-950/30 border-rose-500/40";
-      verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-rose-500/20 text-rose-400";
+      verdictContainer.className = "p-3 rounded-xl border transition space-y-1.5 bg-rose-950/30 border-rose-500/40";
+      verdictIcon.className = "w-5 h-5 rounded-full flex items-center justify-center text-xs font-black bg-rose-500/20 text-rose-400";
       verdictIcon.innerHTML = "!";
-      verdictTitle.className = "text-sm sm:text-base font-bold text-rose-300";
+      verdictTitle.className = "text-xs sm:text-sm font-bold text-rose-300";
       verdictTitle.textContent = "🔴 Potencial Bajo (0.0 - 6.5 pts)";
-      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato de mayor inmersión (POV, Vlog, Dinámico) o validar referencias virales previas.";
+      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda y usar formatos POV o Vlog.";
     }
   }
 
@@ -2578,97 +2557,35 @@ function calculateViralScore() {
   if (tipsContainer) {
     const tips = [];
     if (!data.criteria.nino) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.5 pts:</span> <span>Simplifica la idea para que un <strong>niño de 5 años</strong> la comprenda sin tecnicismos.</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold text-[11px]">💡 +2.5 pts:</span> <span class="text-[11px]">Haz que un <strong>niño de 5 años</strong> la comprenda sin tecnicismos.</span></div>`);
     }
     if (!data.criteria.cincuenta) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.5 pts:</span> <span>Amplía el ángulo para que le interese a <strong>50 de 100 personas</strong> (apela al bolsillo, curiosidad o salud).</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold text-[11px]">💡 +2.5 pts:</span> <span class="text-[11px]">Amplía el tema para que le interese a <strong>50 de 100 personas</strong>.</span></div>`);
     }
     if (!data.criteria.refViral) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.0 pts:</span> <span>Busca una <strong>referencia viral previa</strong> en TikTok/Reels que valide el formato o gancho.</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold text-[11px]">💡 +2.0 pts:</span> <span class="text-[11px]">Valida con una <strong>referencia viral previa</strong> que haya superado 1M de views.</span></div>`);
     }
     if (data.formatScore < 3.5) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-emerald-400 font-bold">📹 +3.5 a +4.5 pts:</span> <span>Prueba formatos de <strong>Inmersión Total (Grupo 1)</strong> como <strong>Formato POV (+4.5)</strong>, <strong>Formato Vlog (+4.0)</strong> o <strong>Formato Dinámico (+3.5)</strong>.</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-emerald-400 font-bold text-[11px]">📹 +3.5 a +4.5:</span> <span class="text-[11px]">Usa formatos de <strong>Inmersión Total</strong> (POV, Vlog o Dinámico).</span></div>`);
     }
     if (!data.criteria.tendencia) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.5 pts:</span> <span>Conecta el tema con una <strong>tendencia actual</strong> o fecha coyuntural relevante.</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold text-[11px]">💡 +1.5 pts:</span> <span class="text-[11px]">Conecta con una <strong>tendencia actual</strong> o fecha coyuntural.</span></div>`);
     }
     if (!data.criteria.controversia) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.0 pts:</span> <span>Añade una pregunta polarizante al final para generar <strong>debate en comentarios</strong>.</span></div>`);
+      tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold text-[11px]">💡 +1.0 pts:</span> <span class="text-[11px]">Añade una pregunta polarizante para generar <strong>debate</strong>.</span></div>`);
     }
 
     if (tips.length === 0) {
-      tipsContainer.innerHTML = `<p class="text-emerald-400 font-semibold">🔥 ¡Puntuación perfecta de 14.5/14.5 pts! Esta idea tiene todos los componentes de un video viral masivo.</p>`;
+      tipsContainer.innerHTML = `<p class="text-emerald-400 font-semibold text-xs">🔥 ¡Puntuación perfecta de 14.5/14.5 pts! Esta idea tiene todos los componentes de un video viral masivo.</p>`;
     } else {
       tipsContainer.innerHTML = tips.slice(0, 3).join('');
     }
   }
 }
 
-function handleViralPresetChange(presetKey) {
-  if (!presetKey) return;
-
-  const presets = {
-    'example-miami': {
-      title: '¿Cuánto gastas al mes en Miami?',
-      client: 'Jennil',
-      criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: true },
-      format: 'Formato entrevista'
-    },
-    'example-tarjeta': {
-      title: 'Deja de pagar por tu tarjeta hasta que no hagas esto',
-      client: 'Jennil',
-      criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'Formato entrevista'
-    },
-    'example-navidad': {
-      title: 'Cómo no engordar en navidad comiendo lo que quieras',
-      client: 'Natalia',
-      criteria: { nino: true, cincuenta: true, refViral: false, mercadoViral: true, tendencia: true, controversia: true },
-      format: 'Formato Vlog'
-    },
-    'example-1000': {
-      title: '3 Secretos para conseguir $1,000 en 30 días',
-      client: 'Jennil',
-      criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'Formato POV'
-    },
-    'example-credito': {
-      title: 'Estrategia de contenido y crecimiento',
-      client: 'Natalia',
-      criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'Hablando a cámara'
-    }
-  };
-
-  const preset = presets[presetKey];
-  if (!preset) return;
-
-  if (document.getElementById('viralIdeaTitle')) {
-    document.getElementById('viralIdeaTitle').value = preset.title;
-  }
-  if (document.getElementById('viralIdeaClient') && state.clients.includes(preset.client)) {
-    document.getElementById('viralIdeaClient').value = preset.client;
-  }
-
-  document.getElementById('viralCritNino').checked = preset.criteria.nino;
-  document.getElementById('viralCrit50de100').checked = preset.criteria.cincuenta;
-  document.getElementById('viralCritRefViral').checked = preset.criteria.refViral;
-  document.getElementById('viralCritMercadoViral').checked = preset.criteria.mercadoViral;
-  document.getElementById('viralCritTendencia').checked = preset.criteria.tendencia;
-  document.getElementById('viralCritControversia').checked = preset.criteria.controversia;
-
-  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${preset.format}"]`) || document.querySelector(`input[name="viralFormatoRadio"]`);
-  if (targetRadio) {
-    targetRadio.checked = true;
-  }
-
-  calculateViralScore();
-}
-
 function resetViralCalculator() {
   if (document.getElementById('viralIdeaTitle')) document.getElementById('viralIdeaTitle').value = '';
   if (document.getElementById('viralIdeaLink')) document.getElementById('viralIdeaLink').value = '';
-  if (document.getElementById('viralPresetSelect')) document.getElementById('viralPresetSelect').value = '';
 
   document.getElementById('viralCritNino').checked = false;
   document.getElementById('viralCrit50de100').checked = false;
@@ -2716,14 +2633,14 @@ function saveCurrentViralEvaluation() {
   saveState();
   renderViralHistoryTable();
   
-  // Auto-switch to history tab so user sees newly added entry
+  // Auto-switch to history tab so user sees newly added entry ranked for today
   switchViralTab('hist');
 
   // Button feedback
   const btnSave = document.getElementById('btnSaveViralEvaluation');
   if (btnSave) {
     const originalHTML = btnSave.innerHTML;
-    btnSave.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> ¡Guardado en Historial!`;
+    btnSave.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> ¡Guardada y Rankeada!`;
     btnSave.classList.add('bg-emerald-500', 'text-slate-950');
     refreshLucideIcons();
     setTimeout(() => {
@@ -2740,9 +2657,9 @@ function switchViralTab(tabName) {
   const tEval = document.getElementById('tabViralEval');
   const tHist = document.getElementById('tabViralHist');
 
-  const activeEvalClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-amber-500 text-slate-950 shadow-md cursor-pointer";
-  const activeHistClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-sky-500 text-white shadow-md cursor-pointer";
-  const inactiveClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer";
+  const activeEvalClass = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5 transition bg-amber-500 text-slate-950 shadow-sm cursor-pointer";
+  const activeHistClass = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5 transition bg-sky-500 text-white shadow-sm cursor-pointer";
+  const inactiveClass = "px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white cursor-pointer";
 
   if (tabName === 'hist') {
     if (vEval) vEval.classList.add('hidden');
@@ -2772,12 +2689,47 @@ window.switchViralTab = switchViralTab;
 window.toggleViralHistory = toggleViralHistory;
 window.toggleViralHistoryCollapse = toggleViralHistoryCollapse;
 
+function getViralDateKey(dateStr) {
+  if (!dateStr) return new Date().toISOString().slice(0, 10);
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10);
+    return d.toISOString().slice(0, 10);
+  } catch (e) {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+function getFriendlyDateLabel(dateKey) {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+
+  const parts = dateKey.split('-').map(Number);
+  if (parts.length !== 3) return dateKey;
+  const [y, m, d] = parts;
+  const dateObj = new Date(y, m - 1, d);
+
+  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  const formattedDate = dateObj.toLocaleDateString('es-ES', options);
+  const capDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+  if (dateKey === todayKey) {
+    return `Hoy — ${capDate}`;
+  } else if (dateKey === yesterdayKey) {
+    return `Ayer — ${capDate}`;
+  }
+  return capDate;
+}
+
 function renderViralHistoryTable() {
-  const tableBody = document.getElementById('viralHistoryTableBody');
+  const historyContainer = document.getElementById('viralHistoryContainer');
   const counter = document.getElementById('viralHistoryCounter');
   const badge = document.getElementById('viralHistoryCountBadge');
   const tabBadge = document.getElementById('viralHistTabBadge');
-  if (!tableBody) return;
+  const dateFilterSelect = document.getElementById('viralDateFilter');
+  if (!historyContainer) return;
 
   const evals = state.viralEvaluations || [];
 
@@ -2790,49 +2742,167 @@ function renderViralHistoryTable() {
   }
 
   if (counter) {
-    counter.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'} evaluada(s) (ordenadas por mayor puntuación)`;
+    counter.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'} evaluada(s) en total (agrupadas y rankeadas por día)`;
   }
 
   if (evals.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center py-10 text-slate-500 text-xs">
-          No hay evaluaciones guardadas en el historial. Evalúa una idea arriba y haz clic en "Guardar Evaluación".
-        </td>
-      </tr>
+    if (dateFilterSelect) {
+      dateFilterSelect.innerHTML = `<option value="ALL">📅 Todas las fechas (0)</option>`;
+    }
+    historyContainer.innerHTML = `
+      <div class="py-12 text-center space-y-3 bg-slate-950/40 rounded-2xl border border-slate-800/80 p-6">
+        <div class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-amber-400">
+          <i data-lucide="flame" class="w-6 h-6"></i>
+        </div>
+        <h4 class="text-sm font-bold text-slate-300">No hay ideas evaluadas en el historial</h4>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">Evalúa tus ideas en la pestaña "1. Evaluar Idea" y guárdalas para que se agrupen y rankeen automáticamente por día.</p>
+        <button type="button" onclick="switchViralTab('eval')" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition shadow-md cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i> Evaluar Primera Idea
+        </button>
+      </div>
     `;
+    refreshLucideIcons();
     return;
   }
 
-  // Sort descending by score
-  const sorted = [...evals].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+  // Group items by dateKey
+  const groups = {};
+  evals.forEach(item => {
+    const dateKey = getViralDateKey(item.createdAt);
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(item);
+  });
 
-  tableBody.innerHTML = sorted.map((item, index) => {
+  // Sort dates descending
+  const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  // Sort ideas within each day descending by totalScore
+  dateKeys.forEach(key => {
+    groups[key].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+  });
+
+  // Populate date filter dropdown
+  if (dateFilterSelect) {
+    const selectedVal = dateFilterSelect.value || currentViralDateFilter || 'ALL';
+    let optionsHtml = `<option value="ALL" ${selectedVal === 'ALL' ? 'selected' : ''}>📅 Todas las fechas (${evals.length} ideas)</option>`;
+    dateKeys.forEach(key => {
+      const label = getFriendlyDateLabel(key);
+      const topScore = groups[key][0]?.totalScore?.toFixed(1) || '0.0';
+      optionsHtml += `<option value="${key}" ${selectedVal === key ? 'selected' : ''}>📅 ${label} (${groups[key].length} ideas · Top: ${topScore} pts)</option>`;
+    });
+    dateFilterSelect.innerHTML = optionsHtml;
+  }
+
+  const activeFilter = dateFilterSelect ? dateFilterSelect.value : currentViralDateFilter;
+  const keysToRender = (activeFilter === 'ALL') ? dateKeys : dateKeys.filter(k => k === activeFilter);
+
+  if (keysToRender.length === 0) {
+    historyContainer.innerHTML = `
+      <div class="py-8 text-center text-slate-500 text-xs">
+        No hay ideas registradas para la fecha seleccionada.
+      </div>
+    `;
+    refreshLucideIcons();
+    return;
+  }
+
+  // Render day cards with leaderboard tables
+  historyContainer.innerHTML = keysToRender.map(dateKey => {
+    const dayItems = groups[dateKey];
+    const dayTitle = getFriendlyDateLabel(dateKey);
+    const bestItem = dayItems[0];
+    const topScore = bestItem ? (bestItem.totalScore || 0).toFixed(1) : '0.0';
+    const topTitle = bestItem ? bestItem.title : '';
+
+    return `
+      <div class="space-y-3 bg-slate-950/60 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-lg">
+        <!-- Day Leaderboard Header -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-800/80">
+          <div class="flex items-center gap-2.5">
+            <span class="p-1.5 rounded-lg bg-sky-500/20 text-sky-400">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+            </span>
+            <div>
+              <h4 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2 flex-wrap">
+                <span>${dayTitle}</span>
+                <span class="text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/20 px-2 py-0.5 rounded-full">
+                  ${dayItems.length} idea${dayItems.length === 1 ? '' : 's'}
+                </span>
+              </h4>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5" title="Mejor idea de este día: ${escapeHtml(topTitle)}">
+              <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>🏆 Top del Día: <strong>${topScore} / 14.5 pts</strong></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Table for this Day -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 border-b border-slate-800/80 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <th class="py-2.5 px-3 text-center w-14">Rank</th>
+                <th class="py-2.5 px-3">Puntaje</th>
+                <th class="py-2.5 px-4">Idea / Título Evaluado</th>
+                <th class="py-2.5 px-3">Cliente</th>
+                <th class="py-2.5 px-3">Formato</th>
+                <th class="py-2.5 px-3">Criterios</th>
+                <th class="py-2.5 px-3">Potencial</th>
+                <th class="py-2.5 px-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50 text-slate-300">
+              ${renderDayRows(dayItems)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+function renderDayRows(items) {
+  const formatLabels = {
+    'Formato POV': '👀 POV (+4.5)',
+    'Formato Vlog': '📹 Vlog (+4.0)',
+    'Formato Dinámico': '⚡ Dinámico (+3.5)',
+    'Formato prima pregunta': '❓ Prima Pregunta (+3.5)',
+    'Formato entrevista': '🎙️ Entrevista (+3.0)',
+    'Formato mirando a la nada': '👁️ Mirando a la nada (+2.5)',
+    'Formato pantalla dividida': '📱 Pantalla dividida (+2.5)',
+    'Formato pantalla verde': '🟩 Pantalla verde (+2.0)',
+    'Formato selfie': '🤳 Selfie (+1.5)',
+    'Hablando a cámara': '🗣️ Hablando a cámara (+1.0)',
+    // legacy
+    'pov': '👀 POV (+4.5)',
+    'vlog': '📹 Vlog (+4.0)',
+    'dinamico': '⚡ Dinámico (+3.5)',
+    'entrevista': '🎙️ Entrevista (+3.0)',
+    'talking_head': '🗣️ Hablando a cámara (+1.0)'
+  };
+
+  return items.map((item, index) => {
+    let rankBadge = `<span class="text-xs font-bold text-slate-400">#${index + 1}</span>`;
+    if (index === 0) {
+      rankBadge = `<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-black text-xs border border-amber-500/40 shadow-sm" title="1º Lugar del día">🥇 1º</span>`;
+    } else if (index === 1) {
+      rankBadge = `<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-slate-400/20 text-slate-200 font-bold text-xs border border-slate-400/30" title="2º Lugar del día">🥈 2º</span>`;
+    } else if (index === 2) {
+      rankBadge = `<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-amber-700/20 text-amber-500 font-bold text-xs border border-amber-700/30" title="3º Lugar del día">🥉 3º</span>`;
+    }
+
     let potentialBadgeClass = "bg-rose-500/10 text-rose-400 border-rose-500/20";
     if (item.totalScore >= 10.0) {
       potentialBadgeClass = "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-bold";
     } else if (item.totalScore >= 7.0) {
       potentialBadgeClass = "bg-amber-500/15 text-amber-300 border-amber-500/30 font-bold";
     }
-
-    const formatLabels = {
-      'Formato POV': '👀 POV (+4.5)',
-      'Formato Vlog': '📹 Vlog (+4.0)',
-      'Formato Dinámico': '⚡ Dinámico (+3.5)',
-      'Formato prima pregunta': '❓ Prima Pregunta (+3.5)',
-      'Formato entrevista': '🎙️ Entrevista (+3.0)',
-      'Formato mirando a la nada': '👁️ Mirando a la nada (+2.5)',
-      'Formato pantalla dividida': '📱 Pantalla dividida (+2.5)',
-      'Formato pantalla verde': '🟩 Pantalla verde (+2.0)',
-      'Formato selfie': '🤳 Selfie (+1.5)',
-      'Hablando a cámara': '🗣️ Hablando a cámara (+1.0)',
-      // legacy / alias keys
-      'pov': '👀 POV (+4.5)',
-      'vlog': '📹 Vlog (+4.0)',
-      'dinamico': '⚡ Dinámico (+3.5)',
-      'entrevista': '🎙️ Entrevista (+3.0)',
-      'talking_head': '🗣️ Hablando a cámara (+1.0)'
-    };
 
     const criteriaTags = [];
     if (item.criteria?.nino) criteriaTags.push('<span class="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]" title="Niño de 5 años">👶 Niño</span>');
@@ -2844,44 +2914,44 @@ function renderViralHistoryTable() {
 
     return `
       <tr class="hover:bg-slate-800/40 transition">
-        <td class="py-3 px-3 text-center font-bold text-slate-400">#${index + 1}</td>
-        <td class="py-3 px-3 whitespace-nowrap">
-          <span class="text-sm font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+        <td class="py-2.5 px-3 text-center whitespace-nowrap">${rankBadge}</td>
+        <td class="py-2.5 px-3 whitespace-nowrap">
+          <span class="text-xs sm:text-sm font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
             ${(item.totalScore || 0).toFixed(1)} <span class="text-[10px] text-slate-400 font-normal">/14.5</span>
           </span>
         </td>
-        <td class="py-3 px-4 font-semibold text-white max-w-xs">
-          <div class="truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+        <td class="py-2.5 px-4 font-semibold text-white max-w-xs">
+          <div class="truncate text-xs sm:text-sm" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
           ${item.link ? `<a href="${item.link}" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1 mt-0.5"><i data-lucide="external-link" class="w-3 h-3"></i> Referencia</a>` : ''}
         </td>
-        <td class="py-3 px-3 whitespace-nowrap">
-          <span class="text-xs font-semibold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">${item.client || 'General'}</span>
+        <td class="py-2.5 px-3 whitespace-nowrap">
+          <span class="text-[11px] font-semibold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">${item.client || 'General'}</span>
         </td>
-        <td class="py-3 px-3 whitespace-nowrap text-xs text-slate-300 font-medium">
+        <td class="py-2.5 px-3 whitespace-nowrap text-xs text-slate-300 font-medium">
           ${formatLabels[item.format] || item.format}
         </td>
-        <td class="py-3 px-3">
+        <td class="py-2.5 px-3">
           <div class="flex flex-wrap gap-1 max-w-xs">
             ${criteriaTags.length > 0 ? criteriaTags.join('') : '<span class="text-slate-600 text-[10px]">Ninguno</span>'}
           </div>
         </td>
-        <td class="py-3 px-3 whitespace-nowrap">
-          <span class="text-xs px-2 py-0.5 rounded-full border ${potentialBadgeClass}">
+        <td class="py-2.5 px-3 whitespace-nowrap">
+          <span class="text-[11px] px-2 py-0.5 rounded-full border ${potentialBadgeClass}">
             ${item.potential}
           </span>
         </td>
-        <td class="py-3 px-3 text-right whitespace-nowrap">
+        <td class="py-2.5 px-3 text-right whitespace-nowrap">
           <div class="flex items-center justify-end gap-1">
-            <button onclick="convertViralEvalToScriptById('${item.id}')" title="Convertir a Guión" class="p-1.5 text-brand-400 hover:text-white hover:bg-brand-600/30 rounded-lg transition">
+            <button onclick="convertViralEvalToScriptById('${item.id}')" title="Convertir a Guión" class="p-1.5 text-brand-400 hover:text-white hover:bg-brand-600/30 rounded-lg transition cursor-pointer">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
             </button>
-            <button onclick="loadViralEvaluationIntoCalc('${item.id}')" title="Cargar en Calculadora" class="p-1.5 text-amber-400 hover:text-white hover:bg-amber-600/30 rounded-lg transition">
+            <button onclick="loadViralEvaluationIntoCalc('${item.id}')" title="Cargar en Calculadora" class="p-1.5 text-amber-400 hover:text-white hover:bg-amber-600/30 rounded-lg transition cursor-pointer">
               <i data-lucide="edit-2" class="w-4 h-4"></i>
             </button>
-            <button onclick="copyViralEvaluationRow('${item.id}', this)" title="Copiar resumen" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+            <button onclick="copyViralEvaluationRow('${item.id}', this)" title="Copiar resumen" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
-            <button onclick="deleteViralEvaluation('${item.id}')" title="Eliminar evaluación" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition">
+            <button onclick="deleteViralEvaluation('${item.id}')" title="Eliminar evaluación" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           </div>
@@ -2889,8 +2959,6 @@ function renderViralHistoryTable() {
       </tr>
     `;
   }).join('');
-
-  refreshLucideIcons();
 }
 
 function loadViralEvaluationIntoCalc(evalId) {
@@ -3014,26 +3082,40 @@ function exportViralEvaluationsCSV() {
     return;
   }
 
-  const headers = ["Ranking", "Titulo", "Cliente", "Puntaje_Total", "Potencial", "Formato", "Puntos_Formato", "Nino_5_Anos", "50_de_100", "Ref_Viral", "Mercado_Viral", "Tendencia", "Controversia", "Fecha"];
+  const headers = ["Fecha", "Ranking_Diario", "Titulo", "Cliente", "Puntaje_Total", "Potencial", "Formato", "Puntos_Formato", "Nino_5_Anos", "50_de_100", "Ref_Viral", "Mercado_Viral", "Tendencia", "Controversia"];
   
-  const sorted = [...evals].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+  // Group by date to compute daily ranking
+  const groups = {};
+  evals.forEach(item => {
+    const dateKey = getViralDateKey(item.createdAt);
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(item);
+  });
 
-  const rows = sorted.map((item, idx) => [
-    idx + 1,
-    `"${(item.title || '').replace(/"/g, '""')}"`,
-    `"${item.client || ''}"`,
-    item.totalScore,
-    `"${item.potential}"`,
-    `"${item.format}"`,
-    item.formatScore,
-    item.criteria?.nino ? 'SI (+2.5)' : 'NO (0)',
-    item.criteria?.cincuenta ? 'SI (+2.5)' : 'NO (0)',
-    item.criteria?.refViral ? 'SI (+2.0)' : 'NO (0)',
-    item.criteria?.mercadoViral ? 'SI (+0.5)' : 'NO (0)',
-    item.criteria?.tendencia ? 'SI (+1.5)' : 'NO (0)',
-    item.criteria?.controversia ? 'SI (+1.0)' : 'NO (0)',
-    `"${item.createdAt ? new Date(item.createdAt).toISOString().slice(0, 10) : ''}"`
-  ]);
+  const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+  const rows = [];
+
+  dateKeys.forEach(dateKey => {
+    groups[dateKey].sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
+    groups[dateKey].forEach((item, idx) => {
+      rows.push([
+        `"${dateKey}"`,
+        idx + 1,
+        `"${(item.title || '').replace(/"/g, '""')}"`,
+        `"${item.client || ''}"`,
+        item.totalScore,
+        `"${item.potential}"`,
+        `"${item.format}"`,
+        item.formatScore,
+        item.criteria?.nino ? 'SI (+2.5)' : 'NO (0)',
+        item.criteria?.cincuenta ? 'SI (+2.5)' : 'NO (0)',
+        item.criteria?.refViral ? 'SI (+2.0)' : 'NO (0)',
+        item.criteria?.mercadoViral ? 'SI (+0.5)' : 'NO (0)',
+        item.criteria?.tendencia ? 'SI (+1.5)' : 'NO (0)',
+        item.criteria?.controversia ? 'SI (+1.0)' : 'NO (0)'
+      ]);
+    });
+  });
 
   const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
