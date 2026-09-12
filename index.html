@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plantilla de creación de contenido</title>
+  <title>BLEX STUDIO</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -39,7 +39,7 @@
 
   <!-- PRINT ONLY HEADER -->
   <div class="hidden print:block mb-6 pb-4 border-b border-slate-300">
-    <h1 class="text-2xl font-bold text-slate-900">Plantilla de creación de contenido</h1>
+    <h1 class="text-2xl font-bold text-slate-900">BLEX STUDIO</h1>
     <p class="text-sm text-slate-600" id="printSubheading">Reporte de Guiones</p>
   </div>
 
@@ -56,8 +56,8 @@
             <i data-lucide="video" class="w-5 h-5 text-white"></i>
           </div>
           <div>
-            <h1 class="font-bold text-base sm:text-lg md:text-xl leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent whitespace-nowrap">Plantilla de creación de contenido</h1>
-            <p class="text-xs text-slate-400">Gestión & Guiones</p>
+            <h1 class="font-black text-lg sm:text-xl md:text-2xl leading-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent whitespace-nowrap tracking-wider">BLEX STUDIO</h1>
+            <p class="text-[11px] text-slate-400 font-medium">Gestión & Guiones</p>
           </div>
         </div>
 
@@ -72,8 +72,14 @@
           </div>
 
           <!-- New Client Button -->
-          <button id="btnNewClient" title="Agregar Cliente" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition flex items-center justify-center">
+          <button id="btnNewClient" title="Agregar / Gestionar Clientes" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition flex items-center justify-center">
             <i data-lucide="folder-plus" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Notes Button -->
+          <button id="btnNotes" title="Bloc de Notas por Cliente" class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-sky-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+            <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
+            <span class="hidden sm:inline">Notas</span>
           </button>
 
           <!-- Quick Idea Button -->
@@ -726,8 +732,11 @@
 
       <!-- Footer -->
       <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-        <button id="btnCancelQuickIdeaModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-sm">
+        <button type="button" id="btnCancelQuickIdeaModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-sm">
           Cancelar
+        </button>
+        <button type="submit" form="quickIdeaForm" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-lg text-sm transition shadow-md shadow-amber-900/40 flex items-center gap-2 cursor-pointer">
+          <i data-lucide="check" class="w-4 h-4"></i> Guardar Idea
         </button>
       </div>
 
@@ -772,6 +781,51 @@
       <!-- Focus Modal Body -->
       <div id="focusModalBody" class="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1 text-slate-200">
         <!-- Injected via JS -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: NOTAS POR CLIENTE -->
+  <div id="notesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Notes Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              Bloc de Notas de Clientes
+            </h3>
+            <p class="text-xs text-slate-400">Guarda anotaciones, ideas y directrices específicas para cada cliente.</p>
+          </div>
+        </div>
+
+        <button id="btnCloseNotesModal" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Cerrar">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Client Selection Tabs & Add Note Toolbar -->
+      <div class="px-6 py-3 border-b border-slate-800 bg-slate-950/50 flex flex-wrap items-center justify-between gap-3">
+        <!-- Client Tabs -->
+        <div id="notesClientTabs" class="flex items-center gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <!-- Dynamic client pills: [Natalia] [Jennil] [USACREDITO] -->
+        </div>
+
+        <!-- Add Note Button -->
+        <button id="btnAddNewNote" onclick="addNewNoteForActiveClient()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Nueva Nota</span>
+        </button>
+      </div>
+
+      <!-- Notes Modal Body -->
+      <div id="notesModalBody" class="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-950/20">
+        <!-- Rendered dynamically via JS -->
       </div>
 
     </div>

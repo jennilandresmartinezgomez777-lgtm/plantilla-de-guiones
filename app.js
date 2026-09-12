@@ -186,18 +186,54 @@ const INITIAL_SCRIPTS = [
   }
 ];
 
+const INITIAL_NOTES = {
+  "Natalia": [
+    {
+      id: "note-nat-1",
+      title: "Directrices de Marca y Tono",
+      content: "• Tono cercano, empático y enérgico.\n• Enfocarse en recetas fáciles, balance calórico y consejos sin restricciones extremas.\n• Colores clave para props: tonos cálidos, cocina limpia e iluminada.",
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "note-nat-2",
+      title: "Ideas pendientes de validar",
+      content: "• Qué comer antes y después de entrenar para hipertrofia.\n• Mitos sobre los carbohidratos en la noche.\n• 3 snacks de menos de 150 kcal para llevar al trabajo.",
+      updatedAt: new Date().toISOString()
+    }
+  ],
+  "Jennil": [
+    {
+      id: "note-jen-1",
+      title: "Estrategia de Contenido Financiero",
+      content: "• Siempre incluir llamado a la acción claro al final (ej: comentar SCORE o GUIA).\n• Mostrar capturas reales de apps bancarias (ocultando datos personales).\n• Mantener explicaciones simples de términos financieros (APR, Score, Buró).",
+      updatedAt: new Date().toISOString()
+    }
+  ],
+  "USACREDITO": [
+    {
+      id: "note-usa-1",
+      title: "Puntos clave para testimonios y casos de éxito",
+      content: "• Enfocarse en el impacto real: compra de casa, préstamo para negocio o ahorro en intereses.\n• Cuidar la calidad de audio en grabaciones de calle/exteriores (usar micrófono solapero inalámbrico).",
+      updatedAt: new Date().toISOString()
+    }
+  ]
+};
+
 // STATE
 const savedClients = JSON.parse(localStorage.getItem('css_clients'));
 const savedScripts = JSON.parse(localStorage.getItem('css_scripts'));
+const savedNotes = JSON.parse(localStorage.getItem('css_notes'));
 
 let state = {
   clients: (savedClients && savedClients.length > 0) ? savedClients : INITIAL_CLIENTS,
   scripts: (savedScripts && savedScripts.length > 0) ? savedScripts : INITIAL_SCRIPTS,
+  notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
   currentView: 'matrix', // Default is MATRIX
-  editingScriptId: null
+  editingScriptId: null,
+  activeNotesClient: (savedClients && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
 
 // PRINT SELECTION STATE
@@ -280,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function saveState() {
   localStorage.setItem('css_clients', JSON.stringify(state.clients));
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  localStorage.setItem('css_notes', JSON.stringify(state.notes));
 }
 
 function refreshLucideIcons() {
@@ -1149,6 +1186,18 @@ function setupEventListeners() {
   if (btnCancelQuickIdeaModal) btnCancelQuickIdeaModal.addEventListener('click', closeQuickIdeaModal);
   if (quickIdeaForm) quickIdeaForm.addEventListener('submit', handleQuickIdeaSubmit);
 
+  // Notes Modal
+  const btnNotes = document.getElementById('btnNotes');
+  const btnCloseNotesModal = document.getElementById('btnCloseNotesModal');
+  const notesModal = document.getElementById('notesModal');
+  if (btnNotes) btnNotes.addEventListener('click', () => openNotesModal());
+  if (btnCloseNotesModal) btnCloseNotesModal.addEventListener('click', closeNotesModal);
+  if (notesModal) {
+    notesModal.addEventListener('click', (e) => {
+      if (e.target === notesModal) closeNotesModal();
+    });
+  }
+
   // Focus Modal Backdrop Click
   const focusModal = document.getElementById('focusScriptModal');
   if (focusModal) {
@@ -1661,6 +1710,15 @@ function saveRenameClient(index, oldName) {
       state.activeClient = newName;
     }
 
+    // Migrate notes
+    if (state.notes && state.notes[oldName]) {
+      state.notes[newName] = state.notes[oldName];
+      delete state.notes[oldName];
+    }
+    if (state.activeNotesClient === oldName) {
+      state.activeNotesClient = newName;
+    }
+
     saveState();
     renderClientSelect();
     renderClientsManageList();
@@ -1681,6 +1739,12 @@ function deleteClientByName(clientName) {
     state.clients = state.clients.filter(c => c !== clientName);
     if (state.activeClient === clientName) {
       state.activeClient = 'ALL';
+    }
+    if (state.notes && state.notes[clientName]) {
+      delete state.notes[clientName];
+    }
+    if (state.activeNotesClient === clientName) {
+      state.activeNotesClient = state.clients[0] || 'USACREDITO';
     }
     saveState();
     renderClientSelect();
@@ -1823,12 +1887,13 @@ function printSingleScript(scriptId) {
 function handleExportJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
     clients: state.clients,
-    scripts: state.scripts
+    scripts: state.scripts,
+    notes: state.notes
   }, null, 2));
   
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `content_studio_backup_${new Date().toISOString().slice(0, 10)}.json`);
+  downloadAnchor.setAttribute("download", `blex_studio_backup_${new Date().toISOString().slice(0, 10)}.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
@@ -1847,6 +1912,9 @@ function handleImportJSON(e) {
         if (data.clients && Array.isArray(data.clients)) {
           state.clients = data.clients;
         }
+        if (data.notes && typeof data.notes === 'object') {
+          state.notes = data.notes;
+        }
         saveState();
         renderClientSelect();
         renderAll();
@@ -1859,4 +1927,207 @@ function handleImportJSON(e) {
     }
   };
   reader.readAsText(file);
+}
+
+// CLIENT NOTES MODULE
+function openNotesModal(clientName = null) {
+  const notesModal = document.getElementById('notesModal');
+  if (!notesModal) return;
+
+  if (clientName && state.clients.includes(clientName)) {
+    state.activeNotesClient = clientName;
+  } else if (state.activeClient !== 'ALL' && state.clients.includes(state.activeClient)) {
+    state.activeNotesClient = state.activeClient;
+  } else if (!state.activeNotesClient || !state.clients.includes(state.activeNotesClient)) {
+    state.activeNotesClient = state.clients[0] || 'USACREDITO';
+  }
+
+  renderNotesClientTabs();
+  renderNotesForActiveClient();
+  notesModal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeNotesModal() {
+  const notesModal = document.getElementById('notesModal');
+  if (notesModal) {
+    notesModal.classList.add('hidden');
+  }
+}
+
+function renderNotesClientTabs() {
+  const tabsContainer = document.getElementById('notesClientTabs');
+  if (!tabsContainer) return;
+
+  tabsContainer.innerHTML = '';
+  state.clients.forEach(client => {
+    const isActive = client === state.activeNotesClient;
+    const clientNotesCount = (state.notes[client] || []).length;
+    
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+      isActive 
+        ? 'bg-sky-600 text-white shadow-md' 
+        : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+    }`;
+    btn.innerHTML = `
+      <span>👤 ${client}</span>
+      <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-sky-700 text-white' : 'bg-slate-900 text-slate-400'}">${clientNotesCount}</span>
+    `;
+    btn.onclick = () => {
+      state.activeNotesClient = client;
+      renderNotesClientTabs();
+      renderNotesForActiveClient();
+    };
+    tabsContainer.appendChild(btn);
+  });
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderNotesForActiveClient() {
+  const body = document.getElementById('notesModalBody');
+  if (!body) return;
+
+  const client = state.activeNotesClient;
+  if (!client) return;
+
+  if (!state.notes[client]) {
+    state.notes[client] = [];
+  }
+
+  const notesList = state.notes[client];
+
+  if (notesList.length === 0) {
+    body.innerHTML = `
+      <div class="text-center py-12 px-4 border border-dashed border-slate-800 rounded-xl bg-slate-900/30">
+        <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="file-plus" class="w-6 h-6"></i>
+        </div>
+        <h4 class="text-base font-bold text-white mb-1">No hay notas para ${client}</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto mb-4">Escribe ideas, directrices de grabación o recordatorios exclusivos para este cliente.</p>
+        <button onclick="addNewNoteForActiveClient()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition inline-flex items-center gap-2 shadow-md cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i> Crear Primera Nota
+        </button>
+      </div>
+    `;
+    refreshLucideIcons();
+    return;
+  }
+
+  body.innerHTML = notesList.map((note) => {
+    const formattedDate = note.updatedAt ? new Date(note.updatedAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <div class="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-xl p-4 sm:p-5 transition shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+          <div class="flex-1 min-w-[200px]">
+            <input 
+              type="text" 
+              value="${escapeHtml(note.title || 'Nota sin título')}" 
+              placeholder="Título de la nota..." 
+              oninput="updateNoteTitle('${note.id}', this.value)"
+              class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg px-3 py-1.5 text-sm font-bold text-white placeholder-slate-500 outline-none transition"
+            >
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${formattedDate ? `<span class="text-[11px] text-slate-500 hidden sm:inline mr-1">🕒 ${formattedDate}</span>` : ''}
+            <button onclick="copyNoteContent('${note.id}', this)" title="Copiar texto de la nota" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span class="hidden md:inline">Copiar</span>
+            </button>
+            <button onclick="deleteNote('${note.id}')" title="Eliminar nota" class="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition cursor-pointer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <textarea 
+            rows="4" 
+            placeholder="Escribe aquí las notas, ideas o apuntes para ${client}..." 
+            oninput="updateNoteContent('${note.id}', this.value)"
+            class="w-full bg-slate-950/70 border border-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg p-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition font-sans leading-relaxed resize-y"
+          >${escapeHtml(note.content || '')}</textarea>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+function addNewNoteForActiveClient() {
+  const client = state.activeNotesClient;
+  if (!client) return;
+
+  if (!state.notes[client]) {
+    state.notes[client] = [];
+  }
+
+  const newNote = {
+    id: 'note-' + Date.now(),
+    title: 'Nueva Nota',
+    content: '',
+    updatedAt: new Date().toISOString()
+  };
+
+  state.notes[client].unshift(newNote);
+  saveState();
+  renderNotesClientTabs();
+  renderNotesForActiveClient();
+}
+
+function updateNoteTitle(noteId, title) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (note) {
+    note.title = title;
+    note.updatedAt = new Date().toISOString();
+    saveState();
+  }
+}
+
+function updateNoteContent(noteId, content) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (note) {
+    note.content = content;
+    note.updatedAt = new Date().toISOString();
+    saveState();
+  }
+}
+
+function deleteNote(noteId) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  if (confirm('¿Deseas eliminar esta nota?')) {
+    state.notes[client] = state.notes[client].filter(n => n.id !== noteId);
+    saveState();
+    renderNotesClientTabs();
+    renderNotesForActiveClient();
+  }
+}
+
+function copyNoteContent(noteId, btnElement) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (note) {
+    const textToCopy = `${note.title ? note.title + '\n\n' : ''}${note.content || ''}`;
+    copyTextToClipboard(textToCopy, btnElement);
+  }
 }
