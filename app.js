@@ -293,10 +293,10 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: false,
       controversia: false
     },
-    format: "Formato Vlog",
+    format: "Formato POV",
     criteriaScore: 7.5,
-    formatScore: 4.0,
-    totalScore: 11.5,
+    formatScore: 4.5,
+    totalScore: 12.0,
     potential: "Muy Alto / Viral",
     createdAt: new Date().toISOString()
   },
@@ -1455,17 +1455,26 @@ function getPointsForFormat(format) {
   if (!format) return 0.0;
   const f = format.trim();
   const lower = f.toLowerCase();
+  
+  // Grupo 1: Alta Retención e Inmersión Total (3.5 – 4.5 pts)
+  if (f === 'Formato POV' || lower === 'pov' || lower.includes('pov')) return 4.5;
   if (f === 'Formato Vlog' || lower === 'vlog' || lower.includes('vlog')) return 4.0;
-  if (f === 'Formato entrevista' || lower === 'entrevista' || lower.includes('entrevista') || 
-      f === 'Formato Dinámico' || lower.includes('dinam') || 
-      f === 'Formato POV' || lower.includes('pov')) return 3.0;
-  if (f === 'Formato pantalla dividida' || lower.includes('dividida') || 
-      f === 'Formato pantalla verde' || lower.includes('verde') || 
-      f === 'Formato prima pregunta' || lower.includes('prima') || lower.includes('pregunta')) return 2.0;
-  if (f === 'Hablando a cámara' || lower.includes('hablando') || lower.includes('camara') || lower.includes('cámara') || lower === 'talking_head' ||
-      f === 'Formato mirando a la nada' || lower.includes('mirando') || lower.includes('nada') || 
-      f === 'Formato selfie' || lower.includes('selfie')) return 1.0;
-  return 0.0;
+  if (f === 'Formato Dinámico' || lower.includes('dinam')) return 3.5;
+  
+  // Grupo 2: Curiosidad Social y Efecto Testigo (2.5 – 3.5 pts)
+  if (f === 'Formato prima pregunta' || lower.includes('prima') || lower.includes('pregunta')) return 3.5;
+  if (f === 'Formato entrevista' || lower === 'entrevista' || lower.includes('entrevista')) return 3.0;
+  if (f === 'Formato mirando a la nada' || lower.includes('mirando') || lower.includes('nada')) return 2.5;
+  
+  // Grupo 3: Demostración Visual y Comentario (2.0 – 2.5 pts)
+  if (f === 'Formato pantalla dividida' || lower.includes('dividida') || lower.includes('split')) return 2.5;
+  if (f === 'Formato pantalla verde' || lower.includes('verde') || lower.includes('green')) return 2.0;
+  
+  // Grupo 4: Exposición Frontal y Mayor Fricción (1.0 – 1.5 pts)
+  if (f === 'Formato selfie' || lower.includes('selfie')) return 1.5;
+  if (f === 'Hablando a cámara' || lower.includes('hablando') || lower.includes('camara') || lower.includes('cámara') || lower === 'talking_head' || lower.includes('tutorial') || lower.includes('reel') || lower.includes('paso a paso') || lower.includes('testimonio')) return 1.0;
+  
+  return 1.0;
 }
 
 // SCRIPT CRUD
@@ -2472,7 +2481,7 @@ function calculateViralScore() {
 
   if (!scoreDisplay) return;
 
-  const percent = Math.min(100, Math.round((data.totalScore / 14.0) * 100));
+  const percent = Math.min(100, Math.round((data.totalScore / 14.5) * 100));
 
   scoreDisplay.textContent = data.totalScore.toFixed(1);
   if (percentBadge) percentBadge.textContent = `${percent}%`;
@@ -2482,7 +2491,7 @@ function calculateViralScore() {
     breakdownCriterios.textContent = `${data.criteriaScore.toFixed(1)} / 10.0 pts`;
   }
   if (breakdownFormato) {
-    breakdownFormato.textContent = `${data.formatScore.toFixed(1)} / 4.0 pts`;
+    breakdownFormato.textContent = `${data.formatScore.toFixed(1)} / 4.5 pts`;
   }
 
   // Verdict box styling
@@ -2492,8 +2501,8 @@ function calculateViralScore() {
       verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-emerald-500/20 text-emerald-400";
       verdictIcon.innerHTML = "✓";
       verdictTitle.className = "text-sm sm:text-base font-bold text-emerald-300";
-      verdictTitle.textContent = "🟢 Potencial Muy Alto / Viral (10.0 - 14.0 pts)";
-      verdictDesc.textContent = "¡Candidato óptimo a escalar y volverse viral! Cumple con la mayoría de pilares de atracción masiva, retención y distribución algorítmica. Muy recomendado para grabar de inmediato.";
+      verdictTitle.textContent = "🟢 Potencial Muy Alto / Viral (10.0 - 14.5 pts)";
+      verdictDesc.textContent = "¡Candidato óptimo a escalar y volverse viral! Cumple con los pilares de atracción masiva, alta retención e inmersión psicológica. Muy recomendado para grabar de inmediato.";
     } else if (data.totalScore >= 7.0) {
       verdictContainer.className = "p-4 rounded-xl border transition space-y-2 bg-amber-950/30 border-amber-500/40";
       verdictIcon.className = "w-6 h-6 rounded-full flex items-center justify-center text-xs font-black bg-amber-500/20 text-amber-400";
@@ -2507,7 +2516,7 @@ function calculateViralScore() {
       verdictIcon.innerHTML = "!";
       verdictTitle.className = "text-sm sm:text-base font-bold text-rose-300";
       verdictTitle.textContent = "🔴 Potencial Bajo (0.0 - 6.5 pts)";
-      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato con mayor dinamismo (Vlog, Entrevista o Dinámico) o validar referencias virales previas.";
+      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato de mayor inmersión (POV, Vlog, Dinámico) o validar referencias virales previas.";
     }
   }
 
@@ -2523,8 +2532,8 @@ function calculateViralScore() {
     if (!data.criteria.refViral) {
       tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.0 pts:</span> <span>Busca una <strong>referencia viral previa</strong> en TikTok/Reels que valide el formato o gancho.</span></div>`);
     }
-    if (data.formatScore < 3.0) {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-brand-400 font-bold">📹 +3.0 a +4.0 pts:</span> <span>Graba en <strong>Formato Vlog (+4.0)</strong>, <strong>Formato entrevista (+3.0)</strong> o <strong>Formato Dinámico (+3.0)</strong> para disparar la retención.</span></div>`);
+    if (data.formatScore < 3.5) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-emerald-400 font-bold">📹 +3.5 a +4.5 pts:</span> <span>Prueba formatos de <strong>Inmersión Total (Grupo 1)</strong> como <strong>Formato POV (+4.5)</strong>, <strong>Formato Vlog (+4.0)</strong> o <strong>Formato Dinámico (+3.5)</strong>.</span></div>`);
     }
     if (!data.criteria.tendencia) {
       tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.5 pts:</span> <span>Conecta el tema con una <strong>tendencia actual</strong> o fecha coyuntural relevante.</span></div>`);
@@ -2534,7 +2543,7 @@ function calculateViralScore() {
     }
 
     if (tips.length === 0) {
-      tipsContainer.innerHTML = `<p class="text-emerald-400 font-semibold">🔥 ¡Puntuación perfecta de 14.0/14.0 pts! Esta idea tiene todos los componentes de un video viral masivo.</p>`;
+      tipsContainer.innerHTML = `<p class="text-emerald-400 font-semibold">🔥 ¡Puntuación perfecta de 14.5/14.5 pts! Esta idea tiene todos los componentes de un video viral masivo.</p>`;
     } else {
       tipsContainer.innerHTML = tips.slice(0, 3).join('');
     }
@@ -2567,7 +2576,7 @@ function handleViralPresetChange(presetKey) {
       title: '3 Secretos para conseguir $1,000 en 30 días',
       client: 'USACREDITO',
       criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'Formato Vlog'
+      format: 'Formato POV'
     },
     'example-credito': {
       title: 'Estrategia de crédito para negocios',
@@ -2702,19 +2711,21 @@ function renderViralHistoryTable() {
     }
 
     const formatLabels = {
-      'Formato Vlog': '📹 Formato Vlog (+4.0)',
-      'Formato entrevista': '🎙️ Formato entrevista (+3.0)',
-      'Formato Dinámico': '⚡ Formato Dinámico (+3.0)',
-      'Formato POV': '👀 Formato POV (+3.0)',
-      'Formato pantalla dividida': '📱 Formato pantalla dividida (+2.0)',
-      'Formato pantalla verde': '🟩 Formato pantalla verde (+2.0)',
-      'Formato prima pregunta': '❓ Formato prima pregunta (+2.0)',
+      'Formato POV': '👀 POV (+4.5)',
+      'Formato Vlog': '📹 Vlog (+4.0)',
+      'Formato Dinámico': '⚡ Dinámico (+3.5)',
+      'Formato prima pregunta': '❓ Prima Pregunta (+3.5)',
+      'Formato entrevista': '🎙️ Entrevista (+3.0)',
+      'Formato mirando a la nada': '👁️ Mirando a la nada (+2.5)',
+      'Formato pantalla dividida': '📱 Pantalla dividida (+2.5)',
+      'Formato pantalla verde': '🟩 Pantalla verde (+2.0)',
+      'Formato selfie': '🤳 Selfie (+1.5)',
       'Hablando a cámara': '🗣️ Hablando a cámara (+1.0)',
-      'Formato mirando a la nada': '👁️ Formato mirando a la nada (+1.0)',
-      'Formato selfie': '🤳 Formato selfie (+1.0)',
       // legacy / alias keys
-      'vlog': '📹 Formato Vlog (+4.0)',
-      'entrevista': '🎙️ Formato entrevista (+3.0)',
+      'pov': '👀 POV (+4.5)',
+      'vlog': '📹 Vlog (+4.0)',
+      'dinamico': '⚡ Dinámico (+3.5)',
+      'entrevista': '🎙️ Entrevista (+3.0)',
       'talking_head': '🗣️ Hablando a cámara (+1.0)'
     };
 
@@ -2731,7 +2742,7 @@ function renderViralHistoryTable() {
         <td class="py-3 px-3 text-center font-bold text-slate-400">#${index + 1}</td>
         <td class="py-3 px-3 whitespace-nowrap">
           <span class="text-sm font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-            ${(item.totalScore || 0).toFixed(1)} <span class="text-[10px] text-slate-400 font-normal">/14</span>
+            ${(item.totalScore || 0).toFixed(1)} <span class="text-[10px] text-slate-400 font-normal">/14.5</span>
           </span>
         </td>
         <td class="py-3 px-4 font-semibold text-white max-w-xs">
@@ -2741,7 +2752,7 @@ function renderViralHistoryTable() {
         <td class="py-3 px-3 whitespace-nowrap">
           <span class="text-xs font-semibold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">${item.client || 'General'}</span>
         </td>
-        <td class="py-3 px-3 whitespace-nowrap text-xs text-slate-300">
+        <td class="py-3 px-3 whitespace-nowrap text-xs text-slate-300 font-medium">
           ${formatLabels[item.format] || item.format}
         </td>
         <td class="py-3 px-3">
@@ -2852,7 +2863,7 @@ function convertViralEvalToScript(evalData = null) {
     document.getElementById('formGancho').value = ideaTitle;
   }
   if (document.getElementById('formContextoAdicional')) {
-    document.getElementById('formContextoAdicional').value = `Score de Viralidad: ${data.totalScore}/14.0 pts (${data.potential})`;
+    document.getElementById('formContextoAdicional').value = `Score de Viralidad: ${data.totalScore}/14.5 pts (${data.potential})`;
   }
 }
 
@@ -2868,7 +2879,7 @@ function copyViralSummary(btnElement) {
   const summary = `🔥 EVALUACIÓN DE VIRALIDAD - BLEX STUDIO
 💡 Idea: "${data.title || 'Idea sin título'}"
 👤 Cliente: ${data.client}
-📊 Puntuación Total: ${data.totalScore} / 14.0 pts (${Math.round((data.totalScore/14)*100)}%)
+📊 Puntuación Total: ${data.totalScore} / 14.5 pts (${Math.round((data.totalScore/14.5)*100)}%)
 🎯 Clasificación: Potencial ${data.potential}
 📹 Formato: ${data.format} (+${data.formatScore} pts)
 Desglose Criterios:
@@ -2886,7 +2897,7 @@ function copyViralEvaluationRow(evalId, btnElement) {
   const item = (state.viralEvaluations || []).find(e => e.id === evalId);
   if (!item) return;
 
-  const summary = `🔥 EVALUACIÓN DE VIRALIDAD: "${item.title}" | Score: ${item.totalScore}/14.0 pts (${item.potential}) | Cliente: ${item.client} | Formato: ${item.format}`;
+  const summary = `🔥 EVALUACIÓN DE VIRALIDAD: "${item.title}" | Score: ${item.totalScore}/14.5 pts (${item.potential}) | Cliente: ${item.client} | Formato: ${item.format}`;
   copyTextToClipboard(summary, btnElement);
 }
 
