@@ -1,12 +1,12 @@
 // Content & Script Studio - Core Application Logic
 
 // 10 Sample Videos Pre-loaded for preview
-const INITIAL_CLIENTS = ["USACREDITO", "Jennil", "Natalia"];
+const INITIAL_CLIENTS = ["Jennil", "Natalia"];
 
 const INITIAL_SCRIPTS = [
   {
     id: "script-1",
-    client: "USACREDITO",
+    client: "Jennil",
     number: 1,
     completed: false,
     ideaGanadora: "¿Cuánto gastas al mes en Miami?",
@@ -16,7 +16,7 @@ const INITIAL_SCRIPTS = [
     historia: "Gasta 5000 dólares al mes entre casa coche, comida, hijos, ropa....\n\n¿Y lo pagas con Tarjeta de crédito o de Débito?\n- con tarjeta de débito",
     moraleja: "SI tu pagas con tarjeta de crédito te dan puntos para poder gastar en viajes y demás y REPORTA EN TU PUNTAJE DE CRÉDITO.",
     cta: "Escribe en comentarios la palabra crédito para mejorar tu puntaje.",
-    actor: "Ramón",
+    actor: "Jennil",
     contextoAdicional: "Se graba Brickell Center",
     status: "Por Grabar",
     createdAt: new Date().toISOString()
@@ -60,7 +60,7 @@ const INITIAL_SCRIPTS = [
   },
   {
     id: "script-4",
-    client: "USACREDITO",
+    client: "Jennil",
     number: 4,
     completed: false,
     ideaGanadora: "3 Secretos para subir tu puntaje de crédito a 750 en 60 días",
@@ -70,7 +70,7 @@ const INITIAL_SCRIPTS = [
     historia: "El 80% de los reportes crediticios tienen errores que los bancos no quieren que borres. Aprende a disputar indagaciones no autorizadas y bajar tu nivel de utilización por debajo del 10%.",
     moraleja: "Un crédito alto te abre puertas a mejores préstamos y tasas de interés casi en cero.",
     cta: "Escribe SCORE para revisar tu reporte gratis.",
-    actor: "Ramón",
+    actor: "Jennil",
     contextoAdicional: "Estudio de grabación con micro",
     status: "Por Grabar",
     createdAt: new Date().toISOString()
@@ -112,7 +112,7 @@ const INITIAL_SCRIPTS = [
   },
   {
     id: "script-7",
-    client: "USACREDITO",
+    client: "Jennil",
     number: 7,
     completed: false,
     ideaGanadora: "¿Comprar casa con Crédito o con Dinero en Efectivo?",
@@ -122,7 +122,7 @@ const INITIAL_SCRIPTS = [
     historia: "Si gastas $300,000 en efectivo descapitalizas tu negocio. Con un buen crédito das solo el 3.5% o 5% de pago inicial y el resto lo financias a tasa baja invirtiendo el remanente.",
     moraleja: "Usa el dinero del banco para apalancarte y conservar tu liquidez.",
     cta: "Escribe CASA y evaluamos tu capacidad de compra hoy.",
-    actor: "Ramón",
+    actor: "Jennil",
     contextoAdicional: "Frente a propiedad inmobiliaria",
     status: "Por Grabar",
     createdAt: new Date().toISOString()
@@ -166,7 +166,7 @@ const INITIAL_SCRIPTS = [
   },
   {
     id: "script-10",
-    client: "USACREDITO",
+    client: "Jennil",
     number: 10,
     completed: true,
     ideaGanadora: "Caso de Éxito: De $2,000 a $50,000 en línea de crédito de negocios",
@@ -176,7 +176,7 @@ const INITIAL_SCRIPTS = [
     historia: "Mostramos el proceso de creación de LLC, estructuración de perfil de crédito corporativo y aprobación bancaria en menos de 45 días sin tocar su crédito personal.",
     moraleja: "El crédito de negocios no afecta tu crédito personal y escala tu empresa al siguiente nivel.",
     cta: "Comenta NEGOCIO si quieres estructurar tu crédito corporativo.",
-    actor: "Ramón",
+    actor: "Jennil",
     contextoAdicional: "Oficina con el cliente Carlos",
     status: "Publicado",
     views: 24800,
@@ -208,14 +208,6 @@ const INITIAL_NOTES = {
       content: "• Siempre incluir llamado a la acción claro al final (ej: comentar SCORE o GUIA).\n• Mostrar capturas reales de apps bancarias (ocultando datos personales).\n• Mantener explicaciones simples de términos financieros (APR, Score, Buró).",
       updatedAt: new Date().toISOString()
     }
-  ],
-  "USACREDITO": [
-    {
-      id: "note-usa-1",
-      title: "Puntos clave para testimonios y casos de éxito",
-      content: "• Enfocarse en el impacto real: compra de casa, préstamo para negocio o ahorro en intereses.\n• Cuidar la calidad de audio en grabaciones de calle/exteriores (usar micrófono solapero inalámbrico).",
-      updatedAt: new Date().toISOString()
-    }
   ]
 };
 
@@ -223,7 +215,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
   {
     id: "viral-1",
     title: "¿Cuánto gastas al mes en Miami?",
-    client: "USACREDITO",
+    client: "Jennil",
     link: "",
     criteria: {
       nino: true,
@@ -283,7 +275,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
   {
     id: "viral-4",
     title: "3 Secretos para conseguir $1,000 en 30 días",
-    client: "USACREDITO",
+    client: "Jennil",
     link: "",
     criteria: {
       nino: true,
@@ -302,8 +294,8 @@ const INITIAL_VIRAL_EVALUATIONS = [
   },
   {
     id: "viral-5",
-    title: "Estrategia de crédito para negocios",
-    client: "USACREDITO",
+    title: "Estrategia de contenido y crecimiento",
+    client: "Natalia",
     link: "",
     criteria: {
       nino: false,
@@ -340,6 +332,42 @@ let state = {
   editingScriptId: null,
   activeNotesClient: (savedClients && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
+
+// Auto-sanitize legacy saved data to purge any traces of USACREDITO
+if (state.clients.includes("USACREDITO")) {
+  state.clients = state.clients.filter(c => c !== "USACREDITO");
+  if (state.clients.length === 0) state.clients = ["Jennil", "Natalia"];
+}
+if (state.scripts && Array.isArray(state.scripts)) {
+  state.scripts = state.scripts.map(s => {
+    if (s.client === "USACREDITO") {
+      return { ...s, client: "Jennil", actor: (s.actor === "Ramón" ? "Jennil" : s.actor) };
+    }
+    return s;
+  });
+}
+if (state.notes && state.notes["USACREDITO"]) {
+  delete state.notes["USACREDITO"];
+}
+if (state.viralEvaluations && Array.isArray(state.viralEvaluations)) {
+  state.viralEvaluations = state.viralEvaluations.map(v => {
+    if (v.client === "USACREDITO") {
+      return { ...v, client: "Jennil" };
+    }
+    return v;
+  });
+}
+if (state.activeNotesClient === "USACREDITO" || !state.activeNotesClient) {
+  state.activeNotesClient = state.clients[0] || "Jennil";
+}
+try {
+  localStorage.setItem('css_clients', JSON.stringify(state.clients));
+  localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  localStorage.setItem('css_notes', JSON.stringify(state.notes));
+  localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+} catch (e) {
+  console.warn("Storage sync failed:", e);
+}
 
 // PRINT SELECTION STATE
 let printSelectedIds = new Set();
@@ -1483,7 +1511,7 @@ function openNewScriptModal() {
   modalTitle.innerHTML = `<i data-lucide="plus" class="w-5 h-5 text-brand-500"></i> Nuevo Guión`;
   scriptForm.reset();
   
-  const initialClient = state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'USACREDITO');
+  const initialClient = state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil');
   document.getElementById('scriptId').value = '';
   document.getElementById('formClient').value = initialClient;
   document.getElementById('formNumber').value = getNextScriptNumber();
@@ -1741,7 +1769,7 @@ function openQuickIdeaModal() {
     });
     quickIdeaClient.value = (state.activeClient !== 'ALL' && state.clients.includes(state.activeClient)) 
       ? state.activeClient 
-      : (state.clients[0] || 'USACREDITO');
+      : (state.clients[0] || 'Jennil');
   }
 
   quickIdeaModal.classList.remove('hidden');
@@ -1758,7 +1786,7 @@ function closeQuickIdeaModal() {
 function handleQuickIdeaSubmit(e) {
   e.preventDefault();
 
-  const clientName = quickIdeaClient ? quickIdeaClient.value.trim() : (state.clients[0] || 'USACREDITO');
+  const clientName = quickIdeaClient ? quickIdeaClient.value.trim() : (state.clients[0] || 'Jennil');
   const title = quickIdeaTitle ? quickIdeaTitle.value.trim() : '';
   const link = quickIdeaLink ? quickIdeaLink.value.trim() : '';
   const notes = quickIdeaNotes ? quickIdeaNotes.value.trim() : '';
@@ -1940,7 +1968,7 @@ function deleteClientByName(clientName) {
       delete state.notes[clientName];
     }
     if (state.activeNotesClient === clientName) {
-      state.activeNotesClient = state.clients[0] || 'USACREDITO';
+      state.activeNotesClient = state.clients[0] || 'Jennil';
     }
     saveState();
     renderClientSelect();
@@ -2142,7 +2170,7 @@ function openNotesModal(clientName = null) {
   } else if (state.activeClient !== 'ALL' && state.clients.includes(state.activeClient)) {
     state.activeNotesClient = state.activeClient;
   } else if (!state.activeNotesClient || !state.clients.includes(state.activeNotesClient)) {
-    state.activeNotesClient = state.clients[0] || 'USACREDITO';
+    state.activeNotesClient = state.clients[0] || 'Jennil';
   }
 
   renderNotesClientTabs();
@@ -2411,7 +2439,7 @@ function getCurrentViralFormData() {
   const linkInput = document.getElementById('viralIdeaLink');
 
   const title = titleInput ? titleInput.value.trim() : '';
-  const client = clientSelect ? clientSelect.value : (state.clients[0] || 'USACREDITO');
+  const client = clientSelect ? clientSelect.value : (state.clients[0] || 'Jennil');
   const link = linkInput ? linkInput.value.trim() : '';
 
   const nino = document.getElementById('viralCritNino')?.checked || false;
@@ -2556,7 +2584,7 @@ function handleViralPresetChange(presetKey) {
   const presets = {
     'example-miami': {
       title: '¿Cuánto gastas al mes en Miami?',
-      client: 'USACREDITO',
+      client: 'Jennil',
       criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: true },
       format: 'Formato entrevista'
     },
@@ -2574,13 +2602,13 @@ function handleViralPresetChange(presetKey) {
     },
     'example-1000': {
       title: '3 Secretos para conseguir $1,000 en 30 días',
-      client: 'USACREDITO',
+      client: 'Jennil',
       criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
       format: 'Formato POV'
     },
     'example-credito': {
-      title: 'Estrategia de crédito para negocios',
-      client: 'USACREDITO',
+      title: 'Estrategia de contenido y crecimiento',
+      client: 'Natalia',
       criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
       format: 'Hablando a cámara'
     }
@@ -2841,7 +2869,7 @@ function clearViralHistory() {
 function convertViralEvalToScript(evalData = null) {
   const data = evalData || getCurrentViralFormData();
   const ideaTitle = data.title || 'Nueva Idea Viral';
-  const clientName = data.client || (state.clients[0] || 'USACREDITO');
+  const clientName = data.client || (state.clients[0] || 'Jennil');
   
   const mappedFormat = normalizeScriptFormat(data.format);
 
