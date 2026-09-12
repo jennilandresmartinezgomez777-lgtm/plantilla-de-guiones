@@ -104,19 +104,19 @@
         
         <!-- View Tabs -->
         <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80 w-full lg:w-auto overflow-x-auto shrink-0">
-          <button id="tabViralCalc" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
+          <button id="tabViralCalc" onclick="switchView('viral_calc')" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
             <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
             <span>Calculadora de Viralidad</span>
           </button>
-          <button id="tabMatrix" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer">
+          <button id="tabMatrix" onclick="switchView('matrix')" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer">
             <i data-lucide="table" class="w-4 h-4"></i>
             <span>Matriz</span>
           </button>
-          <button id="tabCards" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
+          <button id="tabCards" onclick="switchView('cards')" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
             <i data-lucide="layout-grid" class="w-4 h-4"></i>
             <span>Tarjetas</span>
           </button>
-          <button id="tabTeleprompter" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
+          <button id="tabTeleprompter" onclick="switchView('teleprompter')" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
             <i data-lucide="clapperboard" class="w-4 h-4"></i>
             <span>Set / Grabación</span>
           </button>
@@ -168,7 +168,7 @@
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
       
       <!-- STATS BAR (Interactive Status Header Bar) -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-6 print:hidden">
+      <div id="statsBarContainer" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-6 print:hidden">
         <!-- Total -->
         <div id="cardStatTotal" onclick="filterByStatusFromCard('ALL')" title="Ver todos los guiones" class="stat-card bg-slate-900/90 border border-slate-800 hover:border-slate-600 rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
           <div>
@@ -1202,6 +1202,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.6"></script>
 </body>
 </html>

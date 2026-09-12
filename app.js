@@ -1350,35 +1350,51 @@ function toggleFullScreen() {
 
 function switchView(viewName) {
   state.currentView = viewName;
-  
-  if (viewViralCalc) viewViralCalc.classList.add('hidden');
-  viewMatrix.classList.add('hidden');
-  viewCards.classList.add('hidden');
-  viewTeleprompter.classList.add('hidden');
+
+  const vViral = document.getElementById('viewViralCalc');
+  const vMatrix = document.getElementById('viewMatrix');
+  const vCards = document.getElementById('viewCards');
+  const vTele = document.getElementById('viewTeleprompter');
+
+  const tViral = document.getElementById('tabViralCalc');
+  const tMatrix = document.getElementById('tabMatrix');
+  const tCards = document.getElementById('tabCards');
+  const tTele = document.getElementById('tabTeleprompter');
+
+  const statsContainer = document.getElementById('statsBarContainer');
+
+  if (vViral) vViral.classList.add('hidden');
+  if (vMatrix) vMatrix.classList.add('hidden');
+  if (vCards) vCards.classList.add('hidden');
+  if (vTele) vTele.classList.add('hidden');
 
   const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
   const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
 
-  if (tabViralCalc) tabViralCalc.className = inactiveBtnClass;
-  tabMatrix.className = inactiveBtnClass;
-  tabCards.className = inactiveBtnClass;
-  tabTeleprompter.className = inactiveBtnClass;
+  if (tViral) tViral.className = inactiveBtnClass;
+  if (tMatrix) tMatrix.className = inactiveBtnClass;
+  if (tCards) tCards.className = inactiveBtnClass;
+  if (tTele) tTele.className = inactiveBtnClass;
 
   if (viewName === 'viral_calc') {
-    if (viewViralCalc) viewViralCalc.classList.remove('hidden');
-    if (tabViralCalc) tabViralCalc.className = activeViralBtnClass;
+    if (vViral) vViral.classList.remove('hidden');
+    if (tViral) tViral.className = activeViralBtnClass;
+    if (statsContainer) statsContainer.classList.add('hidden');
     calculateViralScore();
     renderViralHistoryTable();
   } else if (viewName === 'matrix') {
-    viewMatrix.classList.remove('hidden');
-    tabMatrix.className = activeBtnClass;
+    if (vMatrix) vMatrix.classList.remove('hidden');
+    if (tMatrix) tMatrix.className = activeBtnClass;
+    if (statsContainer) statsContainer.classList.remove('hidden');
   } else if (viewName === 'cards') {
-    viewCards.classList.remove('hidden');
-    tabCards.className = activeBtnClass;
+    if (vCards) vCards.classList.remove('hidden');
+    if (tCards) tCards.className = activeBtnClass;
+    if (statsContainer) statsContainer.classList.remove('hidden');
   } else if (viewName === 'teleprompter') {
-    viewTeleprompter.classList.remove('hidden');
-    tabTeleprompter.className = activeBtnClass;
+    if (vTele) vTele.classList.remove('hidden');
+    if (tTele) tTele.className = activeBtnClass;
+    if (statsContainer) statsContainer.classList.remove('hidden');
   }
   refreshLucideIcons();
 }
