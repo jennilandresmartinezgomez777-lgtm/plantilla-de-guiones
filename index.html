@@ -687,51 +687,61 @@
         </div>
 
         <!-- SECTION 3: HISTORY & COMPARISON TABLE -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+        <!-- History Table Accordion Card (Collapsible) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
           
-          <!-- History Table Header -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <!-- Collapsible Header / Toggle Bar -->
+          <div id="viralHistoryHeaderToggle" onclick="toggleViralHistoryCollapse()" class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 bg-slate-900 hover:bg-slate-800/60 cursor-pointer select-none transition group">
             <div class="flex items-center gap-3">
-              <span class="p-1.5 rounded-lg bg-sky-500/10 text-sky-400">
-                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+              <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 transition">
+                <i data-lucide="list-ordered" class="w-5 h-5"></i>
               </span>
               <div>
-                <h3 class="text-base font-bold text-white">Historial y Comparativa de Ideas Evaluadas</h3>
-                <p class="text-xs text-slate-400" id="viralHistoryCounter">5 ideas evaluadas (ordenadas por mayor puntuación)</p>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition">Historial y Comparativa de Ideas Evaluadas</h3>
+                  <span id="viralHistoryCountBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0 ideas</span>
+                </div>
+                <p class="text-xs text-slate-400" id="viralHistoryCounter">Haz clic para ver o desplegar el historial de ideas</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2" onclick="event.stopPropagation()">
               <button id="btnExportViralCSV" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Exportar CSV</span>
+                <span class="hidden sm:inline">Exportar CSV</span>
               </button>
               <button id="btnClearViralHistory" type="button" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-rose-800/50 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                <span>Limpiar Historial</span>
+                <span class="hidden sm:inline">Limpiar Historial</span>
+              </button>
+              <!-- Palomita / Chevron Icon Toggle Button -->
+              <button type="button" onclick="toggleViralHistoryCollapse()" class="p-2 rounded-lg bg-slate-800 text-slate-300 group-hover:text-white group-hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center cursor-pointer ml-1" title="Plegar / Desplegar historial">
+                <i id="viralHistoryChevronIcon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
               </button>
             </div>
           </div>
 
-          <!-- History Table -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs sm:text-sm border-collapse">
-              <thead>
-                <tr class="bg-slate-950/80 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th class="py-3 px-3 text-center w-12">Rank</th>
-                  <th class="py-3 px-3">Puntaje</th>
-                  <th class="py-3 px-4">Idea / Título Evaluado</th>
-                  <th class="py-3 px-3">Cliente</th>
-                  <th class="py-3 px-3">Formato</th>
-                  <th class="py-3 px-3">Criterios Cumplidos</th>
-                  <th class="py-3 px-3">Potencial</th>
-                  <th class="py-3 px-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="viralHistoryTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-                <!-- Injected via JS -->
-              </tbody>
-            </table>
+          <!-- History Table Body (Collapsible) -->
+          <div id="viralHistoryContent" class="hidden border-t border-slate-800/80 p-4 sm:p-5 bg-slate-950/30 space-y-4">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr class="bg-slate-950/80 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <th class="py-3 px-3 text-center w-12">Rank</th>
+                    <th class="py-3 px-3">Puntaje</th>
+                    <th class="py-3 px-4">Idea / Título Evaluado</th>
+                    <th class="py-3 px-3">Cliente</th>
+                    <th class="py-3 px-3">Formato</th>
+                    <th class="py-3 px-3">Criterios Cumplidos</th>
+                    <th class="py-3 px-3">Potencial</th>
+                    <th class="py-3 px-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="viralHistoryTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
         </div>

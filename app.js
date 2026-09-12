@@ -2689,6 +2689,9 @@ function saveCurrentViralEvaluation() {
   state.viralEvaluations.unshift(newEval);
   saveState();
   renderViralHistoryTable();
+  
+  // Auto-expand history so user sees newly added entry
+  toggleViralHistoryCollapse(true);
 
   // Button feedback
   const btnSave = document.getElementById('btnSaveViralEvaluation');
@@ -2705,12 +2708,37 @@ function saveCurrentViralEvaluation() {
   }
 }
 
+function toggleViralHistoryCollapse(forceOpen = null) {
+  const content = document.getElementById('viralHistoryContent');
+  const chevron = document.getElementById('viralHistoryChevronIcon');
+  if (!content) return;
+
+  const shouldOpen = forceOpen !== null ? forceOpen : content.classList.contains('hidden');
+
+  if (shouldOpen) {
+    content.classList.remove('hidden');
+    if (chevron) {
+      chevron.classList.add('rotate-180');
+    }
+  } else {
+    content.classList.add('hidden');
+    if (chevron) {
+      chevron.classList.remove('rotate-180');
+    }
+  }
+}
+
 function renderViralHistoryTable() {
   const tableBody = document.getElementById('viralHistoryTableBody');
   const counter = document.getElementById('viralHistoryCounter');
+  const badge = document.getElementById('viralHistoryCountBadge');
   if (!tableBody) return;
 
   const evals = state.viralEvaluations || [];
+
+  if (badge) {
+    badge.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'}`;
+  }
 
   if (counter) {
     counter.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'} evaluada(s) (ordenadas por mayor puntuación)`;
