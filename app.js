@@ -2698,8 +2698,8 @@ function saveCurrentViralEvaluation() {
   saveState();
   renderViralHistoryTable();
   
-  // Auto-expand history so user sees newly added entry
-  toggleViralHistory(true);
+  // Auto-switch to history tab so user sees newly added entry
+  switchViralTab('hist');
 
   // Button feedback
   const btnSave = document.getElementById('btnSaveViralEvaluation');
@@ -2716,35 +2716,41 @@ function saveCurrentViralEvaluation() {
   }
 }
 
-function toggleViralHistory(forceState = null) {
-  const content = document.getElementById('viralHistoryContent');
-  const btnText = document.getElementById('viralHistoryBtnText');
-  const btnIcon = document.getElementById('viralHistoryBtnIcon');
-  if (!content) return;
+function switchViralTab(tabName) {
+  const vEval = document.getElementById('subViewViralEval');
+  const vHist = document.getElementById('subViewViralHist');
+  const tEval = document.getElementById('tabViralEval');
+  const tHist = document.getElementById('tabViralHist');
 
-  const isCurrentlyHidden = (content.style.display === 'none');
-  const shouldShow = (forceState !== null) ? forceState : isCurrentlyHidden;
+  const activeEvalClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-amber-500 text-slate-950 shadow-md cursor-pointer";
+  const activeHistClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-sky-500 text-white shadow-md cursor-pointer";
+  const inactiveClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer";
 
-  if (shouldShow) {
-    content.style.display = 'block';
-    if (btnText) btnText.textContent = 'Ocultar Historial';
-    if (btnIcon) {
-      btnIcon.classList.add('rotate-180');
-    }
+  if (tabName === 'hist') {
+    if (vEval) vEval.classList.add('hidden');
+    if (vHist) vHist.classList.remove('hidden');
+    if (tEval) tEval.className = inactiveClass;
+    if (tHist) tHist.className = activeHistClass;
+    renderViralHistoryTable();
   } else {
-    content.style.display = 'none';
-    if (btnText) btnText.textContent = 'Ver Historial';
-    if (btnIcon) {
-      btnIcon.classList.remove('rotate-180');
-    }
+    // default to 'eval'
+    if (vHist) vHist.classList.add('hidden');
+    if (vEval) vEval.classList.remove('hidden');
+    if (tEval) tEval.className = activeEvalClass;
+    if (tHist) tHist.className = inactiveClass;
   }
   refreshLucideIcons();
 }
 
-function toggleViralHistoryCollapse(forceOpen = null) {
-  toggleViralHistory(forceOpen);
+function toggleViralHistory(forceState = null) {
+  switchViralTab('hist');
 }
 
+function toggleViralHistoryCollapse(forceOpen = null) {
+  switchViralTab('hist');
+}
+
+window.switchViralTab = switchViralTab;
 window.toggleViralHistory = toggleViralHistory;
 window.toggleViralHistoryCollapse = toggleViralHistoryCollapse;
 
@@ -2752,9 +2758,14 @@ function renderViralHistoryTable() {
   const tableBody = document.getElementById('viralHistoryTableBody');
   const counter = document.getElementById('viralHistoryCounter');
   const badge = document.getElementById('viralHistoryCountBadge');
+  const tabBadge = document.getElementById('viralHistTabBadge');
   if (!tableBody) return;
 
   const evals = state.viralEvaluations || [];
+
+  if (tabBadge) {
+    tabBadge.textContent = evals.length;
+  }
 
   if (badge) {
     badge.textContent = `${evals.length} idea${evals.length === 1 ? '' : 's'}`;
@@ -2893,6 +2904,7 @@ function loadViralEvaluationIntoCalc(evalId) {
   }
 
   calculateViralScore();
+  switchViralTab('eval');
 
   // Smooth scroll to top of calculator
   window.scrollTo({ top: 0, behavior: 'smooth' });
