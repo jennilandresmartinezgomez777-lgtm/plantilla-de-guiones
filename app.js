@@ -2426,6 +2426,14 @@ function setupViralCalcEventListeners() {
     btnClearHist.addEventListener('click', clearViralHistory);
   }
 
+  const btnToggleBar = document.getElementById('btnToggleViralHistoryBar');
+  if (btnToggleBar) {
+    btnToggleBar.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleViralHistoryCollapse();
+    });
+  }
+
   // Live title typing doesn't require recalculating score, but ensures smooth experience
   const titleInput = document.getElementById('viralIdeaTitle');
   if (titleInput) {
@@ -2711,22 +2719,33 @@ function saveCurrentViralEvaluation() {
 function toggleViralHistoryCollapse(forceOpen = null) {
   const content = document.getElementById('viralHistoryContent');
   const chevron = document.getElementById('viralHistoryChevronIcon');
+  const label = document.getElementById('viralHistoryToggleLabel');
   if (!content) return;
 
-  const shouldOpen = forceOpen !== null ? forceOpen : content.classList.contains('hidden');
+  const isCurrentlyHidden = content.classList.contains('hidden');
+  const shouldOpen = forceOpen !== null ? forceOpen : isCurrentlyHidden;
 
   if (shouldOpen) {
     content.classList.remove('hidden');
     if (chevron) {
       chevron.classList.add('rotate-180');
     }
+    if (label) {
+      label.textContent = 'Ocultar Historial';
+    }
   } else {
     content.classList.add('hidden');
     if (chevron) {
       chevron.classList.remove('rotate-180');
     }
+    if (label) {
+      label.textContent = 'Abrir Historial';
+    }
   }
+  refreshLucideIcons();
 }
+
+window.toggleViralHistoryCollapse = toggleViralHistoryCollapse;
 
 function renderViralHistoryTable() {
   const tableBody = document.getElementById('viralHistoryTableBody');

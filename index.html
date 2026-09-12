@@ -686,26 +686,35 @@
 
         </div>
 
-        <!-- SECTION 3: HISTORY & COMPARISON TABLE -->
-        <!-- History Table Accordion Card (Collapsible) -->
+        <!-- SECTION 3: HISTORY & COMPARISON TABLE (COLLAPSIBLE ACCORDION) -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
           
           <!-- Collapsible Header / Toggle Bar -->
-          <div id="viralHistoryHeaderToggle" onclick="toggleViralHistoryCollapse()" class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 bg-slate-900 hover:bg-slate-800/60 cursor-pointer select-none transition group">
-            <div class="flex items-center gap-3">
-              <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 transition">
-                <i data-lucide="list-ordered" class="w-5 h-5"></i>
-              </span>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition">Historial y Comparativa de Ideas Evaluadas</h3>
-                  <span id="viralHistoryCountBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0 ideas</span>
+          <div class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 bg-slate-900 border-b border-transparent">
+            <!-- Main Clickable Area (Opens/Closes History) -->
+            <button type="button" id="btnToggleViralHistoryBar" onclick="toggleViralHistoryCollapse()" class="flex-1 flex flex-wrap items-center justify-between sm:justify-start gap-3 text-left cursor-pointer focus:outline-none group">
+              <div class="flex items-center gap-3">
+                <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 group-hover:scale-105 transition">
+                  <i data-lucide="list-ordered" class="w-5 h-5"></i>
+                </span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition">Historial y Comparativa de Ideas Evaluadas</h3>
+                    <span id="viralHistoryCountBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0 ideas</span>
+                  </div>
+                  <p class="text-xs text-slate-400 group-hover:text-slate-300 transition" id="viralHistoryCounter">Toca aquí para ver o desplegar el historial</p>
                 </div>
-                <p class="text-xs text-slate-400" id="viralHistoryCounter">Haz clic para ver o desplegar el historial de ideas</p>
               </div>
-            </div>
 
-            <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+              <!-- Interactive Badge + Palomita Arrow -->
+              <div class="sm:ml-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 group-hover:bg-slate-700 text-sky-400 text-xs font-bold border border-slate-700 transition shadow-sm">
+                <span id="viralHistoryToggleLabel">Abrir Historial</span>
+                <i id="viralHistoryChevronIcon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
+              </div>
+            </button>
+
+            <!-- Actions (CSV & Clear) -->
+            <div class="flex items-center gap-2">
               <button id="btnExportViralCSV" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
                 <span class="hidden sm:inline">Exportar CSV</span>
@@ -713,10 +722,6 @@
               <button id="btnClearViralHistory" type="button" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-rose-800/50 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span class="hidden sm:inline">Limpiar Historial</span>
-              </button>
-              <!-- Palomita / Chevron Icon Toggle Button -->
-              <button type="button" onclick="toggleViralHistoryCollapse()" class="p-2 rounded-lg bg-slate-800 text-slate-300 group-hover:text-white group-hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center cursor-pointer ml-1" title="Plegar / Desplegar historial">
-                <i id="viralHistoryChevronIcon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
               </button>
             </div>
           </div>
@@ -1342,6 +1347,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.6"></script>
+  <script src="app.js?v=2.8"></script>
 </body>
 </html>
