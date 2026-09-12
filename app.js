@@ -2430,7 +2430,25 @@ function setupViralCalcEventListeners() {
   if (btnToggle) {
     btnToggle.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       toggleViralHistory();
+    });
+  }
+
+  const headerBar = document.getElementById('viralHistoryHeaderBar');
+  if (headerBar) {
+    headerBar.addEventListener('click', (e) => {
+      if (!e.target.closest('#btnExportViralCSV') && !e.target.closest('#btnClearViralHistory') && !e.target.closest('#btnToggleViralHistory')) {
+        toggleViralHistory();
+      }
+    });
+  }
+
+  const btnOpenFromForm = document.getElementById('btnOpenViralHistoryFromForm');
+  if (btnOpenFromForm) {
+    btnOpenFromForm.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleViralHistory(true);
     });
   }
 
@@ -2698,8 +2716,8 @@ function saveCurrentViralEvaluation() {
   saveState();
   renderViralHistoryTable();
   
-  // Auto-switch to history tab so user sees newly added entry
-  switchViralTab('hist');
+  // Auto-expand history drawer so user sees newly added entry
+  toggleViralHistory(true);
 
   // Button feedback
   const btnSave = document.getElementById('btnSaveViralEvaluation');
@@ -2716,41 +2734,47 @@ function saveCurrentViralEvaluation() {
   }
 }
 
-function switchViralTab(tabName) {
-  const vEval = document.getElementById('subViewViralEval');
-  const vHist = document.getElementById('subViewViralHist');
-  const tEval = document.getElementById('tabViralEval');
-  const tHist = document.getElementById('tabViralHist');
-
-  const activeEvalClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-amber-500 text-slate-950 shadow-md cursor-pointer";
-  const activeHistClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-sky-500 text-white shadow-md cursor-pointer";
-  const inactiveClass = "flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer";
-
-  if (tabName === 'hist') {
-    if (vEval) vEval.classList.add('hidden');
-    if (vHist) vHist.classList.remove('hidden');
-    if (tEval) tEval.className = inactiveClass;
-    if (tHist) tHist.className = activeHistClass;
-    renderViralHistoryTable();
-  } else {
-    // default to 'eval'
-    if (vHist) vHist.classList.add('hidden');
-    if (vEval) vEval.classList.remove('hidden');
-    if (tEval) tEval.className = activeEvalClass;
-    if (tHist) tHist.className = inactiveClass;
-  }
-  refreshLucideIcons();
-}
+let isViralHistoryExpanded = false;
 
 function toggleViralHistory(forceState = null) {
-  switchViralTab('hist');
+  const content = document.getElementById('viralHistoryContent');
+  const btnText = document.getElementById('viralHistoryBtnText');
+  const chevron = document.getElementById('viralHistoryChevron');
+  if (!content) return;
+
+  if (forceState !== null) {
+    isViralHistoryExpanded = !!forceState;
+  } else {
+    isViralHistoryExpanded = !isViralHistoryExpanded;
+  }
+
+  if (isViralHistoryExpanded) {
+    content.style.display = 'block';
+    content.classList.remove('hidden');
+    if (btnText) btnText.textContent = 'Ocultar Historial';
+    if (chevron) {
+      chevron.textContent = '▲';
+      chevron.style.transform = 'rotate(180deg)';
+    }
+    renderViralHistoryTable();
+    setTimeout(() => {
+      content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 80);
+  } else {
+    content.style.display = 'none';
+    content.classList.add('hidden');
+    if (btnText) btnText.textContent = 'Ver Historial';
+    if (chevron) {
+      chevron.textContent = '▼';
+      chevron.style.transform = 'rotate(0deg)';
+    }
+  }
 }
 
 function toggleViralHistoryCollapse(forceOpen = null) {
-  switchViralTab('hist');
+  toggleViralHistory(forceOpen);
 }
 
-window.switchViralTab = switchViralTab;
 window.toggleViralHistory = toggleViralHistory;
 window.toggleViralHistoryCollapse = toggleViralHistoryCollapse;
 
@@ -2904,7 +2928,6 @@ function loadViralEvaluationIntoCalc(evalId) {
   }
 
   calculateViralScore();
-  switchViralTab('eval');
 
   // Smooth scroll to top of calculator
   window.scrollTo({ top: 0, behavior: 'smooth' });
