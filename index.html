@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>BLEX STUDIO</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -686,48 +689,46 @@
 
         </div>
 
-        <!-- SECTION 3: HISTORY & COMPARISON TABLE (COLLAPSIBLE ACCORDION) -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
+        <!-- SECTION 3: HISTORY & COMPARISON TABLE (COLLAPSIBLE ACCORDION - NATIVE HTML5 DETAILS/SUMMARY) -->
+        <details id="viralHistoryDetails" class="group bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
           
-          <!-- Collapsible Header / Toggle Bar -->
-          <div class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 bg-slate-900 border-b border-transparent">
-            <!-- Main Clickable Area (Opens/Closes History) -->
-            <button type="button" id="btnToggleViralHistoryBar" onclick="toggleViralHistoryCollapse()" class="flex-1 flex flex-wrap items-center justify-between sm:justify-start gap-3 text-left cursor-pointer focus:outline-none group">
-              <div class="flex items-center gap-3">
-                <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 group-hover:scale-105 transition">
-                  <i data-lucide="list-ordered" class="w-5 h-5"></i>
-                </span>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition">Historial y Comparativa de Ideas Evaluadas</h3>
-                    <span id="viralHistoryCountBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0 ideas</span>
-                  </div>
-                  <p class="text-xs text-slate-400 group-hover:text-slate-300 transition" id="viralHistoryCounter">Toca aquí para ver o desplegar el historial</p>
+          <!-- Collapsible Header / Summary Bar (Native iOS/iPad Tap Support) -->
+          <summary class="list-none [&::-webkit-details-marker]:hidden flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 bg-slate-900 hover:bg-slate-800/60 cursor-pointer select-none transition focus:outline-none">
+            <div class="flex items-center gap-3">
+              <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 group-hover:scale-105 transition">
+                <i data-lucide="list-ordered" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-sky-300 transition">Historial y Comparativa de Ideas Evaluadas</h3>
+                  <span id="viralHistoryCountBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0 ideas</span>
                 </div>
+                <p class="text-xs text-slate-400 group-hover:text-slate-300 transition" id="viralHistoryCounter">Toca aquí para ver o desplegar el historial</p>
               </div>
+            </div>
 
-              <!-- Interactive Badge + Palomita Arrow -->
-              <div class="sm:ml-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 group-hover:bg-slate-700 text-sky-400 text-xs font-bold border border-slate-700 transition shadow-sm">
-                <span id="viralHistoryToggleLabel">Abrir Historial</span>
-                <i id="viralHistoryChevronIcon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
-              </div>
-            </button>
-
-            <!-- Actions (CSV & Clear) -->
             <div class="flex items-center gap-2">
-              <button id="btnExportViralCSV" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+              <!-- Action Buttons (Prevent closing on button clicks) -->
+              <button id="btnExportViralCSV" type="button" onclick="event.stopPropagation(); exportViralEvaluationsCSV();" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
                 <span class="hidden sm:inline">Exportar CSV</span>
               </button>
-              <button id="btnClearViralHistory" type="button" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-rose-800/50 transition flex items-center gap-1.5 cursor-pointer">
+              <button id="btnClearViralHistory" type="button" onclick="event.stopPropagation(); clearViralHistory();" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-rose-800/50 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span class="hidden sm:inline">Limpiar Historial</span>
               </button>
+              
+              <!-- Interactive Palomita / Chevron Indicator -->
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 group-hover:bg-slate-700 text-sky-400 text-xs font-bold border border-slate-700 transition shadow-sm ml-1">
+                <span class="group-open:hidden">Abrir Historial</span>
+                <span class="hidden group-open:inline">Ocultar Historial</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300 group-open:rotate-180"></i>
+              </div>
             </div>
-          </div>
+          </summary>
 
-          <!-- History Table Body (Collapsible) -->
-          <div id="viralHistoryContent" class="hidden border-t border-slate-800/80 p-4 sm:p-5 bg-slate-950/30 space-y-4">
+          <!-- History Table Body (Rendered when details is open) -->
+          <div id="viralHistoryContent" class="border-t border-slate-800/80 p-4 sm:p-5 bg-slate-950/30 space-y-4">
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs sm:text-sm border-collapse">
                 <thead>
@@ -749,7 +750,7 @@
             </div>
           </div>
 
-        </div>
+        </details>
 
       </section>
 
@@ -1347,6 +1348,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.8"></script>
+  <script src="app.js?v=3.0&t=1789239000"></script>
 </body>
 </html>

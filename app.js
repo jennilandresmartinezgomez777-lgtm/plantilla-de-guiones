@@ -2426,11 +2426,10 @@ function setupViralCalcEventListeners() {
     btnClearHist.addEventListener('click', clearViralHistory);
   }
 
-  const btnToggleBar = document.getElementById('btnToggleViralHistoryBar');
-  if (btnToggleBar) {
-    btnToggleBar.addEventListener('click', (e) => {
-      e.preventDefault();
-      toggleViralHistoryCollapse();
+  const details = document.getElementById('viralHistoryDetails');
+  if (details) {
+    details.addEventListener('toggle', () => {
+      refreshLucideIcons();
     });
   }
 
@@ -2717,30 +2716,13 @@ function saveCurrentViralEvaluation() {
 }
 
 function toggleViralHistoryCollapse(forceOpen = null) {
-  const content = document.getElementById('viralHistoryContent');
-  const chevron = document.getElementById('viralHistoryChevronIcon');
-  const label = document.getElementById('viralHistoryToggleLabel');
-  if (!content) return;
+  const details = document.getElementById('viralHistoryDetails');
+  if (!details) return;
 
-  const isCurrentlyHidden = content.classList.contains('hidden');
-  const shouldOpen = forceOpen !== null ? forceOpen : isCurrentlyHidden;
-
-  if (shouldOpen) {
-    content.classList.remove('hidden');
-    if (chevron) {
-      chevron.classList.add('rotate-180');
-    }
-    if (label) {
-      label.textContent = 'Ocultar Historial';
-    }
+  if (forceOpen !== null) {
+    details.open = forceOpen;
   } else {
-    content.classList.add('hidden');
-    if (chevron) {
-      chevron.classList.remove('rotate-180');
-    }
-    if (label) {
-      label.textContent = 'Abrir Historial';
-    }
+    details.open = !details.open;
   }
   refreshLucideIcons();
 }
