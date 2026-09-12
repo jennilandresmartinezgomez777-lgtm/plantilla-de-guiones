@@ -10,7 +10,7 @@ const INITIAL_SCRIPTS = [
     number: 1,
     completed: false,
     ideaGanadora: "¿Cuánto gastas al mes en Miami?",
-    formato: "ENTREVISTA",
+    formato: "Formato entrevista",
     objetivo: "VENTA",
     gancho: "¿Cuánto gastas al mes en Miami?",
     historia: "Gasta 5000 dólares al mes entre casa coche, comida, hijos, ropa....\n\n¿Y lo pagas con Tarjeta de crédito o de Débito?\n- con tarjeta de débito",
@@ -27,7 +27,7 @@ const INITIAL_SCRIPTS = [
     number: 2,
     completed: false,
     ideaGanadora: "Deja de pagar por tu tarjeta hasta que no hagas esto",
-    formato: "TUTORIAL",
+    formato: "Hablando a cámara",
     objetivo: "VENTA",
     gancho: "Deja de pagar por tu tarjeta hasta que no hagas esto",
     historia: "Ten cuidado con estas 3 cosas porque estás perdiendo mucho dinero con tus tarjetas y puede hasta bajar tu puntaje de crédito.\n\n1. Fecha de corte en la app del banco.\n2. Evita tarjetas de tiendas comerciales.\n3. Cuidado con adelantos de efectivo.",
@@ -44,7 +44,7 @@ const INITIAL_SCRIPTS = [
     number: 3,
     completed: true,
     ideaGanadora: "Cómo no engordar en navidad comiendo lo que quieras",
-    formato: "VLOG",
+    formato: "Formato Vlog",
     objetivo: "SEGUIDORES",
     gancho: "Cómo no engordar en navidad comiendo lo que quieras",
     historia: "El año pasado este era yo el día 24 de diciembre y este era yo el día 7 de Enero después de 7 cenas de navidad. Exactamente la misma composición corporal.",
@@ -64,7 +64,7 @@ const INITIAL_SCRIPTS = [
     number: 4,
     completed: false,
     ideaGanadora: "3 Secretos para subir tu puntaje de crédito a 750 en 60 días",
-    formato: "REEL",
+    formato: "Formato Dinámico",
     objetivo: "AUTORIDAD",
     gancho: "Si tu crédito está en menos de 650, guarda este video inmediatamente.",
     historia: "El 80% de los reportes crediticios tienen errores que los bancos no quieren que borres. Aprende a disputar indagaciones no autorizadas y bajar tu nivel de utilización por debajo del 10%.",
@@ -81,7 +81,7 @@ const INITIAL_SCRIPTS = [
     number: 5,
     completed: false,
     ideaGanadora: "Lo que los bancos NO quieren que sepas sobre los intereses",
-    formato: "ENTREVISTA",
+    formato: "Formato entrevista",
     objetivo: "VIRAL",
     gancho: "¿Sabías que pagar el mínimo de tu tarjeta te puede costar $15,000 extra?",
     historia: "Mostramos con manzana y plastilina cómo se calcula la tasa APR diaria y por qué el interés compuesto te deja atrapado durante años si solo pagas el mínimo.",
@@ -99,7 +99,7 @@ const INITIAL_SCRIPTS = [
     number: 6,
     completed: false,
     ideaGanadora: "Mi rutina de 15 minutos para quemar grasa sin ir al gimnasio",
-    formato: "TUTORIAL",
+    formato: "Hablando a cámara",
     objetivo: "SEGUIDORES",
     gancho: "Haz estos 4 ejercicios desde tu sala si no tienes tiempo de entrenar.",
     historia: "Demostración rápida de HIIT corporal: Sentadillas con salto, zancadas dinámicas, flexiones y mountain climbers sin ningún equipamiento.",
@@ -116,7 +116,7 @@ const INITIAL_SCRIPTS = [
     number: 7,
     completed: false,
     ideaGanadora: "¿Comprar casa con Crédito o con Dinero en Efectivo?",
-    formato: "ENTREVISTA",
+    formato: "Formato entrevista",
     objetivo: "VENTA",
     gancho: "Comprar una casa en efectivo es el PEOR error financiero que puedes cometer.",
     historia: "Si gastas $300,000 en efectivo descapitalizas tu negocio. Con un buen crédito das solo el 3.5% o 5% de pago inicial y el resto lo financias a tasa baja invirtiendo el remanente.",
@@ -133,7 +133,7 @@ const INITIAL_SCRIPTS = [
     number: 8,
     completed: true,
     ideaGanadora: "Cómo eliminar marcas negativas de tu reporte de crédito legalmente",
-    formato: "PASO A PASO",
+    formato: "Formato pantalla verde",
     objetivo: "AUTORIDAD",
     gancho: "Te enseño la carta exacta respaldada por la ley FCRA para borrar colecciones.",
     historia: "Explicación del artículo de la Ley de Reportes Justos de Crédito que exige a las agencias verificar la deuda original en 30 días o eliminarla por completo.",
@@ -153,7 +153,7 @@ const INITIAL_SCRIPTS = [
     number: 9,
     completed: false,
     ideaGanadora: "El error #1 que arruina tu progreso físico el fin de semana",
-    formato: "VLOG",
+    formato: "Formato Vlog",
     objetivo: "SEGUIDORES",
     gancho: "Haces todo bien de Lunes a Viernes pero en 48 horas arruinas toda la semana...",
     historia: "Analizamos cómo 3 cócteles y 2 comidas tramposas sin medir aportan 3,500 calorías extra, anulando el déficit calórico de toda la semana de esfuerzo.",
@@ -170,7 +170,7 @@ const INITIAL_SCRIPTS = [
     number: 10,
     completed: true,
     ideaGanadora: "Caso de Éxito: De $2,000 a $50,000 en línea de crédito de negocios",
-    formato: "TESTIMONIO",
+    formato: "Formato POV",
     objetivo: "VENTA",
     gancho: "Así fue como Carlos consiguió $50,000 a tasa 0% para su nuevo restaurante.",
     historia: "Mostramos el proceso de creación de LLC, estructuración de perfil de crédito corporativo y aprobación bancaria en menos de 45 días sin tocar su crédito personal.",
@@ -233,7 +233,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: false,
       controversia: true
     },
-    format: "entrevista",
+    format: "Formato entrevista",
     criteriaScore: 8.5,
     formatScore: 3.0,
     totalScore: 11.5,
@@ -253,7 +253,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: false,
       controversia: false
     },
-    format: "entrevista",
+    format: "Formato entrevista",
     criteriaScore: 5.0,
     formatScore: 3.0,
     totalScore: 8.0,
@@ -273,7 +273,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: true,
       controversia: true
     },
-    format: "vlog",
+    format: "Formato Vlog",
     criteriaScore: 8.0,
     formatScore: 4.0,
     totalScore: 12.0,
@@ -293,7 +293,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: false,
       controversia: false
     },
-    format: "vlog",
+    format: "Formato Vlog",
     criteriaScore: 7.5,
     formatScore: 4.0,
     totalScore: 11.5,
@@ -313,7 +313,7 @@ const INITIAL_VIRAL_EVALUATIONS = [
       tendencia: false,
       controversia: false
     },
-    format: "talking_head",
+    format: "Hablando a cámara",
     criteriaScore: 5.0,
     formatScore: 1.0,
     totalScore: 6.0,
@@ -1433,6 +1433,41 @@ function getNextScriptNumber() {
   return maxNum + 1;
 }
 
+function normalizeScriptFormat(formato) {
+  if (!formato) return "Hablando a cámara";
+  const f = formato.trim();
+  const lower = f.toLowerCase();
+  if (lower.includes('vlog')) return "Formato Vlog";
+  if (lower.includes('entrevista')) return "Formato entrevista";
+  if (lower.includes('dinámico') || lower.includes('dinamico')) return "Formato Dinámico";
+  if (lower.includes('pov')) return "Formato POV";
+  if (lower.includes('pantalla dividida') || lower.includes('dividida')) return "Formato pantalla dividida";
+  if (lower.includes('pantalla verde') || lower.includes('verde')) return "Formato pantalla verde";
+  if (lower.includes('prima') || lower.includes('pregunta')) return "Formato prima pregunta";
+  if (lower.includes('mirando') || lower.includes('nada')) return "Formato mirando a la nada";
+  if (lower.includes('selfie')) return "Formato selfie";
+  if (lower.includes('hablando') || lower.includes('cámara') || lower.includes('camara') || lower.includes('talking')) return "Hablando a cámara";
+  if (lower.includes('tutorial') || lower.includes('reel') || lower.includes('paso a paso') || lower.includes('testimonio')) return "Hablando a cámara";
+  return f;
+}
+
+function getPointsForFormat(format) {
+  if (!format) return 0.0;
+  const f = format.trim();
+  const lower = f.toLowerCase();
+  if (f === 'Formato Vlog' || lower === 'vlog' || lower.includes('vlog')) return 4.0;
+  if (f === 'Formato entrevista' || lower === 'entrevista' || lower.includes('entrevista') || 
+      f === 'Formato Dinámico' || lower.includes('dinam') || 
+      f === 'Formato POV' || lower.includes('pov')) return 3.0;
+  if (f === 'Formato pantalla dividida' || lower.includes('dividida') || 
+      f === 'Formato pantalla verde' || lower.includes('verde') || 
+      f === 'Formato prima pregunta' || lower.includes('prima') || lower.includes('pregunta')) return 2.0;
+  if (f === 'Hablando a cámara' || lower.includes('hablando') || lower.includes('camara') || lower.includes('cámara') || lower === 'talking_head' ||
+      f === 'Formato mirando a la nada' || lower.includes('mirando') || lower.includes('nada') || 
+      f === 'Formato selfie' || lower.includes('selfie')) return 1.0;
+  return 0.0;
+}
+
 // SCRIPT CRUD
 function openNewScriptModal() {
   state.editingScriptId = null;
@@ -1444,6 +1479,7 @@ function openNewScriptModal() {
   document.getElementById('formClient').value = initialClient;
   document.getElementById('formNumber').value = getNextScriptNumber();
   document.getElementById('formStatus').value = 'Por Grabar';
+  document.getElementById('formFormato').value = 'Hablando a cámara';
   document.getElementById('formObjetivo').value = 'VENTA';
   populateActorOptions(initialClient);
 
@@ -1462,7 +1498,7 @@ function openEditScriptModal(id) {
   document.getElementById('formClient').value = script.client;
   document.getElementById('formNumber').value = script.number || '';
   document.getElementById('formStatus').value = script.status || 'Idea';
-  document.getElementById('formFormato').value = (script.formato || 'ENTREVISTA').toUpperCase();
+  document.getElementById('formFormato').value = normalizeScriptFormat(script.formato);
   document.getElementById('formObjetivo').value = script.objetivo || 'VENTA';
   populateActorOptions(script.actor || script.client || '');
   document.getElementById('formIdeaGanadora').value = script.ideaGanadora || '';
@@ -1650,7 +1686,7 @@ function handleScriptSubmit(e) {
     client: clientName,
     number: parseInt(document.getElementById('formNumber').value) || getNextScriptNumber(),
     status: document.getElementById('formStatus').value,
-    formato: document.getElementById('formFormato').value.trim() || 'REEL',
+    formato: normalizeScriptFormat(document.getElementById('formFormato').value),
     objetivo: document.getElementById('formObjetivo').value,
     actor: document.getElementById('formActor').value.trim(),
     ideaGanadora: document.getElementById('formIdeaGanadora').value.trim(),
@@ -1731,7 +1767,7 @@ function handleQuickIdeaSubmit(e) {
     historia: notes ? `Notas: ${notes}` : 'Pendiente de redactar historia...',
     moraleja: 'Pendiente de redactar moraleja...',
     cta: 'Pendiente de redactar CTA...',
-    formato: 'REEL',
+    formato: 'Hablando a cámara',
     objetivo: 'VIRAL',
     actor: clientName,
     contextoAdicional: notes ? `Idea rápida: ${notes}` : '',
@@ -2377,7 +2413,7 @@ function getCurrentViralFormData() {
   const controversia = document.getElementById('viralCritControversia')?.checked || false;
 
   const selectedFormatRadio = document.querySelector('input[name="viralFormatoRadio"]:checked');
-  const format = selectedFormatRadio ? selectedFormatRadio.value : 'otro';
+  const format = selectedFormatRadio ? selectedFormatRadio.value : 'Hablando a cámara';
 
   // Criteria score calculation (Max 10.0 pts)
   let criteriaScore = 0;
@@ -2389,11 +2425,7 @@ function getCurrentViralFormData() {
   if (controversia) criteriaScore += 1.0;
 
   // Format bonus calculation (Max 4.0 pts)
-  let formatScore = 0;
-  if (format === 'vlog') formatScore = 4.0;
-  else if (format === 'entrevista') formatScore = 3.0;
-  else if (format === 'talking_head') formatScore = 1.0;
-  else formatScore = 0.0;
+  const formatScore = getPointsForFormat(format);
 
   const totalScore = parseFloat((criteriaScore + formatScore).toFixed(1));
 
@@ -2475,7 +2507,7 @@ function calculateViralScore() {
       verdictIcon.innerHTML = "!";
       verdictTitle.className = "text-sm sm:text-base font-bold text-rose-300";
       verdictTitle.textContent = "🔴 Potencial Bajo (0.0 - 6.5 pts)";
-      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato más dinámico (Vlog/Entrevista) o validar referencias virales previas.";
+      verdictDesc.textContent = "Poco alcance orgánico predecible. Recomendamos simplificar la idea para que cualquiera la entienda, buscar un formato con mayor dinamismo (Vlog, Entrevista o Dinámico) o validar referencias virales previas.";
     }
   }
 
@@ -2491,8 +2523,8 @@ function calculateViralScore() {
     if (!data.criteria.refViral) {
       tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +2.0 pts:</span> <span>Busca una <strong>referencia viral previa</strong> en TikTok/Reels que valide el formato o gancho.</span></div>`);
     }
-    if (data.format !== 'vlog' && data.format !== 'entrevista') {
-      tips.push(`<div class="flex items-start gap-2"><span class="text-brand-400 font-bold">📹 +2.0 a +4.0 pts:</span> <span>Graba en formato <strong>Vlog (+4.0)</strong> o <strong>Entrevista (+3.0)</strong> para disparar la retención visual.</span></div>`);
+    if (data.formatScore < 3.0) {
+      tips.push(`<div class="flex items-start gap-2"><span class="text-brand-400 font-bold">📹 +3.0 a +4.0 pts:</span> <span>Graba en <strong>Formato Vlog (+4.0)</strong>, <strong>Formato entrevista (+3.0)</strong> o <strong>Formato Dinámico (+3.0)</strong> para disparar la retención.</span></div>`);
     }
     if (!data.criteria.tendencia) {
       tips.push(`<div class="flex items-start gap-2"><span class="text-amber-400 font-bold">💡 +1.5 pts:</span> <span>Conecta el tema con una <strong>tendencia actual</strong> o fecha coyuntural relevante.</span></div>`);
@@ -2517,31 +2549,31 @@ function handleViralPresetChange(presetKey) {
       title: '¿Cuánto gastas al mes en Miami?',
       client: 'USACREDITO',
       criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: true },
-      format: 'entrevista'
+      format: 'Formato entrevista'
     },
     'example-tarjeta': {
       title: 'Deja de pagar por tu tarjeta hasta que no hagas esto',
       client: 'Jennil',
       criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'entrevista'
+      format: 'Formato entrevista'
     },
     'example-navidad': {
       title: 'Cómo no engordar en navidad comiendo lo que quieras',
       client: 'Natalia',
       criteria: { nino: true, cincuenta: true, refViral: false, mercadoViral: true, tendencia: true, controversia: true },
-      format: 'vlog'
+      format: 'Formato Vlog'
     },
     'example-1000': {
       title: '3 Secretos para conseguir $1,000 en 30 días',
       client: 'USACREDITO',
       criteria: { nino: true, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'vlog'
+      format: 'Formato Vlog'
     },
     'example-credito': {
       title: 'Estrategia de crédito para negocios',
       client: 'USACREDITO',
       criteria: { nino: false, cincuenta: true, refViral: true, mercadoViral: true, tendencia: false, controversia: false },
-      format: 'talking_head'
+      format: 'Hablando a cámara'
     }
   };
 
@@ -2562,7 +2594,7 @@ function handleViralPresetChange(presetKey) {
   document.getElementById('viralCritTendencia').checked = preset.criteria.tendencia;
   document.getElementById('viralCritControversia').checked = preset.criteria.controversia;
 
-  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${preset.format}"]`);
+  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${preset.format}"]`) || document.querySelector(`input[name="viralFormatoRadio"]`);
   if (targetRadio) {
     targetRadio.checked = true;
   }
@@ -2582,7 +2614,7 @@ function resetViralCalculator() {
   document.getElementById('viralCritTendencia').checked = false;
   document.getElementById('viralCritControversia').checked = false;
 
-  const defaultRadio = document.querySelector('input[name="viralFormatoRadio"][value="otro"]');
+  const defaultRadio = document.querySelector('input[name="viralFormatoRadio"][value="Formato entrevista"]') || document.querySelector('input[name="viralFormatoRadio"]');
   if (defaultRadio) defaultRadio.checked = true;
 
   calculateViralScore();
@@ -2670,10 +2702,20 @@ function renderViralHistoryTable() {
     }
 
     const formatLabels = {
-      vlog: '📹 Vlog (+4.0)',
-      entrevista: '🎙️ Entrevista (+3.0)',
-      talking_head: '🗣️ Hablando a cámara (+1.0)',
-      otro: '⚡ Otro (0.0)'
+      'Formato Vlog': '📹 Formato Vlog (+4.0)',
+      'Formato entrevista': '🎙️ Formato entrevista (+3.0)',
+      'Formato Dinámico': '⚡ Formato Dinámico (+3.0)',
+      'Formato POV': '👀 Formato POV (+3.0)',
+      'Formato pantalla dividida': '📱 Formato pantalla dividida (+2.0)',
+      'Formato pantalla verde': '🟩 Formato pantalla verde (+2.0)',
+      'Formato prima pregunta': '❓ Formato prima pregunta (+2.0)',
+      'Hablando a cámara': '🗣️ Hablando a cámara (+1.0)',
+      'Formato mirando a la nada': '👁️ Formato mirando a la nada (+1.0)',
+      'Formato selfie': '🤳 Formato selfie (+1.0)',
+      // legacy / alias keys
+      'vlog': '📹 Formato Vlog (+4.0)',
+      'entrevista': '🎙️ Formato entrevista (+3.0)',
+      'talking_head': '🗣️ Hablando a cámara (+1.0)'
     };
 
     const criteriaTags = [];
@@ -2757,7 +2799,8 @@ function loadViralEvaluationIntoCalc(evalId) {
   document.getElementById('viralCritTendencia').checked = !!item.criteria?.tendencia;
   document.getElementById('viralCritControversia').checked = !!item.criteria?.controversia;
 
-  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${item.format}"]`);
+  const normalizedFmt = normalizeScriptFormat(item.format);
+  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${item.format}"]`) || document.querySelector(`input[name="viralFormatoRadio"][value="${normalizedFmt}"]`);
   if (targetRadio) {
     targetRadio.checked = true;
   }
@@ -2789,10 +2832,7 @@ function convertViralEvalToScript(evalData = null) {
   const ideaTitle = data.title || 'Nueva Idea Viral';
   const clientName = data.client || (state.clients[0] || 'USACREDITO');
   
-  let mappedFormat = 'REEL';
-  if (data.format === 'vlog') mappedFormat = 'VLOG';
-  else if (data.format === 'entrevista') mappedFormat = 'ENTREVISTA';
-  else if (data.format === 'talking_head') mappedFormat = 'TUTORIAL';
+  const mappedFormat = normalizeScriptFormat(data.format);
 
   openNewScriptModal();
   if (document.getElementById('formIdeaGanadora')) {

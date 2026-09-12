@@ -414,7 +414,7 @@
               </div>
             </div>
 
-            <!-- SECTION 2: PUNTUACIÓN POR FORMATO (+4 PTS MAX) -->
+            <!-- SECTION 2: PUNTUACIÓN POR FORMATO (HASTA +4.0 PTS) -->
             <div class="space-y-3 pt-2">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <span class="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
@@ -423,53 +423,125 @@
                 <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Hasta +4.0 pts</span>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1">
                 
-                <!-- Format 1: Vlog (+4.0 pts) -->
+                <!-- 1. Formato Vlog (+4.0 pts) -->
                 <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
-                  <input type="radio" name="viralFormatoRadio" value="vlog" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <input type="radio" name="viralFormatoRadio" value="Formato Vlog" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Vlog</span>
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato Vlog</span>
                       <span class="text-[11px] font-black text-brand-400 bg-brand-500/15 px-1.5 py-0.5 rounded">+4.0 pts</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Inmersivo, dinámico, cambios de plano constantes y alta retención visual.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Inmersivo, dinámico, cambios de plano constantes y alta retención visual.</p>
                   </div>
                 </label>
 
-                <!-- Format 2: Entrevista (+3.0 pts) -->
+                <!-- 2. Formato entrevista (+3.0 pts) -->
                 <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
-                  <input type="radio" name="viralFormatoRadio" value="entrevista" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <input type="radio" name="viralFormatoRadio" value="Formato entrevista" checked class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Entrevista</span>
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato entrevista</span>
                       <span class="text-[11px] font-black text-brand-400 bg-brand-500/15 px-1.5 py-0.5 rounded">+3.0 pts</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">En calle o set con otra persona. Estimula curiosidad y dinamismo social espontáneo.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">En calle o set con otra persona. Estimula curiosidad y dinamismo social.</p>
                   </div>
                 </label>
 
-                <!-- Format 3: Hablando a cámara (+1.0 pts) -->
+                <!-- 3. Formato Dinámico (+3.0 pts) -->
                 <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
-                  <input type="radio" name="viralFormatoRadio" value="talking_head" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <input type="radio" name="viralFormatoRadio" value="Formato Dinámico" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato Dinámico</span>
+                      <span class="text-[11px] font-black text-brand-400 bg-brand-500/15 px-1.5 py-0.5 rounded">+3.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Cortes rápidos, transiciones visuales, efectos y ritmo acelerado.</p>
+                  </div>
+                </label>
+
+                <!-- 4. Formato POV (+3.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Formato POV" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato POV</span>
+                      <span class="text-[11px] font-black text-brand-400 bg-brand-500/15 px-1.5 py-0.5 rounded">+3.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Perspectiva en primera persona ("Point of View"), máxima inmersión.</p>
+                  </div>
+                </label>
+
+                <!-- 5. Formato pantalla dividida (+2.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Formato pantalla dividida" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato pantalla dividida</span>
+                      <span class="text-[11px] font-black text-sky-400 bg-sky-500/15 px-1.5 py-0.5 rounded">+2.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Comparativa lado a lado, reacción o doble contexto en simultáneo.</p>
+                  </div>
+                </label>
+
+                <!-- 6. Formato pantalla verde (+2.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Formato pantalla verde" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato pantalla verde</span>
+                      <span class="text-[11px] font-black text-sky-400 bg-sky-500/15 px-1.5 py-0.5 rounded">+2.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Fondo visual interactivo explicando datos, noticias o referencias.</p>
+                  </div>
+                </label>
+
+                <!-- 7. Formato prima pregunta (+2.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Formato prima pregunta" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato prima pregunta</span>
+                      <span class="text-[11px] font-black text-sky-400 bg-sky-500/15 px-1.5 py-0.5 rounded">+2.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Apertura con una pregunta directa e intrigante que detiene el scroll.</p>
+                  </div>
+                </label>
+
+                <!-- 8. Hablando a cámara (+1.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Hablando a cámara" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
                       <span class="text-xs font-bold text-white group-hover:text-brand-300">Hablando a cámara</span>
-                      <span class="text-[11px] font-black text-brand-400 bg-brand-500/15 px-1.5 py-0.5 rounded">+1.0 pts</span>
+                      <span class="text-[11px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">+1.0 pts</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Talking Head / Tutorial directo. Excelente para autoridad pero con menor dinamismo orgánico.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Talking Head directo a cámara con valor, autoridad o tutorial.</p>
                   </div>
                 </label>
 
-                <!-- Format 4: Otro (0.0 pts) -->
+                <!-- 9. Formato mirando a la nada (+1.0 pts) -->
                 <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
-                  <input type="radio" name="viralFormatoRadio" value="otro" checked class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <input type="radio" name="viralFormatoRadio" value="Formato mirando a la nada" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Otro / Estándar</span>
-                      <span class="text-[11px] font-black text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">0.0 pts</span>
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato mirando a la nada</span>
+                      <span class="text-[11px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">+1.0 pts</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Voz en off, imágenes de archivo o sin formato dinámico especificado.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Tono reflexivo, estilo documental o cinematográfico con voz en off.</p>
+                  </div>
+                </label>
+
+                <!-- 10. Formato selfie (+1.0 pts) -->
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800/90 hover:border-brand-500/50 cursor-pointer transition select-none group">
+                  <input type="radio" name="viralFormatoRadio" value="Formato selfie" class="mt-1 text-brand-500 focus:ring-brand-500 bg-slate-900 border-slate-700 cursor-pointer">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="text-xs font-bold text-white group-hover:text-brand-300">Formato selfie</span>
+                      <span class="text-[11px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">+1.0 pts</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Grabación casual con teléfono en mano, estilo historia cercana.</p>
                   </div>
                 </label>
 
@@ -754,19 +826,17 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-1">
             <label class="block text-xs font-semibold text-slate-400 mb-1">Formato *</label>
-            <select id="formFormato" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
-              <option value="ENTREVISTA">🎤 Entrevista</option>
-              <option value="ENTREVISTA CALLE">🎙️ Entrevista Calle</option>
-              <option value="SELFIE">🤳 Selfie</option>
-              <option value="VOICE EN OFF">🎧 Voice en Off</option>
-              <option value="DINÁMICO">⚡ Dinámico</option>
-              <option value="PERSONAJES">🎭 Personajes</option>
-              <option value="VLOG">📹 Vlog</option>
-              <option value="HABLANDO A CÁMARA">🗣️ Hablando a Cámara</option>
-              <option value="MIRANDO A LA NADA">👁️ Mirando a la Nada</option>
-              <option value="PANTALLA DIVIDIDA">📱 Pantalla Dividida</option>
-              <option value="PANTALLA VERDE">🟩 Pantalla Verde</option>
-              <option value="PRIMA PREGUNTA">❓ Prima Pregunta</option>
+            <select id="formFormato" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <option value="Hablando a cámara">🗣️ Hablando a cámara</option>
+              <option value="Formato Dinámico">⚡ Formato Dinámico</option>
+              <option value="Formato entrevista">🎙️ Formato entrevista</option>
+              <option value="Formato mirando a la nada">👁️ Formato mirando a la nada</option>
+              <option value="Formato pantalla dividida">📱 Formato pantalla dividida</option>
+              <option value="Formato pantalla verde">🟩 Formato pantalla verde</option>
+              <option value="Formato Vlog">📹 Formato Vlog</option>
+              <option value="Formato prima pregunta">❓ Formato prima pregunta</option>
+              <option value="Formato POV">👀 Formato POV</option>
+              <option value="Formato selfie">🤳 Formato selfie</option>
             </select>
           </div>
           <div class="sm:col-span-1">
