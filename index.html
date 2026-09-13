@@ -145,6 +145,13 @@
             <span>Nuevo Guión</span>
           </button>
 
+          <!-- AI Tools Hub Button -->
+          <button id="btnAiStudioHeader" onclick="switchView('ai_studio')" title="Herramientas de IA (Qwen 2.5 Local + 64 Ganchos)" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-purple-400/40 transition flex items-center gap-1.5 shadow-md shadow-purple-950/50 cursor-pointer whitespace-nowrap shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-200"></i>
+            <span>Herramientas de IA</span>
+            <span id="aiStatusHeaderDot" title="Servidor IA Activo" class="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80 animate-pulse"></span>
+          </button>
+
           <!-- Save Platform Data Button -->
           <button id="btnSavePlatformData" onclick="savePlatformDataToCloud(false)" title="Guardar todo en la Nube (Vercel/GitHub)" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-emerald-400/30 transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer whitespace-nowrap shrink-0">
             <i data-lucide="save" class="w-4 h-4 text-emerald-100"></i>
@@ -168,6 +175,10 @@
         
         <!-- View Tabs -->
         <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80 w-full xl:w-auto overflow-x-auto shrink-0 no-scrollbar">
+          <button id="tabAiStudio" onclick="switchView('ai_studio')" class="flex-1 xl:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+            <span>Herramientas de IA</span>
+          </button>
           <button id="tabViralCalc" onclick="switchView('viral_calc')" class="flex-1 xl:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
             <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
             <span>Calculadora de Viralidad</span>
@@ -1230,6 +1241,510 @@
         </div>
       </div>
 
+    
+      <!-- VIEW 5: HERRAMIENTAS DE IA / BLEX AI STUDIO -->
+      <section id="viewAiStudio" class="hidden space-y-5">
+        
+        <!-- Header Hub Card -->
+        <div class="bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/30 rounded-2xl p-5 shadow-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative overflow-hidden">
+          <div class="space-y-1 relative z-10">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-950/50">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h2 class="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                  <span>BLEX AI STUDIO</span>
+                  <span class="text-[10px] uppercase font-extrabold bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">Qwen 2.5 Local · 64 Ganchos</span>
+                </h2>
+                <p class="text-xs text-slate-300">Generador de ganchos virales, estructurador de reels, auditor de retención y optimizador de teleprónter.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Server Status & Server Config Button -->
+          <div class="flex items-center gap-2.5 shrink-0 flex-wrap relative z-10">
+            <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl shadow-inner text-xs">
+              <span id="aiServerStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80"></span>
+              <span id="aiServerStatusText" class="font-bold text-slate-200">Qwen 2.5 Conectado</span>
+            </div>
+            <button type="button" onclick="openAiServerConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+              <i data-lucide="settings" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Configurar Servidor</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Tools Navigation Tabs -->
+        <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar gap-1 shadow-lg">
+          <button type="button" onclick="switchAiTab('hooks')" id="aiTabBtnHooks" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+            <span>🎣 1. Generador Ganchos</span>
+          </button>
+          <button type="button" onclick="switchAiTab('reel')" id="aiTabBtnReel" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="video" class="w-4 h-4 text-sky-400"></i>
+            <span>📱 2. Creador Reel (4 Cajas)</span>
+          </button>
+          <button type="button" onclick="switchAiTab('audit')" id="aiTabBtnAudit" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
+            <span>🧠 3. Auditor de Viralidad</span>
+          </button>
+          <button type="button" onclick="switchAiTab('tone')" id="aiTabBtnTone" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>🎭 4. Adaptador de Tono</span>
+          </button>
+          <button type="button" onclick="switchAiTab('teleprompter')" id="aiTabBtnTeleprompter" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="clock" class="w-4 h-4 text-rose-400"></i>
+            <span>⏱️ 5. Optimizador Lectura</span>
+          </button>
+          <button type="button" onclick="switchAiTab('catalog')" id="aiTabBtnCatalog" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
+            <span>📚 Catálogo 64 Ganchos</span>
+          </button>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 1: GENERADOR DE GANCHOS VIRALES (64 FÓRMULAS) -->
+        <!-- ============================================== -->
+        <div id="aiPanelHooks" class="space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+            
+            <!-- Left Input Configuration (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="text-amber-400">🎣</span> Parámetros del Gancho
+                </h3>
+                <span class="text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">64 Fórmulas</span>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Idea, Tema o Producto *</label>
+                  <textarea id="aiHookInputIdea" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600" placeholder="Ej: Por qué no debes pagar la tarjeta antes de tiempo, tips de crédito, inversiones inmobiliarias..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Talento</label>
+                    <select id="aiHookClientSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                      <!-- Populated via JS -->
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Categoría de Gancho</label>
+                    <select id="aiHookCategorySelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                      <option value="ALL">🎯 Combinar 4 Mejores Fórmulas</option>
+                      <option value="Curiosidad y Debate">🧐 Curiosidad y Debate</option>
+                      <option value="Alerta y Negativo">⚠️ Alerta y Error Negativo</option>
+                      <option value="Prueba y Credibilidad">📊 Cifras y Casos Reales</option>
+                      <option value="Storytelling">📖 Storytelling & Transformación</option>
+                      <option value="Contraintuitivo">🤯 Contraintuitivo y Desmitificación</option>
+                      <option value="Ego y Desafío">🔥 Reto y Ego</option>
+                      <option value="Polémica Directa">⚡ Polémica y Provocación</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="button" id="btnAiGenerateHooks" onclick="runAiGenerateHooks()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>Generar 4 Ganchos Virales con Qwen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Results Display (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>✨ Ganchos Generados</span>
+                </h3>
+                <span id="aiHooksTimerBadge" class="text-xs text-slate-500 font-mono">Qwen 2.5 Listo</span>
+              </div>
+
+              <!-- Container for Generated Hook Cards -->
+              <div id="aiGeneratedHooksContainer" class="space-y-3">
+                <div class="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2">
+                  <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-purple-400/50"></i>
+                  <p class="text-xs text-slate-400">Escribe tu idea en el panel izquierdo y pulsa <b>Generar 4 Ganchos Virales</b>.</p>
+                  <p class="text-[11px] text-slate-500">Qwen aplicará las 64 fórmulas psicológicas probadas para crear aperturas que detienen el scroll.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: CREADOR DE REEL ESTRUCTURADO (4 CAJAS) -->
+        <!-- ============================================== -->
+        <div id="aiPanelReel" class="hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+            
+            <!-- Left Inputs (4 cols) -->
+            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="text-sky-400">📱</span> Idea para el Reel
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">La IA estructurará las 4 secciones optimizadas para retención.</p>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Tema / Idea Central *</label>
+                  <textarea id="aiReelInputIdea" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-sky-500 outline-none placeholder:text-slate-600" placeholder="Ej: 3 trucos con tarjetas de crédito para viajar gratis y subir puntaje..."></textarea>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Talento</label>
+                  <select id="aiReelClientSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                    <!-- Populated via JS -->
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1">Duración Objetivo</label>
+                  <select id="aiReelDurationSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                    <option value="45s">⚡ 45 Segundos (~90-110 palabras - Recomendado)</option>
+                    <option value="30s">⏱️ 30 Segundos (~60-75 palabras - Ultra Dinámico)</option>
+                    <option value="60s">📖 60 Segundos (~120-140 palabras - Profundo)</option>
+                  </select>
+                </div>
+
+                <button type="button" id="btnAiGenerateFullReel" onclick="runAiGenerateFullReel()" class="w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 hover:from-sky-400 hover:to-indigo-400 text-white font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-sky-950/50 cursor-pointer">
+                  <i data-lucide="zap" class="w-4 h-4"></i>
+                  <span>Crear Reel Completo con Qwen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right 4-Section Structured Editor (8 cols) -->
+            <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>🎬 Guión Estructurado Generado</span>
+                  </h3>
+                  <p class="text-[11px] text-slate-400">Puedes editar cualquier casilla antes de guardarlo o proyectarlo.</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button type="button" onclick="saveAiReelToMatrix()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/40 cursor-pointer" title="Guardar como nuevo guión en la Matriz">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Guardar en Matriz</span>
+                  </button>
+                  <button type="button" onclick="sendAiReelToTeleprompter()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer" title="Cargar en Teleprompter Pro">
+                    <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+                    <span>Teleprónter Pro</span>
+                  </button>
+                  <button type="button" onclick="copyAiReelAll()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copiar Todo</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- The 4 Structured Boxes -->
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-amber-400 mb-1 flex items-center justify-between">
+                    <span>🎣 1. Gancho (Hook):</span>
+                    <span class="text-[10px] text-slate-500 font-normal">0-3 segundos</span>
+                  </label>
+                  <textarea id="aiReelOutputGancho" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-amber-500 outline-none" placeholder="El gancho generado aparecerá aquí..."></textarea>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-sky-400 mb-1 flex items-center justify-between">
+                    <span>📖 2. Contexto / Historia (Cuerpo del Reel):</span>
+                    <span class="text-[10px] text-slate-500 font-normal">3-35 segundos</span>
+                  </label>
+                  <textarea id="aiReelOutputHistoria" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none" placeholder="El desarrollo del contenido aparecerá aquí..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold text-purple-400 mb-1 flex items-center justify-between">
+                      <span>💡 3. Moraleja / Valor:</span>
+                    </label>
+                    <textarea id="aiReelOutputMoraleja" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-purple-500 outline-none" placeholder="La conclusión o enseñanza clave..."></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-emerald-400 mb-1 flex items-center justify-between">
+                      <span>📣 4. Llamado a la Acción (CTA):</span>
+                    </label>
+                    <textarea id="aiReelOutputCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none" placeholder="El CTA para comentarios / guardados..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: AUDITOR DE VIRALIDAD -->
+        <!-- ============================================== -->
+        <div id="aiPanelAudit" class="hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+            
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="text-amber-400">🧠</span> Guión para Auditar
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">La IA analizará el potencial viral, nivel de retención y puntos débiles.</p>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Texto del Guión o Idea *</label>
+                  <textarea id="aiAuditInputText" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-amber-500 outline-none placeholder:text-slate-600" placeholder="Pega aquí el guión que deseas auditar..."></textarea>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button type="button" onclick="loadCurrentScriptIntoAudit()" class="text-xs text-sky-400 hover:text-sky-300 bg-slate-950 border border-slate-800 hover:border-sky-500/50 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="import" class="w-3.5 h-3.5"></i> Cargar Guión Activo
+                  </button>
+                </div>
+
+                <button type="button" id="btnAiRunAudit" onclick="runAiAuditViral()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
+                  <i data-lucide="activity" class="w-4 h-4"></i>
+                  <span>Auditar Potencial Viral con IA</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>📊 Diagnóstico y Sugerencias de Optimización</span>
+                </h3>
+              </div>
+
+              <div id="aiAuditResultsContainer" class="space-y-3">
+                <div class="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2">
+                  <i data-lucide="activity" class="w-8 h-8 mx-auto text-amber-400/50"></i>
+                  <p class="text-xs text-slate-400">Pega un guión y presiona <b>Auditar Potencial Viral</b> para obtener feedback de retención y una versión optimizada.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 4: ADAPTADOR DE TONO & TALENTO -->
+        <!-- ============================================== -->
+        <div id="aiPanelTone" class="hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+            
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="text-emerald-400">🎭</span> Adaptación de Estilo
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Reescribe el guión con la personalidad, energía y jerga del talento.</p>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Guión Original *</label>
+                  <textarea id="aiToneInputText" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none placeholder:text-slate-600" placeholder="Pega el guión que deseas reescribir..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Talento Objetivo</label>
+                    <select id="aiToneClientSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                      <!-- Populated via JS -->
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Estilo / Tono</label>
+                    <select id="aiToneStyleSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
+                      <option value="energetic">🔥 Ultra Enérgico & Contundente</option>
+                      <option value="financial_expert">💼 Experto Financiero / Autoridad</option>
+                      <option value="friendly_mentor">🤝 Mentor Cercano & Didáctico</option>
+                      <option value="storyteller">📖 Narrador Hipnótico</option>
+                      <option value="provocative">⚡ Polémico / Sin Rodeos</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="button" id="btnAiRunTone" onclick="runAiAdaptTone()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 cursor-pointer">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>Adaptar Guión a este Tono</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>✨ Versión Adaptada</span>
+                </h3>
+                <button type="button" onclick="copyAiToneResult()" class="text-xs text-slate-300 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+                </button>
+              </div>
+
+              <div>
+                <textarea id="aiToneOutputText" rows="9" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none leading-relaxed" placeholder="El guión adaptado aparecerá aquí listo para usar..."></textarea>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 5: OPTIMIZADOR DE TELEPRÓNTER -->
+        <!-- ============================================== -->
+        <div id="aiPanelTeleprompter" class="hidden space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+            
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="text-rose-400">⏱️</span> Pulir para Lectura en Cámara
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Elimina palabras trabadas, añade pausas naturales y calcula la duración exacta.</p>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 mb-1">Texto del Guión *</label>
+                  <textarea id="aiTeleprompterInputText" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-rose-500 outline-none placeholder:text-slate-600" placeholder="Pega el texto que vas a leer en el teleprónter..."></textarea>
+                </div>
+
+                <button type="button" id="btnAiRunTeleprompter" onclick="runAiOptimizeTeleprompter()" class="w-full bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 hover:from-rose-500 hover:to-pink-500 text-white font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer">
+                  <i data-lucide="wand-2" class="w-4 h-4"></i>
+                  <span>Optimizar Cadencia & Pausas</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-white">Texto Listo para Teleprónter</h3>
+                  <span id="aiTeleprompterStatsBadge" class="text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">0 palabras · 0s</span>
+                </div>
+                <button type="button" onclick="sendAiTeleprompterToPrompter()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer">
+                  <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+                  <span>Proyectar en Teleprónter</span>
+                </button>
+              </div>
+
+              <div>
+                <textarea id="aiTeleprompterOutputText" rows="9" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-white focus:border-rose-500 outline-none leading-relaxed font-sans" placeholder="El texto optimizado con pausas (...) y ritmo fluido aparecerá aquí..."></textarea>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 6: EXPLORADOR DE 64 GANCHOS VIRALES -->
+        <!-- ============================================== -->
+        <div id="aiPanelCatalog" class="hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            
+            <!-- Filter & Search Toolbar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-3">
+                <span class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <i data-lucide="book-open" class="w-5 h-5"></i>
+                </span>
+                <div>
+                  <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>Catálogo de 64 Ganchos Virales</span>
+                    <span class="text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 px-2.5 py-0.5 rounded-full">64 Fórmulas</span>
+                  </h3>
+                  <p class="text-xs text-slate-400">Explora la base de datos de fórmulas psicológicas y aplícalas con un clic.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Search Input -->
+                <div class="relative w-full sm:w-64">
+                  <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <input type="text" id="aiCatalogSearchInput" oninput="filterAiCatalog()" placeholder="Buscar gancho (ej: secreto, error...)" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-cyan-500">
+                </div>
+
+                <!-- Category Filter -->
+                <select id="aiCatalogCategoryFilter" onchange="filterAiCatalog()" class="bg-slate-950 border border-slate-800 text-xs font-semibold rounded-xl px-3 py-2 text-slate-200 outline-none cursor-pointer">
+                  <option value="ALL">📁 Todas las Categorías</option>
+                  <option value="Curiosidad y Debate">Curiosidad y Debate</option>
+                  <option value="Alerta y Negativo">Alerta y Negativo</option>
+                  <option value="Prueba y Credibilidad">Prueba y Credibilidad</option>
+                  <option value="Storytelling">Storytelling</option>
+                  <option value="Estructura y Valor">Estructura y Valor</option>
+                  <option value="Ego y Desafío">Ego y Desafío</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Grid of Hook Cards -->
+            <div id="aiCatalogGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+              <!-- Rendered via JS -->
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MODAL: CONFIGURACIÓN DE SERVIDOR IA (OLLAMA / QWEN) -->
+      <div id="aiServerConfigModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fadeIn">
+          <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+                <i data-lucide="server" class="w-4 h-4"></i>
+              </span>
+              <h3 class="font-bold text-white text-sm">Configuración de Servidor IA</h3>
+            </div>
+            <button type="button" onclick="closeAiServerConfigModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Dirección URL de Ollama / IA</label>
+              <input type="text" id="aiConfigServerUrl" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500 font-mono" placeholder="http://localhost:11434">
+              <p class="text-[11px] text-slate-400 mt-1">
+                • En este PC: <code class="text-purple-300">http://localhost:11434</code><br>
+                • Desde tu iPad / iPhone: <code class="text-cyan-300">http://192.168.1.10:11434</code>
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Modelo de IA</label>
+              <input type="text" id="aiConfigModelName" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500 font-mono" value="qwen2.5:7b">
+            </div>
+
+            <div id="aiConfigTestResult" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs hidden">
+              <!-- Test response injected via JS -->
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between">
+            <button type="button" onclick="testAiServerConnection()" id="btnAiTestConn" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-800/60 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Probar Conexión</span>
+            </button>
+            <button type="button" onclick="saveAiServerConfig()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md cursor-pointer">
+              Guardar Ajustes
+            </button>
+          </div>
+        </div>
+      </div>
+
     </main>
 
   </div>
@@ -1907,6 +2422,7 @@
 
   <div id="dedicatedPrintArea"></div>
 
+  <script src="ai-hooks-data.js?v=1.0"></script>
   <script src="app.js?v=5.2&t=1789315000"></script>
 </body>
 </html>

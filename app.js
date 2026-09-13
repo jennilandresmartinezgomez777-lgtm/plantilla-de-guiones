@@ -1920,12 +1920,14 @@ function switchView(viewName) {
   const vCards = document.getElementById('viewCards');
   const vTele = document.getElementById('viewTeleprompter');
   const vTelePro = document.getElementById('viewTeleprompterPro');
+  const vAi = document.getElementById('viewAiStudio');
 
   const tViral = document.getElementById('tabViralCalc');
   const tMatrix = document.getElementById('tabMatrix');
   const tCards = document.getElementById('tabCards');
   const tTele = document.getElementById('tabTeleprompter');
   const tTelePro = document.getElementById('tabTeleprompterPro');
+  const tAi = document.getElementById('tabAiStudio');
 
   const statsContainer = document.getElementById('statsBarContainer');
 
@@ -1934,6 +1936,7 @@ function switchView(viewName) {
   if (vCards) vCards.classList.add('hidden');
   if (vTele) vTele.classList.add('hidden');
   if (vTelePro) vTelePro.classList.add('hidden');
+  if (vAi) vAi.classList.add('hidden');
 
   const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
@@ -1945,6 +1948,7 @@ function switchView(viewName) {
   if (tCards) tCards.className = inactiveBtnClass;
   if (tTele) tTele.className = inactiveBtnClass;
   if (tTelePro) tTelePro.className = inactiveBtnClass;
+  if (tAi) tAi.className = inactiveBtnClass;
 
   if (viewName === 'viral_calc') {
     if (vViral) vViral.classList.remove('hidden');
@@ -6275,3 +6279,788 @@ function setupTeleprompterProEventListeners() {
     }
   });
 }
+
+
+// =======================================================
+// BLEX AI STUDIO & 64 VIRAL HOOKS ENGINE (QWEN 2.5 LOCAL)
+// =======================================================
+
+const aiState = {
+  serverUrl: localStorage.getItem('ai_server_url') || 'http://localhost:11434',
+  model: localStorage.getItem('ai_model') || 'qwen2.5:7b',
+  isConnected: false,
+  isGenerating: false,
+  activeTab: 'hooks',
+  selectedCatalogHookId: null
+};
+
+function getAiServerEndpoint() {
+  let url = (aiState.serverUrl || 'http://localhost:11434').trim().replace(/\/+$/, '');
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'http://' + url;
+  }
+  return url;
+}
+
+function aiUpdateConnectionBadge(connected) {
+  aiState.isConnected = connected;
+  const dots = [document.getElementById('aiStatusHeaderDot'), document.getElementById('aiServerStatusDot')];
+  const textElem = document.getElementById('aiServerStatusText');
+  
+  dots.forEach(d => {
+    if (!d) return;
+    if (connected) {
+      d.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80';
+    } else {
+      d.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/80';
+    }
+  });
+
+  if (textElem) {
+    textElem.textContent = connected ? `Qwen 2.5 Conectado (${aiState.model})` : 'IA Desconectada (Verificar Servidor)';
+    textElem.className = connected ? 'font-bold text-emerald-300' : 'font-bold text-rose-400';
+  }
+}
+
+async function checkAiServerHealth() {
+  try {
+    const endpoint = getAiServerEndpoint();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${endpoint}/api/tags`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      aiUpdateConnectionBadge(true);
+      return true;
+    }
+  } catch(e) {}
+  aiUpdateConnectionBadge(false);
+  return false;
+}
+
+async function aiCallOllama(prompt, systemInstruction = '', temperature = 0.7) {
+  aiState.isGenerating = true;
+  const endpoint = getAiServerEndpoint();
+
+  const payload = {
+    model: aiState.model,
+    prompt: prompt,
+    stream: false,
+    options: {
+      temperature: temperature
+    }
+  };
+  if (systemInstruction) {
+    payload.system = systemInstruction;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    const response = await fetch(`${endpoint}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Servidor IA respondió con error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    aiUpdateConnectionBadge(true);
+    return data.response;
+  } catch (error) {
+    aiUpdateConnectionBadge(false);
+    throw error;
+  } finally {
+    aiState.isGenerating = false;
+  }
+}
+
+function initAiStudio() {
+  checkAiServerHealth();
+  populateAiClientDropdowns();
+  renderAiCatalog();
+}
+
+function populateAiClientDropdowns() {
+  const clients = state.clients || ['Jennil'];
+  const selects = ['aiHookClientSelect', 'aiReelClientSelect', 'aiToneClientSelect'];
+  
+  selects.forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const currentVal = sel.value;
+    sel.innerHTML = '';
+    clients.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = `👤 ${c}`;
+      sel.appendChild(opt);
+    });
+    if (currentVal && clients.includes(currentVal)) {
+      sel.value = currentVal;
+    } else if (state.activeClient && state.activeClient !== 'ALL' && clients.includes(state.activeClient)) {
+      sel.value = state.activeClient;
+    }
+  });
+}
+
+function switchAiTab(tabName) {
+  aiState.activeTab = tabName;
+  const tabs = ['hooks', 'reel', 'audit', 'tone', 'teleprompter', 'catalog'];
+  
+  tabs.forEach(t => {
+    const panel = document.getElementById('aiPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById('aiTabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+    
+    if (panel) {
+      if (t === tabName) panel.classList.remove('hidden');
+      else panel.classList.add('hidden');
+    }
+
+    if (btn) {
+      if (t === tabName) {
+        btn.className = 'flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer';
+      } else {
+        btn.className = 'flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer';
+      }
+    }
+  });
+
+  if (tabName === 'catalog') {
+    renderAiCatalog();
+  }
+}
+
+// -------------------------------------------------------
+// 1. GENERADOR DE GANCHOS VIRALES (64 FÓRMULAS)
+// -------------------------------------------------------
+async function runAiGenerateHooks() {
+  const idea = document.getElementById('aiHookInputIdea')?.value?.trim();
+  const client = document.getElementById('aiHookClientSelect')?.value || 'Jennil';
+  const category = document.getElementById('aiHookCategorySelect')?.value || 'ALL';
+  const container = document.getElementById('aiGeneratedHooksContainer');
+  const btn = document.getElementById('btnAiGenerateHooks');
+  const timerBadge = document.getElementById('aiHooksTimerBadge');
+
+  if (!idea) {
+    alert('Por favor escribe una idea, tema o producto para generar los ganchos.');
+    return;
+  }
+
+  // Filter 4 relevant hooks from the 64 database
+  let availableHooks = (typeof BLEX_VIRAL_HOOKS_64 !== 'undefined') ? BLEX_VIRAL_HOOKS_64 : [];
+  if (category !== 'ALL') {
+    const filtered = availableHooks.filter(h => h.category.toLowerCase().includes(category.toLowerCase()));
+    if (filtered.length >= 4) availableHooks = filtered;
+  }
+
+  // Shuffle and pick 4
+  const shuffled = [...availableHooks].sort(() => 0.5 - Math.random());
+  const selectedHooks = shuffled.slice(0, 4);
+  const hooksContext = selectedHooks.map((h, i) => `GANCHO ${i+1} [Fórmula: ${h.name}]: "${h.formula}" (Ejemplo: ${h.example})`).join('\n');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen 2.5 creando ganchos psicológicos...</span>';
+  }
+  if (timerBadge) timerBadge.textContent = '⏳ Generando con GPU...';
+
+  const startTime = Date.now();
+
+  const systemPrompt = `Eres el Director Creativo de BLEX STUDIO experto en ganchos psicológicos de alta retención para Instagram Reels, TikTok y YouTube Shorts.
+Tu objetivo es crear exactamente 4 ganchos diferentes para el cliente "${client}".
+Debes aplicar estrictamente estas 4 fórmulas de nuestro catálogo:
+${hooksContext}
+
+FORMATO DE RESPUESTA OBLIGATORIO:
+Responde ÚNICAMENTE con los 4 ganchos en este formato exacto, sin introducciones ni textos extra:
+[GANCHO 1: Nombre de la fórmula 1]
+Texto del gancho 1 redactado en 1 o 2 frases ultra directas y atractivas.
+
+[GANCHO 2: Nombre de la fórmula 2]
+Texto del gancho 2 redactado en 1 o 2 frases ultra directas y atractivas.
+
+[GANCHO 3: Nombre de la fórmula 3]
+Texto del gancho 3 redactado en 1 o 2 frases ultra directas y atractivas.
+
+[GANCHO 4: Nombre de la fórmula 4]
+Texto del gancho 4 redactado en 1 o 2 frases ultra directas y atractivas.`;
+
+  const userPrompt = `Tema/Idea: ${idea}`;
+
+  try {
+    const response = await aiCallOllama(userPrompt, systemPrompt, 0.75);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    if (timerBadge) timerBadge.textContent = `⚡ Generado en ${duration}s`;
+
+    // Parse the 4 hooks
+    const blocks = response.split(/\[GANCHO/i).filter(b => b.trim());
+    if (container) container.innerHTML = '';
+
+    if (blocks.length === 0) {
+      // Fallback display raw response
+      const card = createHookCardElement('Gancho Viral', response.trim(), 1);
+      if (container) container.appendChild(card);
+    } else {
+      blocks.forEach((block, idx) => {
+        const closeBracketIdx = block.indexOf(']');
+        let formulaName = `Fórmula ${idx + 1}`;
+        let hookText = block.trim();
+        
+        if (closeBracketIdx !== -1) {
+          formulaName = block.substring(0, closeBracketIdx).replace(/^[0-9:\s]+/, '').trim();
+          hookText = block.substring(closeBracketIdx + 1).trim();
+        }
+
+        const card = createHookCardElement(formulaName, hookText, idx + 1);
+        if (container) container.appendChild(card);
+      });
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  } catch (err) {
+    if (container) {
+      container.innerHTML = `
+        <div class="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-xs text-rose-300 space-y-2">
+          <p class="font-bold flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> No se pudo conectar con Ollama en ${aiState.serverUrl}</p>
+          <p class="text-slate-300">Asegúrate de que Ollama esté ejecutándose en tu PC (puerto 11434).</p>
+          <button type="button" onclick="openAiServerConfigModal()" class="bg-rose-900/60 hover:bg-rose-800 text-white font-semibold px-3 py-1.5 rounded-lg">Verificar Configuración</button>
+        </div>
+      `;
+    }
+    if (window.lucide) window.lucide.createIcons();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i><span>Generar 4 Ganchos Virales con Qwen</span>';
+    }
+  }
+}
+
+function createHookCardElement(formulaName, hookText, index) {
+  const div = document.createElement('div');
+  div.className = 'bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 rounded-xl p-4 transition space-y-2.5 shadow-md group';
+  
+  const cleanHookText = hookText.replace(/^[\n\r"']+|[\n\r"']+$/g, '');
+
+  div.innerHTML = `
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+        <span>🎣</span> ${formulaName || 'Gancho ' + index}
+      </span>
+      <div class="flex items-center gap-1.5">
+        <button type="button" class="btn-copy-hook text-xs text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-800 transition flex items-center gap-1 cursor-pointer">
+          <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+        </button>
+        <button type="button" class="btn-use-hook text-xs font-bold text-sky-400 hover:text-sky-300 bg-sky-950/40 hover:bg-sky-900/60 px-2.5 py-1 rounded-lg border border-sky-800/60 transition flex items-center gap-1 cursor-pointer">
+          <i data-lucide="arrow-right" class="w-3 h-3"></i> Crear Reel
+        </button>
+      </div>
+    </div>
+    <p class="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed">${cleanHookText}</p>
+  `;
+
+  div.querySelector('.btn-copy-hook').addEventListener('click', () => {
+    navigator.clipboard.writeText(cleanHookText);
+    alert('✅ Gancho copiado al portapapeles.');
+  });
+
+  div.querySelector('.btn-use-hook').addEventListener('click', () => {
+    switchAiTab('reel');
+    const reelIdeaInput = document.getElementById('aiReelInputIdea');
+    if (reelIdeaInput) reelIdeaInput.value = cleanHookText;
+    const ganchoBox = document.getElementById('aiReelOutputGancho');
+    if (ganchoBox) ganchoBox.value = cleanHookText;
+  });
+
+  return div;
+}
+
+// -------------------------------------------------------
+// 2. CREADOR DE REEL ESTRUCTURADO (4 CAJAS)
+// -------------------------------------------------------
+async function runAiGenerateFullReel() {
+  const idea = document.getElementById('aiReelInputIdea')?.value?.trim();
+  const client = document.getElementById('aiReelClientSelect')?.value || 'Jennil';
+  const duration = document.getElementById('aiReelDurationSelect')?.value || '45s';
+  const btn = document.getElementById('btnAiGenerateFullReel');
+
+  if (!idea) {
+    alert('Por favor escribe la idea central o el tema para estructurar el Reel.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen 2.5 estructurando el Reel...</span>';
+  }
+
+  const systemPrompt = `Eres el Guionista Principal de BLEX STUDIO. Vas a redactar un guión para Instagram Reel de alto impacto para el cliente "${client}".
+Duración objetivo: ${duration}.
+El guión debe tener exactamente 4 partes estructuradas para máxima retención y comentarios:
+
+1. GANCHO (0-3 segundos): Una frase impactante que detiene el scroll (usando fórmulas psicológicas).
+2. HISTORIA / CONTEXTO (3-35 segundos): Desarrollo fluido, sin rodeos, con puntos clave y dinamismo.
+3. MORALEJA (35-40 segundos): El valor principal, aprendizaje o lección sintetizada en 1 o 2 frases.
+4. CTA (Llamado a la Acción): Una orden clara y fácil para comentar una palabra clave (ej: "Comenta SCORE...", "Escribe GUIA...").
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+Debes responder ÚNICAMENTE en este formato con estas etiquetas exactas:
+[GANCHO]
+Texto del gancho aquí.
+
+[HISTORIA]
+Texto del contexto y cuerpo del reel aquí.
+
+[MORALEJA]
+Texto de la moraleja aquí.
+
+[CTA]
+Texto del llamado a la acción aquí.`;
+
+  const userPrompt = `Idea del reel: ${idea}`;
+
+  try {
+    const response = await aiCallOllama(userPrompt, systemPrompt, 0.7);
+
+    // Parse sections
+    const ganchoMatch = response.match(/\[GANCHO\]([\s\S]*?)(?=\[HISTORIA\]|$)/i);
+    const historiaMatch = response.match(/\[HISTORIA\]([\s\S]*?)(?=\[MORALEJA\]|$)/i);
+    const moralejaMatch = response.match(/\[MORALEJA\]([\s\S]*?)(?=\[CTA\]|$)/i);
+    const ctaMatch = response.match(/\[CTA\]([\s\S]*?)$/i);
+
+    const outGancho = document.getElementById('aiReelOutputGancho');
+    const outHistoria = document.getElementById('aiReelOutputHistoria');
+    const outMoraleja = document.getElementById('aiReelOutputMoraleja');
+    const outCTA = document.getElementById('aiReelOutputCTA');
+
+    if (outGancho) outGancho.value = ganchoMatch ? ganchoMatch[1].trim() : '';
+    if (outHistoria) outHistoria.value = historiaMatch ? historiaMatch[1].trim() : '';
+    if (outMoraleja) outMoraleja.value = moralejaMatch ? moralejaMatch[1].trim() : '';
+    if (outCTA) outCTA.value = ctaMatch ? ctaMatch[1].trim() : '';
+
+    if (!ganchoMatch && !historiaMatch) {
+      if (outHistoria) outHistoria.value = response.trim();
+    }
+  } catch(err) {
+    alert('Error al conectar con la IA local: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i><span>Crear Reel Completo con Qwen</span>';
+    }
+  }
+}
+
+function saveAiReelToMatrix() {
+  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
+  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
+  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
+  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
+  const client = document.getElementById('aiReelClientSelect')?.value || 'Jennil';
+  const idea = document.getElementById('aiReelInputIdea')?.value?.trim() || 'Reel IA';
+
+  if (!gancho && !historia) {
+    alert('No hay contenido para guardar. Genera un Reel primero.');
+    return;
+  }
+
+  const nextNumber = state.scripts.length > 0 ? Math.max(...state.scripts.map(s => s.number || 0)) + 1 : 1;
+  const newScript = {
+    id: generateId(),
+    number: nextNumber,
+    client: client,
+    ideaGanadora: idea.substring(0, 80),
+    gancho: gancho,
+    historia: historia,
+    moraleja: moraleja,
+    cta: cta,
+    actor: client,
+    status: 'Idea',
+    createdAt: new Date().toISOString()
+  };
+
+  state.scripts.unshift(newScript);
+  saveScripts();
+  renderMatrix();
+  renderCards();
+  alert(`✅ ¡Guión #${nextNumber} guardado exitosamente en la Matriz de Guiones!`);
+  switchView('matrix');
+}
+
+function sendAiReelToTeleprompter() {
+  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
+  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
+  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
+  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
+  const idea = document.getElementById('aiReelInputIdea')?.value?.trim() || 'Reel IA';
+
+  if (!gancho && !historia) {
+    alert('No hay contenido para enviar. Genera un Reel primero.');
+    return;
+  }
+
+  if (typeof tpState !== 'undefined') {
+    tpState.mode = 'reel';
+    tpState.activeReelSlot = 1;
+    tpState.activeReelSection = 'all';
+    tpState.reelScripts[1] = {
+      title: idea.substring(0, 25),
+      gancho: gancho,
+      historia: historia,
+      moraleja: moraleja,
+      cta: cta
+    };
+    if (typeof tpSaveScriptsToStorage === 'function') tpSaveScriptsToStorage();
+    if (typeof tpUpdateToolbarSelectors === 'function') tpUpdateToolbarSelectors();
+    if (typeof tpGetActiveDisplayScript === 'function') tpState.scriptText = tpGetActiveDisplayScript();
+    if (typeof tpRenderScript === 'function') tpRenderScript();
+    if (typeof tpResetToTop === 'function') tpResetToTop();
+  }
+
+  switchView('teleprompter_pro');
+}
+
+function copyAiReelAll() {
+  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
+  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
+  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
+  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
+
+  let full = [];
+  if (gancho) full.push('🎣 GANCHO:\n' + gancho);
+  if (historia) full.push('📖 CONTEXTO / HISTORIA:\n' + historia);
+  if (moraleja) full.push('💡 MORALEJA:\n' + moraleja);
+  if (cta) full.push('📣 CTA:\n' + cta);
+
+  navigator.clipboard.writeText(full.join('\n\n'));
+  alert('✅ Guión completo copiado al portapapeles.');
+}
+
+// -------------------------------------------------------
+// 3. AUDITOR DE VIRALIDAD CON IA
+// -------------------------------------------------------
+function loadCurrentScriptIntoAudit() {
+  const currentTitle = document.getElementById('viralIdeaTitle')?.value || '';
+  const auditInput = document.getElementById('aiAuditInputText');
+  if (auditInput) {
+    auditInput.value = currentTitle || (state.scripts[0]?.gancho ? `${state.scripts[0].gancho}\n\n${state.scripts[0].historia || ''}` : '');
+  }
+}
+
+async function runAiAuditViral() {
+  const text = document.getElementById('aiAuditInputText')?.value?.trim();
+  const container = document.getElementById('aiAuditResultsContainer');
+  const btn = document.getElementById('btnAiRunAudit');
+
+  if (!text) {
+    alert('Por favor pega el texto o guión que deseas auditar.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen auditando retención y viralidad...</span>';
+  }
+
+  const systemPrompt = `Eres un Auditor de Contenido Viral de BLEX STUDIO. Evalúa el siguiente guión según los 4 pilares de viralidad:
+1. Simplicidad (¿Lo entiende un niño de 5 años? Cero tecnicismos).
+2. Interés Universal (¿Le importa a 50 de cada 100 personas?).
+3. Retención y Dinamismo (¿El gancho y el cuerpo evitan que la gente deslice?).
+4. Eficacia del CTA (¿Provoca comentarios masivos?).
+
+Da tu veredicto estructurado con:
+• PUNTUACIÓN ESTIMADA (de 0 a 14.5 pts).
+• PUNTOS FUERTES (1 o 2 aspectos destacados).
+• PUNTOS DÉBILES / FUGAS DE RETENCIÓN (Qué recortar o cambiar).
+• VERSIÓN OPTIMIZADA VIRAL (El guión reescrito con máxima potencia).`;
+
+  try {
+    const response = await aiCallOllama(text, systemPrompt, 0.6);
+    if (container) {
+      container.innerHTML = `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-3 text-xs sm:text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap">${response}</div>
+      `;
+    }
+  } catch(err) {
+    alert('Error al auditar con la IA: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="activity" class="w-4 h-4"></i><span>Auditar Potencial Viral con IA</span>';
+    }
+  }
+}
+
+// -------------------------------------------------------
+// 4. ADAPTADOR DE TONO & TALENTO
+// -------------------------------------------------------
+async function runAiAdaptTone() {
+  const text = document.getElementById('aiToneInputText')?.value?.trim();
+  const client = document.getElementById('aiToneClientSelect')?.value || 'Jennil';
+  const style = document.getElementById('aiToneStyleSelect')?.value || 'energetic';
+  const outputElem = document.getElementById('aiToneOutputText');
+  const btn = document.getElementById('btnAiRunTone');
+
+  if (!text) {
+    alert('Por favor pega el guión que deseas adaptar.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Adaptando estilo con Qwen...</span>';
+  }
+
+  const systemPrompt = `Eres el Adaptador de Tono de BLEX STUDIO. Toma el siguiente texto y reescríbelo con el estilo y personalidad de "${client}".
+Estilo seleccionado: ${style}.
+Conserva la idea central pero cambia el vocabulario, ritmo, aperturas y cierres para que suene 100% natural, carismático y magnético en cámara.
+Responde ÚNICAMENTE con el texto adaptado.`;
+
+  try {
+    const response = await aiCallOllama(text, systemPrompt, 0.75);
+    if (outputElem) outputElem.value = response.trim();
+  } catch(err) {
+    alert('Error al adaptar tono: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i><span>Adaptar Guión a este Tono</span>';
+    }
+  }
+}
+
+function copyAiToneResult() {
+  const text = document.getElementById('aiToneOutputText')?.value?.trim();
+  if (!text) return;
+  navigator.clipboard.writeText(text);
+  alert('✅ Guión adaptado copiado al portapapeles.');
+}
+
+// -------------------------------------------------------
+// 5. OPTIMIZADOR DE TELEPRÓNTER
+// -------------------------------------------------------
+async function runAiOptimizeTeleprompter() {
+  const text = document.getElementById('aiTeleprompterInputText')?.value?.trim();
+  const outputElem = document.getElementById('aiTeleprompterOutputText');
+  const badge = document.getElementById('aiTeleprompterStatsBadge');
+  const btn = document.getElementById('btnAiRunTeleprompter');
+
+  if (!text) {
+    alert('Por favor pega el texto que vas a leer en el teleprónter.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Optimizando cadencia de lectura...</span>';
+  }
+
+  const systemPrompt = `Eres un Especialista en Locución y Teleprompter de BLEX STUDIO.
+Toma el siguiente guión y optimízalo para ser leído fluidamente a cámara:
+1. Elimina palabras difíciles de pronunciar o trabalenguas.
+2. Acorta frases largas en oraciones breves y contundentes.
+3. Inserta pausas naturales con puntos suspensivos (...) donde el orador deba respirar o cambiar de entonación.
+4. Mantén un tono directo y conversacional.
+Responde ÚNICAMENTE con el guión optimizado para teleprompter.`;
+
+  try {
+    const response = await aiCallOllama(text, systemPrompt, 0.5);
+    if (outputElem) outputElem.value = response.trim();
+
+    const wordsCount = response.trim().split(/\s+/).length;
+    const estimatedSeconds = Math.round(wordsCount / 2.3);
+    if (badge) badge.textContent = `${wordsCount} palabras · ~${estimatedSeconds}s de lectura`;
+  } catch(err) {
+    alert('Error al optimizar teleprónter: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="wand-2" class="w-4 h-4"></i><span>Optimizar Cadencia & Pausas</span>';
+    }
+  }
+}
+
+function sendAiTeleprompterToPrompter() {
+  const text = document.getElementById('aiTeleprompterOutputText')?.value?.trim();
+  if (!text) {
+    alert('No hay texto optimizado para proyectar. Pulsa "Optimizar Cadencia" primero.');
+    return;
+  }
+
+  if (typeof tpState !== 'undefined') {
+    tpState.mode = 'libre';
+    tpState.activeLibreSlot = 1;
+    tpState.libreScripts[1] = {
+      title: 'Guión Optimizado IA',
+      text: text
+    };
+    if (typeof tpSaveScriptsToStorage === 'function') tpSaveScriptsToStorage();
+    if (typeof tpUpdateToolbarSelectors === 'function') tpUpdateToolbarSelectors();
+    if (typeof tpGetActiveDisplayScript === 'function') tpState.scriptText = tpGetActiveDisplayScript();
+    if (typeof tpRenderScript === 'function') tpRenderScript();
+    if (typeof tpResetToTop === 'function') tpResetToTop();
+  }
+
+  switchView('teleprompter_pro');
+}
+
+// -------------------------------------------------------
+// 6. EXPLORADOR DEL CATÁLOGO DE 64 GANCHOS
+// -------------------------------------------------------
+function renderAiCatalog() {
+  const grid = document.getElementById('aiCatalogGrid');
+  if (!grid) return;
+  
+  const search = (document.getElementById('aiCatalogSearchInput')?.value || '').toLowerCase().trim();
+  const cat = document.getElementById('aiCatalogCategoryFilter')?.value || 'ALL';
+  const hooks = (typeof BLEX_VIRAL_HOOKS_64 !== 'undefined') ? BLEX_VIRAL_HOOKS_64 : [];
+
+  grid.innerHTML = '';
+
+  const filtered = hooks.filter(h => {
+    const matchCat = (cat === 'ALL') || h.category.toLowerCase().includes(cat.toLowerCase());
+    const matchSearch = !search || h.name.toLowerCase().includes(search) || h.summary.toLowerCase().includes(search) || h.example.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  filtered.forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'bg-slate-950/80 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-4 transition space-y-2.5 shadow-md flex flex-col justify-between group';
+    card.innerHTML = `
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-black text-white group-hover:text-cyan-300 transition">#${h.id}. ${h.name}</span>
+          <span class="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">${h.category}</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-snug">${h.summary}</p>
+        <div class="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800/80 space-y-1 text-[11px]">
+          <p class="text-amber-300 font-semibold"><b>Ejemplo:</b> "${h.example}"</p>
+          <p class="text-slate-400"><b>Fórmula:</b> ${h.formula}</p>
+        </div>
+      </div>
+      <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
+        <button type="button" class="btn-copy-formula text-[11px] text-slate-400 hover:text-white bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 transition flex items-center gap-1 cursor-pointer">
+          <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+        </button>
+        <button type="button" class="btn-apply-hook bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 font-bold text-[11px] px-3 py-1 rounded-lg border border-cyan-800/50 transition flex items-center gap-1 cursor-pointer">
+          <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i> Usar con IA
+        </button>
+      </div>
+    `;
+
+    card.querySelector('.btn-copy-formula').addEventListener('click', () => {
+      navigator.clipboard.writeText(`${h.name}: ${h.formula}`);
+      alert(`✅ Fórmula #${h.id} copiada al portapapeles.`);
+    });
+
+    card.querySelector('.btn-apply-hook').addEventListener('click', () => {
+      switchAiTab('hooks');
+      const ideaInput = document.getElementById('aiHookInputIdea');
+      if (ideaInput && !ideaInput.value.trim()) {
+        ideaInput.value = `Aplicar fórmula: ${h.name} (${h.formula})`;
+      }
+      const catSelect = document.getElementById('aiHookCategorySelect');
+      if (catSelect) {
+        catSelect.value = 'ALL';
+      }
+    });
+
+    grid.appendChild(card);
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function filterAiCatalog() {
+  renderAiCatalog();
+}
+
+// -------------------------------------------------------
+// 7. MODAL CONFIGURACIÓN DE SERVIDOR IA
+// -------------------------------------------------------
+function openAiServerConfigModal() {
+  const modal = document.getElementById('aiServerConfigModal');
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const modelInput = document.getElementById('aiConfigModelName');
+  const resultDiv = document.getElementById('aiConfigTestResult');
+
+  if (urlInput) urlInput.value = aiState.serverUrl || 'http://localhost:11434';
+  if (modelInput) modelInput.value = aiState.model || 'qwen2.5:7b';
+  if (resultDiv) resultDiv.classList.add('hidden');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeAiServerConfigModal() {
+  const modal = document.getElementById('aiServerConfigModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function testAiServerConnection() {
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const resultDiv = document.getElementById('aiConfigTestResult');
+  const btn = document.getElementById('btnAiTestConn');
+
+  let testUrl = (urlInput?.value || 'http://localhost:11434').trim().replace(/\/+$/, '');
+  if (!testUrl.startsWith('http://') && !testUrl.startsWith('https://')) {
+    testUrl = 'http://' + testUrl;
+  }
+
+  if (btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Probando...</span>';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${testUrl}/api/tags`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      const modelsList = data.models ? data.models.map(m => m.name).join(', ') : 'Ninguno';
+      if (resultDiv) {
+        resultDiv.className = 'p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300 space-y-1';
+        resultDiv.innerHTML = `<p class="font-bold">✅ Conexión Exitosa con Ollama</p><p class="text-slate-300">Modelos detectados: <b>${modelsList}</b></p>`;
+        resultDiv.classList.remove('hidden');
+      }
+      aiUpdateConnectionBadge(true);
+    } else {
+      throw new Error(`Código HTTP ${res.status}`);
+    }
+  } catch(err) {
+    if (resultDiv) {
+      resultDiv.className = 'p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 space-y-1';
+      resultDiv.innerHTML = `<p class="font-bold">❌ No se pudo conectar a ${testUrl}</p><p class="text-slate-400">Verifica que Ollama esté corriendo y que la dirección IP sea correcta.</p>`;
+      resultDiv.classList.remove('hidden');
+    }
+    aiUpdateConnectionBadge(false);
+  } finally {
+    if (btn) btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Probar Conexión</span>';
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function saveAiServerConfig() {
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const modelInput = document.getElementById('aiConfigModelName');
+
+  if (urlInput && urlInput.value.trim()) {
+    aiState.serverUrl = urlInput.value.trim();
+    localStorage.setItem('ai_server_url', aiState.serverUrl);
+  }
+
+  if (modelInput && modelInput.value.trim()) {
+    aiState.model = modelInput.value.trim();
+    localStorage.setItem('ai_model', aiState.model);
+  }
+
+  checkAiServerHealth();
+  closeAiServerConfigModal();
+  alert('✅ Configuración del Servidor IA guardada.');
+}
+
