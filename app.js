@@ -449,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
   calculateViralScore();
   renderViralHistoryTable();
   setupEventListeners();
+  initTeleprompterProEngine();
   refreshLucideIcons();
 });
 
@@ -1329,6 +1330,8 @@ function setupEventListeners() {
   tabMatrix.addEventListener('click', () => switchView('matrix'));
   tabCards.addEventListener('click', () => switchView('cards'));
   tabTeleprompter.addEventListener('click', () => switchView('teleprompter'));
+  const tabTeleprompterPro = document.getElementById('tabTeleprompterPro');
+  if (tabTeleprompterPro) tabTeleprompterPro.addEventListener('click', () => switchView('teleprompter_pro'));
 
   // Filters
   clientFilterSelect.addEventListener('change', (e) => {
@@ -1433,11 +1436,13 @@ function switchView(viewName) {
   const vMatrix = document.getElementById('viewMatrix');
   const vCards = document.getElementById('viewCards');
   const vTele = document.getElementById('viewTeleprompter');
+  const vTelePro = document.getElementById('viewTeleprompterPro');
 
   const tViral = document.getElementById('tabViralCalc');
   const tMatrix = document.getElementById('tabMatrix');
   const tCards = document.getElementById('tabCards');
   const tTele = document.getElementById('tabTeleprompter');
+  const tTelePro = document.getElementById('tabTeleprompterPro');
 
   const statsContainer = document.getElementById('statsBarContainer');
 
@@ -1445,15 +1450,18 @@ function switchView(viewName) {
   if (vMatrix) vMatrix.classList.add('hidden');
   if (vCards) vCards.classList.add('hidden');
   if (vTele) vTele.classList.add('hidden');
+  if (vTelePro) vTelePro.classList.add('hidden');
 
   const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
   const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
+  const activeProBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md whitespace-nowrap cursor-pointer";
 
   if (tViral) tViral.className = inactiveBtnClass;
   if (tMatrix) tMatrix.className = inactiveBtnClass;
   if (tCards) tCards.className = inactiveBtnClass;
   if (tTele) tTele.className = inactiveBtnClass;
+  if (tTelePro) tTelePro.className = inactiveBtnClass;
 
   if (viewName === 'viral_calc') {
     if (vViral) vViral.classList.remove('hidden');
@@ -1473,6 +1481,13 @@ function switchView(viewName) {
     if (vTele) vTele.classList.remove('hidden');
     if (tTele) tTele.className = activeBtnClass;
     if (statsContainer) statsContainer.classList.remove('hidden');
+  } else if (viewName === 'teleprompter_pro') {
+    if (vTelePro) vTelePro.classList.remove('hidden');
+    if (tTelePro) tTelePro.className = activeProBtnClass;
+    if (statsContainer) statsContainer.classList.add('hidden');
+    setTimeout(() => {
+      if (typeof tpRecalculateWordPositions === 'function') tpRecalculateWordPositions();
+    }, 100);
   }
   refreshLucideIcons();
 }
@@ -3236,4 +3251,839 @@ function exportViralEvaluationsCSV() {
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+// ==========================================
+// TELEPROMPTER PRO (IPAD ENGINE) LOGIC
+// ==========================================
+
+const TP_SAMPLE_SCRIPTS = {
+  presentation: `¡Hola a todos! Bienvenidos a esta presentación especial.\n\nHoy vamos a explorar una manera increíblemente fácil y fluida de utilizar un teleprompter profesional directamente desde cualquier iPad o navegador web.\n\nCon este sistema, puedes ajustar la velocidad de desplazamiento exacta que necesitas para tu ritmo de habla, cambiar el tamaño del texto para leer a mayor distancia y tener el resaltado activo palabra por palabra en tiempo real.\n\n¡Es hora de comenzar tus grabaciones con total confianza y fluidez!`,
+  youtube: `¡Qué tal amigos! Bienvenidos de nuevo al canal.\n\nEn el video de hoy vamos a analizar un tema súper interesante que me han estado pidiendo mucho en los comentarios.\n\nRecuerda darle me gusta a este video, suscribirte al canal si aún no lo has hecho, y activar la campanita de notificaciones.\n\n¡Comencemos!`
+};
+
+const TP_DEFAULT_SLOTS = {
+  1: { title: 'Guión 1: Presentación', text: TP_SAMPLE_SCRIPTS.presentation },
+  2: { title: 'Guión 2: YouTube Video', text: TP_SAMPLE_SCRIPTS.youtube },
+  3: { title: 'Guión 3', text: '' },
+  4: { title: 'Guión 4', text: '' },
+  5: { title: 'Guión 5', text: '' },
+  6: { title: 'Guión 6', text: '' },
+  7: { title: 'Guión 7', text: '' },
+  8: { title: 'Guión 8', text: '' },
+  9: { title: 'Guión 9', text: '' },
+  10: { title: 'Guión 10', text: '' }
+};
+
+let tpStoredScripts = null;
+try {
+  tpStoredScripts = JSON.parse(localStorage.getItem('tp_scripts_v2'));
+} catch(e) {}
+
+if (!tpStoredScripts) {
+  tpStoredScripts = TP_DEFAULT_SLOTS;
+}
+
+const tpActiveSlotNum = parseInt(localStorage.getItem('tp_active_slot')) || 1;
+const tpSavedOrientMode = localStorage.getItem('tp_orient_mode') || 'auto';
+const tpSavedGuidePos = parseInt(localStorage.getItem('tp_guide_pos')) || 40;
+
+const tpState = {
+  scripts: tpStoredScripts,
+  activeSlot: tpActiveSlotNum,
+  editingSlot: tpActiveSlotNum,
+  scriptText: tpStoredScripts[tpActiveSlotNum]?.text || tpStoredScripts[1].text,
+  isPlaying: false,
+  speed: parseInt(localStorage.getItem('tp_speed')) || 35,
+  fontSize: parseInt(localStorage.getItem('tp_font_size')) || 64,
+  highlightColor: localStorage.getItem('tp_highlight_color') || '#ffee58',
+  mirrorX: localStorage.getItem('tp_mirror_x') === 'true',
+  mirrorY: localStorage.getItem('tp_mirror_y') === 'true',
+  showGuide: localStorage.getItem('tp_show_guide') !== 'false',
+  marginWidth: parseInt(localStorage.getItem('tp_margin')) || 88,
+  orientationMode: tpSavedOrientMode,
+  guidePosPct: tpSavedGuidePos,
+  words: [],
+  lines: [],
+  activeLineIdx: -1,
+  currentScrollY: 0,
+  lastTimestamp: 0,
+  controlsTimeout: null
+};
+
+let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGuidePosLabel, tpControlBar;
+let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
+let tpQuickSlotSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
+let tpEditorModal, tpScriptTextarea, tpSlotChipsContainer, tpSlotTitleInput, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
+let tpPresetSample1, tpPresetSample2, tpPresetClear, tpPresetSync;
+let tpSettingsModal, tpBtnCloseSettings, tpBtnSaveSettings, tpToggleMirrorY, tpToggleGuideLine;
+let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatches;
+
+function tpSaveScriptsToStorage() {
+  localStorage.setItem('tp_scripts_v2', JSON.stringify(tpState.scripts));
+  localStorage.setItem('tp_active_slot', tpState.activeSlot);
+  localStorage.setItem('tp_script', tpState.scriptText);
+}
+
+function syncStudioScriptsToTeleprompter() {
+  if (!tpState) return;
+  const clientScripts = state.activeClient === 'ALL'
+    ? state.scripts
+    : state.scripts.filter(s => s.client === state.activeClient);
+    
+  if (!clientScripts || clientScripts.length === 0) return;
+
+  clientScripts.slice(0, 10).forEach((s, idx) => {
+    const slotNum = idx + 1;
+    const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Guión ' + slotNum}`;
+    let text = `GANCHO:\n${s.gancho || ''}\n\nHISTORIA:\n${s.historia || ''}\n\nLLAMADO A LA ACCIÓN (CTA):\n${s.cta || ''}`;
+    if (s.moraleja) text += `\n\nMORALEJA:\n${s.moraleja}`;
+    
+    tpState.scripts[slotNum] = {
+      title: title,
+      text: text
+    };
+  });
+  
+  tpState.scriptText = tpState.scripts[tpState.activeSlot]?.text || '';
+  tpSaveScriptsToStorage();
+  tpUpdateQuickSlotDropdown();
+  tpRenderScript();
+}
+
+function openScriptInTeleprompterPro(scriptId) {
+  const script = state.scripts.find(s => s.id === scriptId);
+  if (!script) return;
+  
+  const text = `GANCHO:\n${script.gancho || ''}\n\nHISTORIA:\n${script.historia || ''}\n\nLLAMADO A LA ACCIÓN (CTA):\n${script.cta || ''}${script.moraleja ? '\n\nMORALEJA:\n' + script.moraleja : ''}`;
+  const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Guión'}`;
+
+  tpState.activeSlot = 1;
+  tpState.scripts[1] = { title, text };
+  tpState.scriptText = text;
+  tpSaveScriptsToStorage();
+  tpUpdateQuickSlotDropdown();
+  tpRenderScript();
+  tpResetToTop();
+  
+  switchView('teleprompter_pro');
+}
+
+function tpUpdateQuickSlotDropdown() {
+  if (!tpQuickSlotSelect) return;
+  tpQuickSlotSelect.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    const slotTitle = tpState.scripts[i]?.title || ('Guión ' + i);
+    const hasText = tpState.scripts[i]?.text?.trim() ? ' ●' : '';
+    opt.textContent = slotTitle + hasText;
+    if (i === tpState.activeSlot) opt.selected = true;
+    tpQuickSlotSelect.appendChild(opt);
+  }
+}
+
+function tpRenderSlotChips() {
+  if (!tpSlotChipsContainer) return;
+  tpSlotChipsContainer.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tp-slot-chip' + (i === tpState.editingSlot ? ' active' : '');
+    
+    const title = tpState.scripts[i]?.title || ('Guión ' + i);
+    btn.textContent = title;
+
+    if (tpState.scripts[i]?.text?.trim()) {
+      const dot = document.createElement('span');
+      dot.className = 'tp-dot-has-text';
+      btn.appendChild(dot);
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpSwitchEditingSlot(i);
+    });
+
+    tpSlotChipsContainer.appendChild(btn);
+  }
+}
+
+function tpSwitchEditingSlot(newSlotNum) {
+  if (tpState.scripts[tpState.editingSlot]) {
+    tpState.scripts[tpState.editingSlot].text = tpScriptTextarea.value;
+    tpState.scripts[tpState.editingSlot].title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+  }
+
+  tpState.editingSlot = newSlotNum;
+  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, text: '' };
+  tpSlotTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
+  tpScriptTextarea.value = currentData.text || '';
+  tpRenderSlotChips();
+}
+
+function tpApplyStylesAndTransforms() {
+  document.documentElement.style.setProperty('--tp-highlight-color', tpState.highlightColor);
+  
+  if (tpSpeedSlider) tpSpeedSlider.value = tpState.speed;
+  if (tpSpeedVal) tpSpeedVal.textContent = tpState.speed;
+  
+  if (tpFontSlider) tpFontSlider.value = tpState.fontSize;
+  if (tpFontVal) tpFontVal.textContent = tpState.fontSize + 'px';
+  if (tpPrompterContent) tpPrompterContent.style.fontSize = tpState.fontSize + 'px';
+
+  if (tpMarginSlider) tpMarginSlider.value = tpState.marginWidth;
+  if (tpMarginVal) tpMarginVal.textContent = tpState.marginWidth + '%';
+  if (tpPrompterContent) tpPrompterContent.style.maxWidth = tpState.marginWidth + '%';
+
+  if (tpReadingGuide) tpReadingGuide.style.display = tpState.showGuide ? 'flex' : 'none';
+  if (tpToggleGuideLine) tpToggleGuideLine.textContent = tpState.showGuide ? 'Visible' : 'Oculto';
+
+  if (tpToggleMirrorY) tpToggleMirrorY.textContent = tpState.mirrorY ? 'Activado' : 'Desactivado';
+
+  tpUpdateMirrorClasses();
+  tpUpdateColorSwatchSelection();
+  tpApplyOrientationMode();
+  tpUpdateGuidePosition(tpState.guidePosPct);
+}
+
+function tpUpdateGuidePosition(newPct) {
+  tpState.guidePosPct = Math.max(15, Math.min(75, Math.round(newPct)));
+  if (tpReadingGuide) tpReadingGuide.style.top = tpState.guidePosPct + '%';
+  if (tpPrompterTransform) {
+    tpPrompterTransform.style.paddingTop = tpState.guidePosPct + 'vh';
+    tpPrompterTransform.style.paddingBottom = (100 - tpState.guidePosPct + 25) + 'vh';
+  }
+
+  if (tpGuidePosSlider) tpGuidePosSlider.value = tpState.guidePosPct;
+  if (tpGuidePosVal) tpGuidePosVal.textContent = tpState.guidePosPct + '%';
+  if (tpGuidePosLabel) tpGuidePosLabel.textContent = tpState.guidePosPct + '%';
+
+  localStorage.setItem('tp_guide_pos', tpState.guidePosPct);
+  setTimeout(tpRecalculateWordPositions, 40);
+}
+
+function tpApplyOrientationMode() {
+  document.body.classList.remove('tp-mode-portrait', 'tp-mode-landscape', 'tp-mode-rotate90');
+  if (tpState.orientationMode && tpState.orientationMode !== 'auto') {
+    document.body.classList.add('tp-mode-' + tpState.orientationMode);
+  }
+
+  const chips = document.querySelectorAll('#tp-orient-chips .tp-chip-btn');
+  chips.forEach(chip => {
+    if (chip.getAttribute('data-orient') === tpState.orientationMode) {
+      chip.style.background = '#ffee58';
+      chip.style.color = '#000000';
+      chip.style.fontWeight = '700';
+    } else {
+      chip.style.background = '';
+      chip.style.color = '';
+      chip.style.fontWeight = '';
+    }
+  });
+
+  if (tpBtnOrient) {
+    tpBtnOrient.classList.toggle('tp-btn-active', tpState.orientationMode !== 'auto');
+  }
+
+  setTimeout(tpRecalculateWordPositions, 60);
+}
+
+function tpCycleOrientationMode() {
+  const modes = ['auto', 'portrait', 'landscape', 'rotate90'];
+  const currentIdx = modes.indexOf(tpState.orientationMode);
+  const nextMode = modes[(currentIdx + 1) % modes.length];
+  tpState.orientationMode = nextMode;
+  localStorage.setItem('tp_orient_mode', nextMode);
+  tpApplyOrientationMode();
+}
+
+function tpUpdateMirrorClasses() {
+  if (!tpPrompterTransform) return;
+  tpPrompterTransform.className = '';
+  if (tpState.mirrorX && tpState.mirrorY) {
+    tpPrompterTransform.classList.add('tp-mirror-xy');
+  } else if (tpState.mirrorX) {
+    tpPrompterTransform.classList.add('tp-mirror-x');
+  } else if (tpState.mirrorY) {
+    tpPrompterTransform.classList.add('tp-mirror-y');
+  }
+  if (tpBtnMirror) tpBtnMirror.classList.toggle('tp-btn-active', tpState.mirrorX);
+}
+
+function tpUpdateColorSwatchSelection() {
+  if (!tpColorSwatches) return;
+  tpColorSwatches.forEach(swatch => {
+    if (swatch.getAttribute('data-color') === tpState.highlightColor) {
+      swatch.classList.add('selected');
+    } else {
+      swatch.classList.remove('selected');
+    }
+  });
+}
+
+function tpRenderScript() {
+  if (!tpPrompterContent) return;
+  tpPrompterContent.innerHTML = '';
+  tpState.words = [];
+  tpState.lines = [];
+
+  const textToRender = tpState.scriptText || '';
+  const paragraphs = textToRender.split(/\n+/);
+  let globalWordIdx = 0;
+
+  paragraphs.forEach(pText => {
+    if (!pText.trim()) return;
+    const pElem = document.createElement('div');
+    pElem.className = 'tp-paragraph';
+
+    const wordTokens = pText.trim().split(/\s+/);
+    wordTokens.forEach((w, idx) => {
+      const span = document.createElement('span');
+      span.className = 'tp-word';
+      span.textContent = w;
+      span.setAttribute('data-idx', globalWordIdx);
+      
+      pElem.appendChild(span);
+      if (idx < wordTokens.length - 1) {
+        pElem.appendChild(document.createTextNode(' '));
+      }
+
+      tpState.words.push({
+        text: w,
+        elem: span,
+        idx: globalWordIdx
+      });
+
+      globalWordIdx++;
+    });
+
+    tpPrompterContent.appendChild(pElem);
+  });
+
+  tpRecalculateWordPositions();
+  requestAnimationFrame(tpRecalculateWordPositions);
+}
+
+function tpRecalculateWordPositions() {
+  tpState.lines = [];
+  if (!tpPrompterContent || tpState.words.length === 0) return;
+
+  const contentTop = tpPrompterContent.getBoundingClientRect().top;
+
+  let currentLineWords = [];
+  let currentTop = null;
+
+  tpState.words.forEach(w => {
+    const absTop = w.elem.getBoundingClientRect().top - contentTop;
+    w.top = absTop;
+    w.height = w.elem.offsetHeight;
+
+    if (currentTop === null) {
+      currentTop = absTop;
+      currentLineWords.push(w);
+    } else if (Math.abs(absTop - currentTop) < 14) {
+      currentLineWords.push(w);
+    } else {
+      tpState.lines.push({
+        words: currentLineWords,
+        top: currentTop
+      });
+      currentTop = absTop;
+      currentLineWords = [w];
+    }
+  });
+
+  if (currentLineWords.length > 0) {
+    tpState.lines.push({
+      words: currentLineWords,
+      top: currentTop
+    });
+  }
+}
+
+function tpRenderLoop(timestamp) {
+  if (!tpState.lastTimestamp) tpState.lastTimestamp = timestamp;
+  const dt = (timestamp - tpState.lastTimestamp) / 1000;
+  tpState.lastTimestamp = timestamp;
+
+  if (tpState.isPlaying && tpPrompterView) {
+    const pixelsPerSec = tpState.speed * 2.8;
+    tpState.currentScrollY += pixelsPerSec * dt;
+    tpPrompterView.scrollTop = tpState.currentScrollY;
+
+    if (tpPrompterView.scrollTop + tpPrompterView.clientHeight >= tpPrompterView.scrollHeight - 20) {
+      tpPause();
+    }
+  }
+
+  tpUpdateWordHighlights();
+  requestAnimationFrame(tpRenderLoop);
+}
+
+function tpUpdateWordHighlights() {
+  if (!tpReadingGuide || !tpState.words || tpState.words.length === 0) return;
+
+  const guideRect = tpReadingGuide.getBoundingClientRect();
+  const guideCenterY = guideRect.top + (guideRect.height / 2);
+
+  const linesMap = new Map();
+
+  tpState.words.forEach(w => {
+    const rect = w.elem.getBoundingClientRect();
+    if (rect.height === 0 || rect.width === 0) return;
+    const centerY = rect.top + (rect.height / 2);
+    
+    let matchedLineY = null;
+    for (const lineY of linesMap.keys()) {
+      if (Math.abs(centerY - lineY) < 12) {
+        matchedLineY = lineY;
+        break;
+      }
+    }
+
+    if (matchedLineY !== null) {
+      linesMap.get(matchedLineY).push({ word: w, centerY });
+    } else {
+      linesMap.set(centerY, [{ word: w, centerY }]);
+    }
+  });
+
+  if (linesMap.size === 0) return;
+
+  let closestLineY = null;
+  let minDiff = Infinity;
+
+  for (const [lineY, wordGroup] of linesMap.entries()) {
+    const diff = Math.abs(lineY - guideCenterY);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestLineY = lineY;
+    }
+  }
+
+  linesMap.forEach((wordGroup, lineY) => {
+    const isCurrentActiveLine = (lineY === closestLineY);
+    const isPastLine = (!isCurrentActiveLine && lineY < guideCenterY - 14);
+
+    wordGroup.forEach(item => {
+      if (isCurrentActiveLine) {
+        item.word.elem.className = 'tp-word active';
+      } else if (isPastLine) {
+        item.word.elem.className = 'tp-word past';
+      } else {
+        item.word.elem.className = 'tp-word';
+      }
+    });
+  });
+}
+
+function tpTogglePlay() {
+  if (tpState.isPlaying) {
+    tpPause();
+  } else {
+    tpPlay();
+  }
+}
+
+function tpPlay() {
+  tpState.isPlaying = true;
+  if (tpPrompterView) tpState.currentScrollY = tpPrompterView.scrollTop;
+  if (tpIconPlay) tpIconPlay.style.display = 'none';
+  if (tpIconPause) tpIconPause.style.display = 'block';
+  if (tpStatusDot) tpStatusDot.classList.add('playing');
+  if (tpStatusText) tpStatusText.textContent = 'TRANSMITIENDO';
+  tpScheduleHideControls();
+}
+
+function tpPause() {
+  tpState.isPlaying = false;
+  if (tpIconPlay) tpIconPlay.style.display = 'block';
+  if (tpIconPause) tpIconPause.style.display = 'none';
+  if (tpStatusDot) tpStatusDot.classList.remove('playing');
+  if (tpStatusText) tpStatusText.textContent = 'PAUSADO';
+  tpShowControls();
+}
+
+function tpResetToTop() {
+  tpPause();
+  if (tpPrompterView) tpPrompterView.scrollTop = 0;
+  tpState.currentScrollY = 0;
+  tpState.activeLineIdx = -1;
+  tpUpdateWordHighlights();
+}
+
+function tpShowControls() {
+  if (!tpControlBar) return;
+  tpControlBar.classList.remove('hidden');
+  clearTimeout(tpState.controlsTimeout);
+  if (tpState.isPlaying) {
+    tpScheduleHideControls();
+  }
+}
+
+function tpScheduleHideControls() {
+  clearTimeout(tpState.controlsTimeout);
+  tpState.controlsTimeout = setTimeout(() => {
+    if (tpState.isPlaying && tpControlBar) {
+      tpControlBar.classList.add('hidden');
+    }
+  }, 3200);
+}
+
+function initTeleprompterProEngine() {
+  tpPrompterView = document.getElementById('tp-prompter-view');
+  tpPrompterTransform = document.getElementById('tp-prompter-transform');
+  tpPrompterContent = document.getElementById('tp-prompter-content');
+  tpReadingGuide = document.getElementById('tp-reading-guide');
+  tpGuidePosLabel = document.getElementById('tp-guide-pos-label');
+  tpControlBar = document.getElementById('tp-control-bar');
+  
+  tpBtnPlay = document.getElementById('tp-btn-play');
+  tpIconPlay = document.getElementById('tp-icon-play');
+  tpIconPause = document.getElementById('tp-icon-pause');
+  tpBtnReset = document.getElementById('tp-btn-reset');
+  tpBtnMirror = document.getElementById('tp-btn-mirror');
+  tpBtnOrient = document.getElementById('tp-btn-orient');
+  tpBtnEdit = document.getElementById('tp-btn-edit');
+  tpBtnSettings = document.getElementById('tp-btn-settings');
+  tpBtnFullscreen = document.getElementById('tp-btn-fullscreen');
+  tpQuickSlotSelect = document.getElementById('tp-quick-slot-select');
+  
+  tpSpeedSlider = document.getElementById('tp-speed-slider');
+  tpSpeedVal = document.getElementById('tp-speed-val');
+  tpFontSlider = document.getElementById('tp-font-slider');
+  tpFontVal = document.getElementById('tp-font-val');
+  
+  tpStatusDot = document.getElementById('tp-status-dot');
+  tpStatusText = document.getElementById('tp-status-text');
+
+  tpEditorModal = document.getElementById('tp-editor-modal');
+  tpScriptTextarea = document.getElementById('tp-script-textarea');
+  tpSlotChipsContainer = document.getElementById('tp-slot-chips-container');
+  tpSlotTitleInput = document.getElementById('tp-slot-title-input');
+  tpBtnCloseEditor = document.getElementById('tp-btn-close-editor');
+  tpBtnCancelEditor = document.getElementById('tp-btn-cancel-editor');
+  tpBtnSaveEditor = document.getElementById('tp-btn-save-editor');
+  tpPresetSample1 = document.getElementById('tp-preset-sample1');
+  tpPresetSample2 = document.getElementById('tp-preset-sample2');
+  tpPresetClear = document.getElementById('tp-preset-clear');
+  tpPresetSync = document.getElementById('tp-preset-sync');
+
+  tpSettingsModal = document.getElementById('tp-settings-modal');
+  tpBtnCloseSettings = document.getElementById('tp-btn-close-settings');
+  tpBtnSaveSettings = document.getElementById('tp-btn-save-settings');
+  tpToggleMirrorY = document.getElementById('tp-toggle-mirror-y');
+  tpToggleGuideLine = document.getElementById('tp-toggle-guide-line');
+  tpGuidePosSlider = document.getElementById('tp-guide-pos-slider');
+  tpGuidePosVal = document.getElementById('tp-guide-pos-val');
+  tpMarginSlider = document.getElementById('tp-margin-slider');
+  tpMarginVal = document.getElementById('tp-margin-val');
+  tpColorSwatches = document.querySelectorAll('.tp-color-swatch');
+
+  if (!tpPrompterView) return;
+
+  syncStudioScriptsToTeleprompter();
+  tpApplyStylesAndTransforms();
+  tpUpdateQuickSlotDropdown();
+  tpRenderScript();
+  setupTeleprompterProEventListeners();
+  requestAnimationFrame(tpRenderLoop);
+}
+
+function setupTeleprompterProEventListeners() {
+  if (tpQuickSlotSelect) {
+    tpQuickSlotSelect.addEventListener('change', (e) => {
+      const chosenSlot = parseInt(e.target.value);
+      tpState.activeSlot = chosenSlot;
+      tpState.scriptText = tpState.scripts[chosenSlot]?.text || '';
+      tpSaveScriptsToStorage();
+      tpRenderScript();
+      tpResetToTop();
+    });
+  }
+
+  if (tpPrompterView) {
+    tpPrompterView.addEventListener('scroll', () => {
+      if (!tpState.isPlaying || Math.abs(tpPrompterView.scrollTop - tpState.currentScrollY) > 30) {
+        tpState.currentScrollY = tpPrompterView.scrollTop;
+      }
+    });
+
+    tpPrompterView.addEventListener('click', (e) => {
+      if (tpControlBar && tpControlBar.classList.contains('hidden')) {
+        tpShowControls();
+      } else {
+        tpTogglePlay();
+      }
+    });
+  }
+
+  const tpAppElem = document.getElementById('tpApp');
+  if (tpAppElem) {
+    tpAppElem.addEventListener('mousemove', tpShowControls);
+    tpAppElem.addEventListener('touchstart', tpShowControls);
+  }
+
+  if (tpBtnPlay) tpBtnPlay.addEventListener('click', (e) => { e.stopPropagation(); tpTogglePlay(); });
+  if (tpBtnReset) tpBtnReset.addEventListener('click', (e) => { e.stopPropagation(); tpResetToTop(); });
+
+  if (tpBtnMirror) {
+    tpBtnMirror.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpState.mirrorX = !tpState.mirrorX;
+      localStorage.setItem('tp_mirror_x', tpState.mirrorX);
+      tpUpdateMirrorClasses();
+    });
+  }
+
+  if (tpBtnOrient) {
+    tpBtnOrient.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpCycleOrientationMode();
+    });
+  }
+
+  const orientChips = document.querySelectorAll('#tp-orient-chips .tp-chip-btn');
+  orientChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const mode = chip.getAttribute('data-orient');
+      tpState.orientationMode = mode;
+      localStorage.setItem('tp_orient_mode', mode);
+      tpApplyOrientationMode();
+    });
+  });
+
+  if (tpSpeedSlider) {
+    tpSpeedSlider.addEventListener('input', (e) => {
+      tpState.speed = parseInt(e.target.value);
+      if (tpSpeedVal) tpSpeedVal.textContent = tpState.speed;
+      localStorage.setItem('tp_speed', tpState.speed);
+    });
+  }
+
+  if (tpFontSlider) {
+    tpFontSlider.addEventListener('input', (e) => {
+      tpState.fontSize = parseInt(e.target.value);
+      if (tpFontVal) tpFontVal.textContent = tpState.fontSize + 'px';
+      if (tpPrompterContent) tpPrompterContent.style.fontSize = tpState.fontSize + 'px';
+      localStorage.setItem('tp_font_size', tpState.fontSize);
+      setTimeout(tpRecalculateWordPositions, 50);
+    });
+  }
+
+  const toggleFullscreen = (e) => {
+    if (e) e.stopPropagation();
+    const elem = document.getElementById('tpApp') || document.documentElement;
+    if (!document.fullscreenElement) {
+      if (elem.requestFullscreen) elem.requestFullscreen().catch(err => {});
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  };
+
+  if (tpBtnFullscreen) tpBtnFullscreen.addEventListener('click', toggleFullscreen);
+  const tpBtnExpandFullscreen = document.getElementById('tpBtnExpandFullscreen');
+  if (tpBtnExpandFullscreen) tpBtnExpandFullscreen.addEventListener('click', toggleFullscreen);
+
+  const tpBtnSyncStudio = document.getElementById('tpBtnSyncStudio');
+  if (tpBtnSyncStudio) {
+    tpBtnSyncStudio.addEventListener('click', () => {
+      syncStudioScriptsToTeleprompter();
+      alert("✅ ¡Guiones de Blex Studio importados con éxito a las 10 carpetas del Teleprónter!");
+    });
+  }
+
+  if (tpBtnEdit) {
+    tpBtnEdit.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpPause();
+      tpSwitchEditingSlot(tpState.activeSlot);
+      if (tpEditorModal) tpEditorModal.classList.add('open');
+    });
+  }
+
+  if (tpBtnCloseEditor) tpBtnCloseEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
+  if (tpBtnCancelEditor) tpBtnCancelEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
+
+  if (tpBtnSaveEditor) {
+    tpBtnSaveEditor.addEventListener('click', () => {
+      if (tpState.scripts[tpState.editingSlot]) {
+        tpState.scripts[tpState.editingSlot].text = tpScriptTextarea.value;
+        tpState.scripts[tpState.editingSlot].title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+      }
+
+      tpState.activeSlot = tpState.editingSlot;
+      tpState.scriptText = tpState.scripts[tpState.activeSlot].text;
+
+      tpSaveScriptsToStorage();
+      tpUpdateQuickSlotDropdown();
+      tpRenderScript();
+      tpResetToTop();
+      if (tpEditorModal) tpEditorModal.classList.remove('open');
+    });
+  }
+
+  if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation);
+  if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube);
+  if (tpPresetClear) tpPresetClear.addEventListener('click', () => tpScriptTextarea.value = '');
+  if (tpPresetSync) {
+    tpPresetSync.addEventListener('click', () => {
+      syncStudioScriptsToTeleprompter();
+      tpSwitchEditingSlot(tpState.editingSlot);
+    });
+  }
+
+  if (tpBtnSettings) {
+    tpBtnSettings.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpPause();
+      if (tpSettingsModal) tpSettingsModal.classList.add('open');
+    });
+  }
+
+  if (tpBtnCloseSettings) tpBtnCloseSettings.addEventListener('click', () => tpSettingsModal.classList.remove('open'));
+  if (tpBtnSaveSettings) tpBtnSaveSettings.addEventListener('click', () => tpSettingsModal.classList.remove('open'));
+
+  if (tpColorSwatches) {
+    tpColorSwatches.forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        tpState.highlightColor = swatch.getAttribute('data-color');
+        localStorage.setItem('tp_highlight_color', tpState.highlightColor);
+        document.documentElement.style.setProperty('--tp-highlight-color', tpState.highlightColor);
+        tpUpdateColorSwatchSelection();
+      });
+    });
+  }
+
+  if (tpToggleMirrorY) {
+    tpToggleMirrorY.addEventListener('click', () => {
+      tpState.mirrorY = !tpState.mirrorY;
+      localStorage.setItem('tp_mirror_y', tpState.mirrorY);
+      tpToggleMirrorY.textContent = tpState.mirrorY ? 'Activado' : 'Desactivado';
+      tpUpdateMirrorClasses();
+    });
+  }
+
+  if (tpToggleGuideLine) {
+    tpToggleGuideLine.addEventListener('click', () => {
+      tpState.showGuide = !tpState.showGuide;
+      localStorage.setItem('tp_show_guide', tpState.showGuide);
+      if (tpReadingGuide) tpReadingGuide.style.display = tpState.showGuide ? 'flex' : 'none';
+      tpToggleGuideLine.textContent = tpState.showGuide ? 'Visible' : 'Oculto';
+    });
+  }
+
+  if (tpGuidePosSlider) {
+    tpGuidePosSlider.addEventListener('input', (e) => {
+      tpUpdateGuidePosition(parseInt(e.target.value));
+    });
+  }
+
+  let isDraggingGuide = false;
+  const onGuideDragStart = (e) => {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+    isDraggingGuide = true;
+    if (tpReadingGuide) tpReadingGuide.classList.add('dragging');
+  };
+  const onGuideDragMove = (e) => {
+    if (!isDraggingGuide) return;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const pct = (clientY / window.innerHeight) * 100;
+    tpUpdateGuidePosition(pct);
+  };
+  const onGuideDragEnd = () => {
+    if (isDraggingGuide) {
+      isDraggingGuide = false;
+      if (tpReadingGuide) tpReadingGuide.classList.remove('dragging');
+    }
+  };
+
+  if (tpReadingGuide) {
+    tpReadingGuide.addEventListener('mousedown', onGuideDragStart);
+    tpReadingGuide.addEventListener('touchstart', onGuideDragStart, { passive: true });
+  }
+  window.addEventListener('mousemove', onGuideDragMove);
+  window.addEventListener('touchmove', onGuideDragMove, { passive: true });
+  window.addEventListener('mouseup', onGuideDragEnd);
+  window.addEventListener('touchend', onGuideDragEnd);
+
+  if (tpMarginSlider) {
+    tpMarginSlider.addEventListener('input', (e) => {
+      tpState.marginWidth = parseInt(e.target.value);
+      if (tpMarginVal) tpMarginVal.textContent = tpState.marginWidth + '%';
+      if (tpPrompterContent) tpPrompterContent.style.maxWidth = tpState.marginWidth + '%';
+      localStorage.setItem('tp_margin', tpState.marginWidth);
+      setTimeout(tpRecalculateWordPositions, 50);
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    setTimeout(tpRecalculateWordPositions, 100);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (state.currentView !== 'teleprompter_pro') return;
+    if (document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT')) {
+      return;
+    }
+
+    switch(e.code) {
+      case 'Space':
+      case 'Enter':
+        e.preventDefault();
+        tpTogglePlay();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        tpState.speed = Math.min(100, tpState.speed + 3);
+        if (tpSpeedSlider) tpSpeedSlider.value = tpState.speed;
+        if (tpSpeedVal) tpSpeedVal.textContent = tpState.speed;
+        localStorage.setItem('tp_speed', tpState.speed);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        tpState.speed = Math.max(1, tpState.speed - 3);
+        if (tpSpeedSlider) tpSpeedSlider.value = tpState.speed;
+        if (tpSpeedVal) tpSpeedVal.textContent = tpState.speed;
+        localStorage.setItem('tp_speed', tpState.speed);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        tpState.fontSize = Math.min(120, tpState.fontSize + 4);
+        if (tpFontSlider) tpFontSlider.value = tpState.fontSize;
+        if (tpFontVal) tpFontVal.textContent = tpState.fontSize + 'px';
+        if (tpPrompterContent) tpPrompterContent.style.fontSize = tpState.fontSize + 'px';
+        localStorage.setItem('tp_font_size', tpState.fontSize);
+        setTimeout(tpRecalculateWordPositions, 50);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        tpState.fontSize = Math.max(28, tpState.fontSize - 4);
+        if (tpFontSlider) tpFontSlider.value = tpState.fontSize;
+        if (tpFontVal) tpFontVal.textContent = tpState.fontSize + 'px';
+        if (tpPrompterContent) tpPrompterContent.style.fontSize = tpState.fontSize + 'px';
+        localStorage.setItem('tp_font_size', tpState.fontSize);
+        setTimeout(tpRecalculateWordPositions, 50);
+        break;
+      case 'KeyR':
+        tpResetToTop();
+        break;
+      case 'KeyM':
+        tpState.mirrorX = !tpState.mirrorX;
+        localStorage.setItem('tp_mirror_x', tpState.mirrorX);
+        tpUpdateMirrorClasses();
+        break;
+      case 'KeyO':
+        tpCycleOrientationMode();
+        break;
+      case 'KeyF':
+        toggleFullscreen(e);
+        break;
+      case 'KeyE':
+        if (tpBtnEdit) tpBtnEdit.click();
+        break;
+    }
+  });
 }

@@ -129,6 +129,10 @@
             <i data-lucide="clapperboard" class="w-4 h-4"></i>
             <span>Set / Grabación</span>
           </button>
+          <button id="tabTeleprompterPro" onclick="switchView('teleprompter_pro')" class="flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer">
+            <i data-lucide="tv" class="w-4 h-4 text-emerald-400"></i>
+            <span>Teleprónter iPad</span>
+          </button>
         </div>
 
         <!-- Filters & Tools -->
@@ -827,6 +831,239 @@
 
         <div id="teleprompterDisplay" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8 min-h-[500px]">
           <!-- Prompter content injected via JS -->
+        </div>
+      </section>
+
+      <!-- VIEW 4: TELEPROMPTER IPAD / PRO -->
+      <section id="viewTeleprompterPro" class="hidden space-y-4">
+        <!-- Top Toolbar Header for Teleprompter Pro -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl print:hidden">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <i data-lucide="tv" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-white flex items-center gap-2">
+                Teleprónter iPad / Web
+                <span class="text-[10px] uppercase font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">Pro Engine</span>
+              </h2>
+              <p class="text-xs text-slate-400">Teleprónter profesional con resaltado en vivo, control de velocidad, espejo y atajos bluetooth.</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button id="tpBtnSyncStudio" title="Sincronizar Guiones de BLEX STUDIO" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Importar Guiones del Cliente</span>
+            </button>
+            <button id="tpBtnExpandFullscreen" title="Modo Pantalla Completa" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/40">
+              <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+              <span>Pantalla Completa</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Teleprompter Main Canvas Application -->
+        <div id="tpApp">
+          <!-- Top Status Indicator -->
+          <div class="tp-status-badge" id="tp-status-badge">
+            <div class="tp-status-dot" id="tp-status-dot"></div>
+            <span id="tp-status-text">PAUSADO</span>
+          </div>
+
+          <!-- Draggable Reading Focus Guide Bar -->
+          <div id="tp-reading-guide" title="Arrastra esta franja arriba/abajo para ajustar la posición">
+            <span class="tp-guide-drag-handle" title="Arrastrar posición">↕</span>
+            <span class="tp-guide-drag-handle" id="tp-guide-pos-label">40%</span>
+          </div>
+
+          <!-- Teleprompter View Area -->
+          <div id="tp-prompter-view">
+            <!-- Transform Container (for Mirroring) -->
+            <div id="tp-prompter-transform">
+              <div id="tp-prompter-content">
+                <!-- Dynamically generated word spans -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Floating Controls -->
+          <div class="tp-control-bar" id="tp-control-bar">
+            <!-- Cluster 1: Playback Controls -->
+            <div class="tp-ctrl-group">
+              <button class="tp-btn" id="tp-btn-reset" title="Reiniciar al inicio (R)">
+                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+              </button>
+              <button class="tp-btn tp-btn-primary" id="tp-btn-play" title="Iniciar / Pausar (Espacio)">
+                <svg id="tp-icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="tp-icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </button>
+            </div>
+
+            <!-- Cluster 2: Quick Slot Selector -->
+            <div class="tp-ctrl-group">
+              <select id="tp-quick-slot-select" class="tp-quick-slot-select" title="Seleccionar Guión Activo">
+                <!-- Dynamically populated 1 to 10 -->
+              </select>
+            </div>
+
+            <!-- Cluster 3: Sliders -->
+            <div class="tp-ctrl-group">
+              <div class="tp-slider-group">
+                <label for="tp-speed-slider">Velocidad</label>
+                <input type="range" id="tp-speed-slider" min="1" max="100" value="35">
+                <span class="tp-value-badge" id="tp-speed-val">35</span>
+              </div>
+              <div class="tp-slider-group">
+                <label for="tp-font-slider">Tamaño</label>
+                <input type="range" id="tp-font-slider" min="28" max="120" value="64">
+                <span class="tp-value-badge" id="tp-font-val">64px</span>
+              </div>
+            </div>
+
+            <!-- Cluster 4: Action Tools -->
+            <div class="tp-ctrl-group">
+              <button class="tp-btn" id="tp-btn-mirror" title="Modo Espejo Horizontal (M)">
+                <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+              </button>
+              <button class="tp-btn" id="tp-btn-edit" title="Editar Guión (E)">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+              <button class="tp-btn" id="tp-btn-orient" title="Modo de Pantalla: Vertical / Horizontal / Auto (O)">
+                <svg viewBox="0 0 24 24"><path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 5.29 18.27 0 12 0 8.73 0 5.82 1.34 3.76 3.51L1 0.75V8h7.25L5.42 5.17C7.09 3.51 9.42 2.5 12 2.5c1.6 0 3.12.43 4.48 1.17zM12 21.5c-1.6 0-3.12-.43-4.48-1.17C4.25 18.78 1.91 15.61 1.55 11.85h-1.5C.56 17.56 5.73 22.85 12 22.85c3.27 0 6.18-1.34 8.24-3.51L23 22.09V14.85h-7.25l2.83 2.83c-1.67 1.66-4 2.67-6.58 2.67z"/></svg>
+              </button>
+              <button class="tp-btn" id="tp-btn-settings" title="Configuración">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              </button>
+              <button class="tp-btn" id="tp-btn-fullscreen" title="Pantalla Completa (F)">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Script Editor Modal -->
+          <div class="tp-modal-overlay" id="tp-editor-modal">
+            <div class="tp-modal-card">
+              <div class="tp-modal-header">
+                <h2>Gestor de Guiones (1 al 10)</h2>
+                <button class="tp-btn" id="tp-btn-close-editor">
+                  <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+              </div>
+              <div class="tp-modal-body">
+                <!-- 10 Script Slots Selector -->
+                <div>
+                  <span style="display:block; font-size:12px; font-weight:700; color:#aaa; margin-bottom:6px; text-transform:uppercase;">Seleccionar Guión para Editar (1 al 10):</span>
+                  <div class="tp-slot-chips" id="tp-slot-chips-container">
+                    <!-- Rendered via JS -->
+                  </div>
+                </div>
+
+                <!-- Slot Title Input -->
+                <div>
+                  <input type="text" id="tp-slot-title-input" class="tp-slot-title-input" placeholder="Nombre o título de este guión (ej: Presentación, Tema 1, etc.)">
+                </div>
+
+                <div class="tp-preset-btns">
+                  <button class="tp-chip-btn" id="tp-preset-sync">🔄 Importar Guiones de Blex Studio</button>
+                  <button class="tp-chip-btn" id="tp-preset-sample1">Ejemplo Presentación</button>
+                  <button class="tp-chip-btn" id="tp-preset-sample2">Ejemplo YouTube</button>
+                  <button class="tp-chip-btn" id="tp-preset-clear">Limpiar Texto</button>
+                </div>
+
+                <textarea class="tp-script-input" id="tp-script-textarea" placeholder="Escribe o pega aquí el texto de tu discurso para este guión..."></textarea>
+              </div>
+              <div class="tp-modal-footer">
+                <button class="tp-action-btn tp-action-btn-secondary" id="tp-btn-cancel-editor">Cancelar</button>
+                <button class="tp-action-btn tp-action-btn-primary" id="tp-btn-save-editor">Guardar y Usar Guión</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Modal -->
+          <div class="tp-modal-overlay" id="tp-settings-modal">
+            <div class="tp-modal-card">
+              <div class="tp-modal-header">
+                <h2>Configuración y Personalización</h2>
+                <button class="tp-btn" id="tp-btn-close-settings">
+                  <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+              </div>
+              <div class="tp-modal-body">
+                <!-- Color Selector -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Color de Resaltado de Palabras</span>
+                  <div class="tp-color-options">
+                    <div class="tp-color-swatch selected" data-color="#ffee58" style="background:#ffee58;" title="Amarillo Neón"></div>
+                    <div class="tp-color-swatch" data-color="#00e5ff" style="background:#00e5ff;" title="Cian Eléctrico"></div>
+                    <div class="tp-color-swatch" data-color="#76ff03" style="background:#76ff03;" title="Verde Lima"></div>
+                    <div class="tp-color-swatch" data-color="#ff4081" style="background:#ff4081;" title="Rosa Neón"></div>
+                    <div class="tp-color-swatch" data-color="#ff9100" style="background:#ff9100;" title="Naranja Vivo"></div>
+                  </div>
+                </div>
+
+                <!-- Orientation Mode Option -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Modo de Pantalla (Orientación)</span>
+                  <div class="tp-preset-btns" id="tp-orient-chips">
+                    <button class="tp-chip-btn" data-orient="auto">Auto 📱🖥️</button>
+                    <button class="tp-chip-btn" data-orient="portrait">Vertical 📱</button>
+                    <button class="tp-chip-btn" data-orient="landscape">Horizontal 🖥️</button>
+                    <button class="tp-chip-btn" data-orient="rotate90">Girar 90° 🔄</button>
+                  </div>
+                </div>
+
+                <!-- Vertical Mirror Option -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Giro Espejo Vertical</span>
+                  <button class="tp-chip-btn" id="tp-toggle-mirror-y">Desactivado</button>
+                </div>
+
+                <!-- Guide Line Toggle -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Línea Guía de Lectura</span>
+                  <button class="tp-chip-btn" id="tp-toggle-guide-line">Visible</button>
+                </div>
+
+                <!-- Guide Line Position Slider -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Altura / Posición de Línea Guía</span>
+                  <div class="tp-slider-group">
+                    <input type="range" id="tp-guide-pos-slider" min="15" max="75" value="40">
+                    <span class="tp-value-badge" id="tp-guide-pos-val">40%</span>
+                  </div>
+                </div>
+
+                <!-- Margin Width -->
+                <div class="tp-setting-row">
+                  <span class="tp-setting-label">Ancho del Margen de Texto</span>
+                  <div class="tp-slider-group">
+                    <input type="range" id="tp-margin-slider" min="60" max="98" value="88">
+                    <span class="tp-value-badge" id="tp-margin-val">88%</span>
+                  </div>
+                </div>
+
+                <!-- Keyboard Shortcuts Reference -->
+                <div style="margin-top: 10px;">
+                  <span class="tp-setting-label" style="display:block; margin-bottom:10px;">Atajos de Teclado / Mando Bluetooth</span>
+                  <div class="tp-shortcut-list">
+                    <div class="tp-shortcut-item"><span>Reproducir / Pausa</span><span class="tp-kbd">Espacio</span></div>
+                    <div class="tp-shortcut-item"><span>Aumentar Velocidad</span><span class="tp-kbd">↑ Flecha Arriba</span></div>
+                    <div class="tp-shortcut-item"><span>Disminuir Velocidad</span><span class="tp-kbd">↓ Flecha Abajo</span></div>
+                    <div class="tp-shortcut-item"><span>Aumentar Texto</span><span class="tp-kbd">→ Flecha Der</span></div>
+                    <div class="tp-shortcut-item"><span>Disminuir Texto</span><span class="tp-kbd">← Flecha Izq</span></div>
+                    <div class="tp-shortcut-item"><span>Reiniciar al Inicio</span><span class="tp-kbd">R</span></div>
+                    <div class="tp-shortcut-item"><span>Modo Espejo</span><span class="tp-kbd">M</span></div>
+                    <div class="tp-shortcut-item"><span>Pantalla Completa</span><span class="tp-kbd">F</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tp-modal-footer">
+                <button class="tp-action-btn tp-action-btn-primary" id="tp-btn-save-settings">Aceptar</button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
