@@ -1439,6 +1439,10 @@ function setupEventListeners() {
   }
 
   // Tab Switching
+  const tabAiStudio = document.getElementById('tabAiStudio');
+  if (tabAiStudio) tabAiStudio.addEventListener('click', () => switchView('ai_studio'));
+  const btnAiStudioHeader = document.getElementById('btnAiStudioHeader');
+  if (btnAiStudioHeader) btnAiStudioHeader.addEventListener('click', () => switchView('ai_studio'));
   if (tabViralCalc) tabViralCalc.addEventListener('click', () => switchView('viral_calc'));
   tabMatrix.addEventListener('click', () => switchView('matrix'));
   tabCards.addEventListener('click', () => switchView('cards'));
@@ -1942,6 +1946,7 @@ function switchView(viewName) {
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
   const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
   const activeProBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md whitespace-nowrap cursor-pointer";
+  const activeAiBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white shadow-md shadow-purple-950/50 whitespace-nowrap cursor-pointer";
 
   if (tViral) tViral.className = inactiveBtnClass;
   if (tMatrix) tMatrix.className = inactiveBtnClass;
@@ -1975,6 +1980,11 @@ function switchView(viewName) {
     setTimeout(() => {
       if (typeof tpRecalculateWordPositions === 'function') tpRecalculateWordPositions();
     }, 100);
+  } else if (viewName === 'ai_studio') {
+    if (vAi) vAi.classList.remove('hidden');
+    if (tAi) tAi.className = activeAiBtnClass;
+    if (statsContainer) statsContainer.classList.add('hidden');
+    if (typeof initAiStudio === 'function') initAiStudio();
   }
   refreshLucideIcons();
 }
