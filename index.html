@@ -137,11 +137,11 @@
             <span>Guardar Datos</span>
           </button>
 
-          <!-- Device Sync Button (PC ↔ iPad) -->
-          <button id="btnSyncDevicesHeader" onclick="openSyncModal()" title="Sincronizar PC ↔ iPad" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0">
+          <!-- Device Sync Button (PC ↔ iPad ↔ iPhone) -->
+          <button id="btnSyncDevicesHeader" onclick="openSyncModal()" title="Sincronizar Dispositivos (PC · iPad · iPhone)" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0">
             <span id="cloudStatusDot" title="Nube Sincronizada" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
             <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
-            <span>Sincronizar PC ↔ iPad</span>
+            <span>Sincronizar Dispositivos</span>
           </button>
         </div>
 
@@ -1736,7 +1736,7 @@
         <!-- Rendered dynamically via JS -->
       </div>
 
-  <!-- MODAL: DEVICE SYNC (PC ↔ IPAD) -->
+  <!-- MODAL: DEVICE SYNC (PC ↔ IPAD ↔ IPHONE) -->
   <div id="syncModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden">
       
@@ -1744,7 +1744,7 @@
       <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <i data-lucide="smartphone" class="w-5 h-5 text-brand-400"></i>
-          Sincronizar PC ↔ iPad
+          Sincronizar Dispositivos (PC ↔ iPad ↔ iPhone)
         </h3>
         <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white transition cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -1754,7 +1754,7 @@
       <!-- Modal Body -->
       <div class="p-6 space-y-5 text-sm text-slate-300">
         <p class="text-xs text-slate-400 leading-relaxed">
-          Los navegadores guardan los datos localmente en cada dispositivo. Para sincronizar tus guiones entre tu PC y tu iPad (en ambas direcciones), utiliza cualquiera de las siguientes opciones:
+          Mantén todos tus guiones, ideas, notas y evaluaciones de viralidad sincronizados en tiempo real entre tu <strong>PC, iPad e iPhone</strong>:
         </p>
 
         <!-- Method 0: Cloud Sync (No link sending) -->
@@ -1762,11 +1762,11 @@
           <div class="flex items-center justify-between">
             <span class="font-bold text-white text-xs flex items-center gap-1.5">
               <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
-              Sincronización en la Nube (Sin enviar enlaces)
+              Sincronización en la Nube (Automática y 1-Clic)
             </span>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">1-Clic</span>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">Recomendado</span>
           </div>
-          <p class="text-xs text-slate-400">Guarda tus guiones en la nube desde un dispositivo y descárgalos al instante en el otro.</p>
+          <p class="text-xs text-slate-400">Guarda tus guiones en la nube desde cualquier dispositivo y se actualizarán automáticamente en los demás.</p>
           <div class="flex gap-2">
             <button id="btnSaveCloud" onclick="saveStateToCloud()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-md">
               <i data-lucide="cloud-upload" class="w-4 h-4"></i>
@@ -1779,14 +1779,14 @@
           </div>
           <!-- Personal Cloud Sync Key -->
           <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
-            <label class="block text-[11px] font-semibold text-slate-300">🔑 Clave Personal de Sincronización (para PC e iPad):</label>
+            <label class="block text-[11px] font-semibold text-slate-300">🔑 Clave Personal de Sincronización (PC, iPad e iPhone):</label>
             <div class="flex gap-2">
               <input type="text" id="syncPersonalCodeInput" placeholder="Ej: MI-ESTUDIO-1" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-emerald-500">
               <button type="button" onclick="savePersonalSyncCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer whitespace-nowrap">
                 Guardar Clave
               </button>
             </div>
-            <p class="text-[10px] text-slate-400 leading-tight">Al usar la misma clave en tu PC e iPad, la sincronización en la nube será 100% directa y automática.</p>
+            <p class="text-[10px] text-slate-400 leading-tight">Al usar la misma clave en tu PC, iPad e iPhone, la sincronización entre los tres será 100% directa y privada.</p>
           </div>
         </div>
 
@@ -1795,19 +1795,19 @@
           <div class="flex items-center justify-between">
             <span class="font-bold text-white text-xs flex items-center gap-1.5">
               <i data-lucide="link" class="w-4 h-4 text-sky-400"></i>
-              Opción 2: Enlace Directo para iPad
+              Opción 2: Enlace Directo para iPhone / iPad
             </span>
           </div>
-          <p class="text-xs text-slate-400">Copia un enlace especial que contiene todos tus guiones. Ábrelo en tu iPad y se sincronizará automáticamente al 100%.</p>
+          <p class="text-xs text-slate-400">Copia un enlace especial que contiene todos tus guiones. Ábrelo en Safari de tu iPhone o iPad y se cargarán al 100%.</p>
           <button onclick="copySyncUrlToClipboard()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md">
             <i data-lucide="copy" class="w-4 h-4"></i>
-            <span>Copiar Enlace Directo para iPad</span>
+            <span>Copiar Enlace para iPhone / iPad</span>
           </button>
         </div>
 
         <!-- Method 2: Sync Code -->
         <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-          <span class="font-bold text-white text-xs block">Opción 2: Código de Texto (Copiar y Pegar)</span>
+          <span class="font-bold text-white text-xs block">Opción 3: Código de Texto (Copiar y Pegar)</span>
           <div class="flex gap-2">
             <button onclick="copySyncCodeToClipboard()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
               <i data-lucide="code" class="w-3.5 h-3.5 text-amber-400"></i>

@@ -866,12 +866,27 @@ document.addEventListener('DOMContentLoaded', () => {
   initTeleprompterProEngine();
   refreshLucideIcons();
 
-  // Automatic background load from Cloud on startup (iPad receives PC changes instantly)
+  // Automatic background load from Cloud on startup (iPhone/iPad receives PC changes instantly)
   setTimeout(() => {
     if (typeof loadStateFromCloud === 'function') {
       loadStateFromCloud(true);
     }
   }, 600);
+
+  // Auto-sync whenever the app/tab becomes active or visible (e.g. unlocking iPhone, switching back to Safari/Chrome)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (typeof loadStateFromCloud === 'function') {
+        loadStateFromCloud(true);
+      }
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    if (typeof loadStateFromCloud === 'function') {
+      loadStateFromCloud(true);
+    }
+  });
 
   // Initialize 1-hour Auto-Save Timer
   if (typeof initAutoSaveTimer === 'function') {
@@ -2210,7 +2225,7 @@ function savePersonalSyncCode() {
   const val = input.value.trim();
   if (val) {
     localStorage.setItem('blex_cloud_sync_code', val);
-    alert(`🔑 Clave personal '${val}' guardada en este dispositivo.\n\nColoca esta misma clave en tu otro dispositivo (PC / iPad) para sincronización directa sin enviar enlaces.`);
+    alert(`🔑 Clave personal '${val}' guardada en este dispositivo.\n\nColoca esta misma clave en tus otros dispositivos (PC, iPad, iPhone) para sincronización directa y automática en la nube.`);
   } else {
     localStorage.removeItem('blex_cloud_sync_code');
     alert("Se eliminó la clave personal de este dispositivo.");
@@ -2469,9 +2484,9 @@ function copySyncUrlToClipboard() {
     const fullUrl = `${baseUrl}?syncData=${encoded}`;
     
     navigator.clipboard.writeText(fullUrl).then(() => {
-      alert("✅ ¡Enlace copiado al portapapeles!\n\nEnvía este enlace a tu iPad (por WhatsApp, AirDrop, iMessage, Mail o Telegram). Al abrirlo en el iPad, se cargarán y sincronizarán tus " + state.scripts.length + " guiones al instante.");
+      alert("✅ ¡Enlace copiado al portapapeles!\n\nEnvía este enlace a tu iPhone o iPad (por WhatsApp, AirDrop, iMessage, Mail o Telegram). Al abrirlo, se cargarán y sincronizarán tus " + state.scripts.length + " guiones al instante.");
     }).catch(() => {
-      prompt("Copia este enlace de sincronización y ábrelo en tu iPad:", fullUrl);
+      prompt("Copia este enlace de sincronización y ábrelo en tu iPhone o iPad:", fullUrl);
     });
   } catch (e) {
     alert("Error al generar enlace de sincronización: " + e.message);
@@ -2483,7 +2498,7 @@ function copySyncCodeToClipboard() {
     const jsonStr = getFullAppStateJSON();
     const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     navigator.clipboard.writeText(encoded).then(() => {
-      alert("✅ Código de sincronización copiado al portapapeles.\n\nEn tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Pegar e Importar'.");
+      alert("✅ Código de sincronización copiado al portapapeles.\n\nEn tu iPhone o iPad, presiona 'Sincronizar Dispositivos' y haz clic en 'Pegar e Importar'.");
     }).catch(() => {
       prompt("Copia este código de sincronización:", encoded);
     });

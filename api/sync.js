@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-let globalSyncState = null;
+let channelsState = {};
 
 module.exports = async (req, res) => {
   // Prevent aggressive browser caching
@@ -22,6 +22,15 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
+  // Get channel name from query param or default to 'default'
+  let channel = 'default';
+  if (req.query && req.query.channel) {
+    channel = String(req.query.channel).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'default';
+  }
+
+  const tmpFileName = `sync_${channel}.json`;
+  const tmpFilePath = path.join('/tmp', tmpFileName);
+
   if (req.method === 'POST' || req.method === 'PUT') {
     try {
       let body = req.body;
@@ -29,22 +38,25 @@ module.exports = async (req, res) => {
         body = JSON.parse(body);
       }
       if (body && Array.isArray(body.scripts)) {
-        globalSyncState = {
+        const syncObj = {
           data: body,
+          channel: channel,
           updatedAt: body.updatedAt || new Date().toISOString()
         };
-        
+        channelsState[channel] = syncObj;
+
         // Attempt persistent temp cache
         try {
-          fs.writeFileSync(path.join('/tmp', 'sync.json'), JSON.stringify(globalSyncState));
+          fs.writeFileSync(tmpFilePath, JSON.stringify(syncObj));
         } catch (e) {
           // ignore temp write errors
         }
 
         return res.status(200).json({ 
           success: true, 
+          channel: channel,
           count: body.scripts.length, 
-          updatedAt: globalSyncState.updatedAt 
+          updatedAt: syncObj.updatedAt 
         });
       }
       return res.status(400).json({ error: 'Invalid payload structure' });
@@ -54,18 +66,18 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    // 1. Memory cache
-    if (globalSyncState && globalSyncState.data) {
-      return res.status(200).json(globalSyncState.data);
+    // 1. In-memory channel cache
+    if (channelsState[channel] && channelsState[channel].data) {
+      return res.status(200).json(channelsState[channel].data);
     }
 
-    // 2. Temp file cache
+    // 2. Temp file cache for channel
     try {
-      if (fs.existsSync(path.join('/tmp', 'sync.json'))) {
-        const tmpRaw = fs.readFileSync(path.join('/tmp', 'sync.json'), 'utf8');
+      if (fs.existsSync(tmpFilePath)) {
+        const tmpRaw = fs.readFileSync(tmpFilePath, 'utf8');
         const parsed = JSON.parse(tmpRaw);
         if (parsed && parsed.data) {
-          globalSyncState = parsed;
+          channelsState[channel] = parsed;
           return res.status(200).json(parsed.data);
         }
       }
@@ -73,19 +85,21 @@ module.exports = async (req, res) => {
       // fallback
     }
 
-    // 3. Repository sync-data.json static fallback
-    try {
-      const syncPath = path.join(process.cwd(), 'sync-data.json');
-      if (fs.existsSync(syncPath)) {
-        const fileContent = fs.readFileSync(syncPath, 'utf8');
-        const staticData = JSON.parse(fileContent);
-        return res.status(200).json(staticData);
+    // 3. Static fallback for default channel
+    if (channel === 'default') {
+      try {
+        const syncPath = path.join(process.cwd(), 'sync-data.json');
+        if (fs.existsSync(syncPath)) {
+          const fileContent = fs.readFileSync(syncPath, 'utf8');
+          const staticData = JSON.parse(fileContent);
+          return res.status(200).json(staticData);
+        }
+      } catch (e) {
+        // fallback
       }
-    } catch (e) {
-      // fallback
     }
 
-    return res.status(404).json({ error: 'No cloud state available' });
+    return res.status(404).json({ error: `No cloud state available for channel '${channel}'` });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
