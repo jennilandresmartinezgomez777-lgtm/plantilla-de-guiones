@@ -1533,12 +1533,91 @@ function renderCardsView(scripts) {
   });
 }
 
-// 3. TELEPROMPTER VIEW RENDER
+// 3. TELEPROMPTER / SET VIEW RENDER & FULLSCREEN EXPANSION
+let isSetCardFullscreen = false;
+
+function toggleSetCardFullscreen() {
+  const display = document.getElementById('teleprompterDisplay');
+  if (!display) return;
+  
+  isSetCardFullscreen = !isSetCardFullscreen;
+  
+  if (isSetCardFullscreen) {
+    display.classList.add('set-card-fullscreen');
+    document.body.classList.add('set-fullscreen-active');
+    
+    // Request browser fullscreen if available
+    try {
+      if (!document.fullscreenElement && display.requestFullscreen) {
+        display.requestFullscreen().catch(() => {});
+      } else if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch(e) {}
+  } else {
+    display.classList.remove('set-card-fullscreen');
+    document.body.classList.remove('set-fullscreen-active');
+    
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch(e) {}
+  }
+  
+  const selectedId = teleprompterSelect?.value || (state.scripts.length > 0 ? state.scripts[0].id : null);
+  if (selectedId) {
+    displayScriptInTeleprompter(selectedId);
+  }
+  refreshLucideIcons();
+}
+
+// Listen to fullscreen exit via Esc or browser UI
+document.addEventListener('fullscreenchange', () => {
+  const display = document.getElementById('teleprompterDisplay');
+  if (!document.fullscreenElement && isSetCardFullscreen) {
+    isSetCardFullscreen = false;
+    if (display) display.classList.remove('set-card-fullscreen');
+    document.body.classList.remove('set-fullscreen-active');
+    const selectedId = teleprompterSelect?.value;
+    if (selectedId) displayScriptInTeleprompter(selectedId);
+    refreshLucideIcons();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isSetCardFullscreen) {
+    toggleSetCardFullscreen();
+  }
+});
+
+function selectTeleprompterScript(scriptId) {
+  if (!scriptId) return;
+  if (teleprompterSelect) {
+    teleprompterSelect.value = scriptId;
+  }
+  displayScriptInTeleprompter(scriptId);
+}
+
+function navigateTeleprompterScript(direction) {
+  const scripts = state.scripts || [];
+  if (scripts.length === 0) return;
+  const currentId = teleprompterSelect?.value || scripts[0].id;
+  const currentIndex = scripts.findIndex(s => s.id === currentId);
+  if (currentIndex === -1) return;
+  
+  const newIndex = currentIndex + direction;
+  if (newIndex >= 0 && newIndex < scripts.length) {
+    selectTeleprompterScript(scripts[newIndex].id);
+  }
+}
+
 function renderTeleprompterView(scripts) {
+  if (!teleprompterSelect || !teleprompterDisplay) return;
   teleprompterSelect.innerHTML = '';
   
   if (scripts.length === 0) {
-    teleprompterDisplay.innerHTML = `<p class="text-slate-500 text-center py-20">No hay guiones disponibles para grabar.</p>`;
+    teleprompterDisplay.innerHTML = `<p class="text-slate-500 text-center py-20 font-medium">No hay guiones disponibles para grabar.</p>`;
     return;
   }
 
@@ -1555,91 +1634,249 @@ function renderTeleprompterView(scripts) {
 
 function displayScriptInTeleprompter(scriptId) {
   const script = state.scripts.find(s => s.id === scriptId);
-  if (!script) return;
+  if (!script || !teleprompterDisplay) return;
 
-  teleprompterDisplay.innerHTML = `
-    <!-- Prompter Header Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded border border-brand-500/20">
-            ${script.client}
-          </span>
-          <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2 py-1 rounded">
-            Guión #${script.number || '-'}
-          </span>
-          <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-1 rounded border border-amber-500/20">
-            Formato: ${script.formato}
-          </span>
+  const scripts = state.scripts || [];
+  const currentIndex = scripts.findIndex(s => s.id === scriptId);
+  const prevScript = currentIndex > 0 ? scripts[currentIndex - 1] : null;
+  const nextScript = currentIndex >= 0 && currentIndex < scripts.length - 1 ? scripts[currentIndex + 1] : null;
+
+  if (isSetCardFullscreen) {
+    // RENDER FULLSCREEN MAXIMIZED CARD
+    teleprompterDisplay.innerHTML = `
+      <div class="set-fullscreen-container space-y-6 sm:space-y-8 animate-fadeIn">
+        
+        <!-- Sticky Top Fullscreen Navigation Bar -->
+        <div class="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md border border-purple-500/30 p-3 sm:p-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-3">
+          
+          <div class="flex items-center gap-2">
+            <button onclick="toggleSetCardFullscreen()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs sm:text-sm px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer" title="Salir de Pantalla Completa (Esc)">
+              <i data-lucide="minimize-2" class="w-4 h-4"></i>
+              <span>Salir Pantalla Completa</span>
+            </button>
+            
+            <!-- Quick Prev / Next Navigator -->
+            <div class="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl p-1 gap-1">
+              <button onclick="navigateTeleprompterScript(-1)" ${!prevScript ? 'disabled class="opacity-30 cursor-not-allowed text-slate-500 p-1.5 rounded-lg"' : 'class="text-slate-300 hover:text-white hover:bg-slate-800 p-1.5 rounded-lg transition cursor-pointer"'} title="Guión Anterior">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span class="text-xs font-bold text-slate-300 px-2 select-none whitespace-nowrap">
+                #${script.number || (currentIndex + 1)} (${currentIndex + 1}/${scripts.length})
+              </span>
+              <button onclick="navigateTeleprompterScript(1)" ${!nextScript ? 'disabled class="opacity-30 cursor-not-allowed text-slate-500 p-1.5 rounded-lg"' : 'class="text-slate-300 hover:text-white hover:bg-slate-800 p-1.5 rounded-lg transition cursor-pointer"'} title="Guión Siguiente">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button onclick="openScriptInTeleprompterPro('${script.id}')" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer">
+              <i data-lucide="tv" class="w-4 h-4"></i>
+              <span>Teleprónter Pro</span>
+            </button>
+            <button onclick="copyFullScript('${script.id}', this)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow-md cursor-pointer">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copiar Guión</span>
+            </button>
+            <button onclick="printSingleScript('${script.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow-md cursor-pointer" title="Imprimir Guión">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+            </button>
+          </div>
+
         </div>
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-3">${script.ideaGanadora}</h2>
-      </div>
 
-      <div class="flex items-center gap-3">
-        <button onclick="openScriptInTeleprompterPro('${script.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
-          <i data-lucide="tv" class="w-4 h-4"></i>
-          <span>Cargar en Teleprónter Pro</span>
-        </button>
-        <button onclick="copyFullScript('${script.id}', this)" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md">
-          <i data-lucide="copy" class="w-4 h-4"></i>
-          <span>Copiar Guión Completo</span>
-        </button>
-        <div class="text-sm text-slate-400">
-          <span>Actor: <strong class="text-white">${script.actor || 'N/A'}</strong></span>
-          ${script.contextoAdicional ? `<span class="border-l border-slate-800 pl-2">📍 ${script.contextoAdicional}</span>` : ''}
+        <!-- Fullscreen Script Info Header -->
+        <div class="bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-4 shadow-xl">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="bg-brand-500/20 text-brand-300 text-xs font-bold px-3 py-1 rounded-lg border border-brand-500/30">
+              👤 ${script.client}
+            </span>
+            <span class="bg-slate-800 text-slate-200 text-xs font-bold px-3 py-1 rounded-lg border border-slate-700">
+              Guión #${script.number || '-'}
+            </span>
+            <span class="bg-amber-500/10 text-amber-400 text-xs font-bold px-3 py-1 rounded-lg border border-amber-500/20">
+              📹 Formato: ${script.formato}
+            </span>
+            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-lg border border-emerald-500/20">
+              🎯 Objetivo: ${script.objetivo}
+            </span>
+            ${script.actor ? `
+            <span class="bg-purple-500/10 text-purple-300 text-xs font-bold px-3 py-1 rounded-lg border border-purple-500/20">
+              🎭 Actor: ${script.actor}
+            </span>` : ''}
+            ${script.contextoAdicional ? `
+            <span class="bg-slate-800 text-slate-300 text-xs font-medium px-3 py-1 rounded-lg border border-slate-700">
+              📍 ${script.contextoAdicional}
+            </span>` : ''}
+          </div>
+
+          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight mt-2">
+            ${script.ideaGanadora}
+          </h1>
         </div>
-      </div>
-    </div>
 
-    <!-- Prompter Script Sections (Large Reading Font) -->
-    <div class="space-y-8 py-4">
-      
-      <!-- GANCHO -->
-      <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO (Hook - Primeros 3 seg)</span>
-          <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+        <!-- Fullscreen Prompter Script Sections (Gigantic Clear Font for Reading on Set) -->
+        <div class="space-y-6 sm:space-y-8">
+          
+          <!-- GANCHO -->
+          <div class="bg-amber-500/5 border-l-8 border-amber-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
+                🪝 GANCHO (Hook - Primeros 3 seg)
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-100 leading-relaxed sm:leading-relaxed">
+              ${script.gancho}
+            </p>
+          </div>
+
+          <!-- HISTORIA / CONTEXTO -->
+          <div class="bg-emerald-500/5 border-l-8 border-emerald-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                📖 HISTORIA - CONTEXTO
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-xl sm:text-2xl lg:text-3xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed sm:leading-relaxed">
+              ${script.historia}
+            </p>
+          </div>
+
+          <!-- MORALEJA / VALOR -->
+          <div class="bg-rose-500/5 border-l-8 border-rose-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-rose-400 flex items-center gap-1.5">
+                💡 MORALEJA / SOLUCIÓN
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-xl sm:text-2xl lg:text-3xl font-medium text-rose-100 whitespace-pre-line leading-relaxed sm:leading-relaxed">
+              ${script.moraleja}
+            </p>
+          </div>
+
+          <!-- CTA -->
+          <div class="bg-blue-500/5 border-l-8 border-blue-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
+                📣 LLAMADO A LA ACCIÓN (CTA)
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-100 leading-relaxed sm:leading-relaxed">
+              ${script.cta}
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    `;
+  } else {
+    // RENDER NORMAL CARD VIEW
+    teleprompterDisplay.innerHTML = `
+      <!-- Prompter Header Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded border border-brand-500/20">
+              ${script.client}
+            </span>
+            <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2 py-1 rounded">
+              Guión #${script.number || '-'}
+            </span>
+            <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-1 rounded border border-amber-500/20">
+              Formato: ${script.formato}
+            </span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-3">${script.ideaGanadora}</h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Button to Expand / Maximize to Full Screen -->
+          <button onclick="toggleSetCardFullscreen()" id="btnCardSetFullscreen" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer" title="Maximizar tarjeta a pantalla completa">
+            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+            <span>Ampliar Pantalla</span>
           </button>
-        </div>
-        <p class="text-2xl sm:text-3xl font-bold text-amber-100 leading-relaxed">${script.gancho}</p>
-      </div>
-
-      <!-- HISTORIA / CONTEXTO -->
-      <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
-          <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+          
+          <button onclick="openScriptInTeleprompterPro('${script.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
+            <i data-lucide="tv" class="w-4 h-4"></i>
+            <span>Cargar en Teleprónter Pro</span>
           </button>
-        </div>
-        <p class="text-xl sm:text-2xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed">${script.historia}</p>
-      </div>
-
-      <!-- MORALEJA / VALOR -->
-      <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / SOLUCIÓN</span>
-          <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+          
+          <button onclick="copyFullScript('${script.id}', this)" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            <span>Copiar Guión Completo</span>
           </button>
+          
+          <div class="text-sm text-slate-400 pl-1">
+            <span>Actor: <strong class="text-white">${script.actor || 'N/A'}</strong></span>
+            ${script.contextoAdicional ? `<span class="border-l border-slate-800 pl-2">📍 ${script.contextoAdicional}</span>` : ''}
+          </div>
         </div>
-        <p class="text-xl sm:text-2xl font-medium text-rose-100 whitespace-pre-line leading-relaxed">${script.moraleja}</p>
       </div>
 
-      <!-- CTA -->
-      <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
-          <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-          </button>
+      <!-- Prompter Script Sections (Large Reading Font) -->
+      <div class="space-y-8 py-4">
+        
+        <!-- GANCHO -->
+        <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO (Hook - Primeros 3 seg)</span>
+            <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </div>
+          <p class="text-2xl sm:text-3xl font-bold text-amber-100 leading-relaxed">${script.gancho}</p>
         </div>
-        <p class="text-2xl sm:text-3xl font-bold text-blue-100 leading-relaxed">${script.cta}</p>
-      </div>
 
-    </div>
-  `;
+        <!-- HISTORIA / CONTEXTO -->
+        <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
+            <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </div>
+          <p class="text-xl sm:text-2xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed">${script.historia}</p>
+        </div>
+
+        <!-- MORALEJA / VALOR -->
+        <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / SOLUCIÓN</span>
+            <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </div>
+          <p class="text-xl sm:text-2xl font-medium text-rose-100 whitespace-pre-line leading-relaxed">${script.moraleja}</p>
+        </div>
+
+        <!-- CTA -->
+        <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
+            <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+            </button>
+          </div>
+          <p class="text-2xl sm:text-3xl font-bold text-blue-100 leading-relaxed">${script.cta}</p>
+        </div>
+
+      </div>
+    `;
+  }
+  refreshLucideIcons();
 }
 
 function openTeleprompterForScript(scriptId) {
@@ -4938,6 +5175,9 @@ function syncStudioScriptsToTeleprompter() {
 }
 
 function openScriptInTeleprompterPro(scriptId) {
+  if (isSetCardFullscreen) {
+    toggleSetCardFullscreen();
+  }
   const script = state.scripts.find(s => s.id === scriptId);
   if (!script) return;
   

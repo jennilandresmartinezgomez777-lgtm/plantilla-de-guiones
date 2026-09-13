@@ -33,7 +33,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=5.0">
+  <link rel="stylesheet" href="styles.css?v=5.1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -865,9 +865,15 @@
               <p class="text-xs text-slate-400">Selecciona un guión para visualizarlo en pantalla completa con fuente gigante.</p>
             </div>
           </div>
-          <select id="teleprompterSelect" class="bg-slate-950 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 text-slate-200 outline-none max-w-xs">
-            <!-- Options injected via JS -->
-          </select>
+          <div class="flex items-center gap-2">
+            <select id="teleprompterSelect" class="bg-slate-950 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 text-slate-200 outline-none max-w-xs cursor-pointer">
+              <!-- Options injected via JS -->
+            </select>
+            <button onclick="toggleSetCardFullscreen()" id="btnHeaderSetFullscreen" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 shrink-0 cursor-pointer" title="Maximizar / Pantalla Completa">
+              <i data-lucide="maximize-2" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Pantalla Completa</span>
+            </button>
+          </div>
         </div>
 
         <div id="teleprompterDisplay" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8 min-h-[500px]">
@@ -1808,6 +1814,6 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="app.js?v=5.0&t=1789300000"></script>
+  <script src="app.js?v=5.1&t=1789310000"></script>
 </body>
 </html>
