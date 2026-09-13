@@ -711,6 +711,14 @@ textarea.tp-script-input:focus {
   border-color: #ffee58;
 }
 
+#tp-script-textarea {
+  min-height: 240px;
+  line-height: 1.6;
+  font-size: 15px;
+  background: #09090b;
+  color: #f1f5f9;
+}
+
 .tp-quick-slot-select {
   background: rgba(0, 0, 0, 0.6);
   color: #ffee58;

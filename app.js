@@ -4987,21 +4987,21 @@ function tpGetSectionText(data, section) {
   if (!data) return '';
   const sec = section || 'all';
   if (sec === 'all') {
-    return tpAssembleScriptText(data);
+    return (data.text !== undefined && data.text !== null) ? data.text : tpAssembleScriptText(data);
   }
   if (sec === 'gancho') {
-    return data.gancho && data.gancho.trim() ? "🎣 GANCHO:\n" + data.gancho.trim() : "🎣 GANCHO:\n(Sin gancho redactado)";
+    return (data.gancho && data.gancho.trim()) ? data.gancho.trim() : (data.text || '');
   }
   if (sec === 'historia') {
-    return data.historia && data.historia.trim() ? "📖 CONTEXTO / HISTORIA:\n" + data.historia.trim() : "📖 CONTEXTO / HISTORIA:\n(Sin contexto redactado)";
+    return (data.historia && data.historia.trim()) ? data.historia.trim() : (data.text || '');
   }
   if (sec === 'moraleja') {
-    return data.moraleja && data.moraleja.trim() ? "💡 MORALEJA:\n" + data.moraleja.trim() : "💡 MORALEJA:\n(Sin moraleja redactada)";
+    return (data.moraleja && data.moraleja.trim()) ? data.moraleja.trim() : (data.text || '');
   }
   if (sec === 'cta') {
-    return data.cta && data.cta.trim() ? "📣 LLAMADO A LA ACCIÓN (CTA):\n" + data.cta.trim() : "📣 CTA:\n(Sin CTA redactado)";
+    return (data.cta && data.cta.trim()) ? data.cta.trim() : (data.text || '');
   }
-  return tpAssembleScriptText(data);
+  return (data.text !== undefined && data.text !== null) ? data.text : tpAssembleScriptText(data);
 }
 
 const tpState = {
@@ -5032,7 +5032,6 @@ let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGu
 let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
 let tpQuickSlotSelect, tpSectionSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
 let tpEditorModal, tpScriptTextarea, tpSlotChipsContainer, tpSlotTitleInput, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
-let tpEditorGancho, tpEditorHistoria, tpEditorMoraleja, tpEditorCTA;
 let tpPresetSample1, tpPresetSample2, tpPresetClear, tpPresetSync;
 let tpSettingsModal, tpBtnCloseSettings, tpBtnSaveSettings, tpToggleMirrorY, tpToggleGuideLine;
 let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatches;
@@ -5046,20 +5045,20 @@ function tpSaveScriptsToStorage() {
 
 function tpAssembleScriptText(data) {
   if (!data) return '';
+  if (data.text !== undefined && data.text !== null && data.text.trim()) return data.text;
   let parts = [];
   if (data.gancho && data.gancho.trim()) {
-    parts.push("🎣 GANCHO:\n" + data.gancho.trim());
+    parts.push(data.gancho.trim());
   }
   if (data.historia && data.historia.trim()) {
-    parts.push("📖 CONTEXTO / HISTORIA:\n" + data.historia.trim());
+    parts.push(data.historia.trim());
   }
   if (data.moraleja && data.moraleja.trim()) {
-    parts.push("💡 MORALEJA:\n" + data.moraleja.trim());
+    parts.push(data.moraleja.trim());
   }
   if (data.cta && data.cta.trim()) {
-    parts.push("📣 LLAMADO A LA ACCIÓN (CTA):\n" + data.cta.trim());
+    parts.push(data.cta.trim());
   }
-  if (parts.length === 0 && data.text) return data.text;
   return parts.join("\n\n");
 }
 
@@ -5074,14 +5073,21 @@ function syncStudioScriptsToTeleprompter() {
   clientScripts.slice(0, 10).forEach((s, idx) => {
     const slotNum = idx + 1;
     const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Guión ' + slotNum}`;
+    let textParts = [];
+    if (s.gancho && s.gancho.trim()) textParts.push(s.gancho.trim());
+    if (s.historia && s.historia.trim()) textParts.push(s.historia.trim());
+    if (s.moraleja && s.moraleja.trim()) textParts.push(s.moraleja.trim());
+    if (s.cta && s.cta.trim()) textParts.push(s.cta.trim());
+    const fullText = textParts.join("\n\n") || (s.ideaGanadora || '');
+
     const data = {
       title: title,
       gancho: s.gancho || '',
       historia: s.historia || '',
       moraleja: s.moraleja || '',
-      cta: s.cta || ''
+      cta: s.cta || '',
+      text: fullText
     };
-    data.text = tpAssembleScriptText(data);
     tpState.scripts[slotNum] = data;
   });
   
@@ -5099,14 +5105,21 @@ function openScriptInTeleprompterPro(scriptId) {
   if (!script) return;
   
   const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Guión'}`;
+  let textParts = [];
+  if (script.gancho && script.gancho.trim()) textParts.push(script.gancho.trim());
+  if (script.historia && script.historia.trim()) textParts.push(script.historia.trim());
+  if (script.moraleja && script.moraleja.trim()) textParts.push(script.moraleja.trim());
+  if (script.cta && script.cta.trim()) textParts.push(script.cta.trim());
+  const fullText = textParts.join("\n\n") || (script.ideaGanadora || '');
+
   const data = {
     title: title,
     gancho: script.gancho || '',
     historia: script.historia || '',
     moraleja: script.moraleja || '',
-    cta: script.cta || ''
+    cta: script.cta || '',
+    text: fullText
   };
-  data.text = tpAssembleScriptText(data);
 
   tpState.activeSlot = 1;
   tpState.scripts[1] = data;
@@ -5162,21 +5175,13 @@ function tpRenderSlotChips() {
 function tpSwitchEditingSlot(newSlotNum) {
   if (tpState.scripts[tpState.editingSlot]) {
     const prev = tpState.scripts[tpState.editingSlot];
-    if (tpEditorGancho) prev.gancho = tpEditorGancho.value;
-    if (tpEditorHistoria) prev.historia = tpEditorHistoria.value;
-    if (tpEditorMoraleja) prev.moraleja = tpEditorMoraleja.value;
-    if (tpEditorCTA) prev.cta = tpEditorCTA.value;
     if (tpSlotTitleInput) prev.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
-    prev.text = tpAssembleScriptText(prev);
+    if (tpScriptTextarea) prev.text = tpScriptTextarea.value;
   }
 
   tpState.editingSlot = newSlotNum;
-  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, gancho: '', historia: '', moraleja: '', cta: '', text: '' };
+  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, text: '' };
   if (tpSlotTitleInput) tpSlotTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
-  if (tpEditorGancho) tpEditorGancho.value = currentData.gancho || '';
-  if (tpEditorHistoria) tpEditorHistoria.value = currentData.historia || '';
-  if (tpEditorMoraleja) tpEditorMoraleja.value = currentData.moraleja || '';
-  if (tpEditorCTA) tpEditorCTA.value = currentData.cta || '';
   if (tpScriptTextarea) tpScriptTextarea.value = currentData.text || '';
   tpRenderSlotChips();
 }
@@ -5687,12 +5692,8 @@ function setupTeleprompterProEventListeners() {
     tpBtnSaveEditor.addEventListener('click', () => {
       if (tpState.scripts[tpState.editingSlot]) {
         const slot = tpState.scripts[tpState.editingSlot];
-        if (tpEditorGancho) slot.gancho = tpEditorGancho.value;
-        if (tpEditorHistoria) slot.historia = tpEditorHistoria.value;
-        if (tpEditorMoraleja) slot.moraleja = tpEditorMoraleja.value;
-        if (tpEditorCTA) slot.cta = tpEditorCTA.value;
         if (tpSlotTitleInput) slot.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
-        slot.text = tpAssembleScriptText(slot);
+        if (tpScriptTextarea) slot.text = tpScriptTextarea.value;
       }
 
       tpState.activeSlot = tpState.editingSlot;
@@ -5707,18 +5708,12 @@ function setupTeleprompterProEventListeners() {
   }
 
   if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => {
-    if (tpEditorHistoria) tpEditorHistoria.value = TP_SAMPLE_SCRIPTS.presentation;
     if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
   });
   if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => {
-    if (tpEditorHistoria) tpEditorHistoria.value = TP_SAMPLE_SCRIPTS.youtube;
     if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
   });
   if (tpPresetClear) tpPresetClear.addEventListener('click', () => {
-    if (tpEditorGancho) tpEditorGancho.value = '';
-    if (tpEditorHistoria) tpEditorHistoria.value = '';
-    if (tpEditorMoraleja) tpEditorMoraleja.value = '';
-    if (tpEditorCTA) tpEditorCTA.value = '';
     if (tpScriptTextarea) tpScriptTextarea.value = '';
   });
   if (tpPresetSync) {
