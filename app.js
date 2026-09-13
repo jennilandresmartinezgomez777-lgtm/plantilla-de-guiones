@@ -183,6 +183,23 @@ const INITIAL_SCRIPTS = [
     comments: 310,
     rating: 5,
     createdAt: new Date().toISOString()
+  },
+  {
+    id: "script-11",
+    client: "Jennil",
+    number: 11,
+    completed: false,
+    ideaGanadora: "Estrategia de Crédito Corporativo a 0% de Interés para Nuevos Negocios",
+    formato: "Hablando a cámara",
+    objetivo: "VENTA",
+    gancho: "Si tienes una LLC y no has conseguido más de $50,000 en crédito, guarda este video.",
+    historia: "Estructuración corporativa completa: dirección física comercial, registro en Dun & Bradstreet, teléfono 411 y cuentas bancarias corporativas para obtener financiamiento al 0% sin arriesgar tu patrimonio.",
+    moraleja: "El dinero institucional existe para apalancar tu negocio si lo ejecutas con la estructura correcta.",
+    cta: "Comenta ESTRUCTURA para agendar tu diagnóstico corporativo.",
+    actor: "Jennil",
+    contextoAdicional: "Oficina ejecutiva",
+    status: "Idea",
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -1663,7 +1680,10 @@ async function loadStateFromCloud(isSilent = false) {
       syncEndpoint += `&channel=${encodeURIComponent(syncCode)}`;
     }
 
-    const res = await fetch(syncEndpoint);
+    let res = await fetch(syncEndpoint);
+    if (!res.ok) {
+      res = await fetch('/sync-data.json?v=' + Date.now());
+    }
     if (!res.ok) {
       if (!isSilent) {
         alert("No se encontró ninguna copia previa en la Nube. Haz clic en 'Guardar en Nube' primero en tu PC.");
@@ -1674,7 +1694,7 @@ async function loadStateFromCloud(isSilent = false) {
     const data = await res.json();
     if (data && data.scripts && Array.isArray(data.scripts)) {
       const cloudCount = data.scripts.length;
-      const localCount = state.scripts.length;
+      const localCount = (state.scripts && Array.isArray(state.scripts)) ? state.scripts.length : 0;
 
       if (!isSilent || cloudCount >= localCount) {
         applyCloudData(data, null, isSilent);
@@ -1684,6 +1704,18 @@ async function loadStateFromCloud(isSilent = false) {
     }
   } catch (err) {
     console.warn("Cloud load network exception:", err);
+    try {
+      const staticRes = await fetch('/sync-data.json?v=' + Date.now());
+      if (staticRes.ok) {
+        const staticData = await staticRes.json();
+        if (staticData && staticData.scripts && Array.isArray(staticData.scripts)) {
+          applyCloudData(staticData, null, isSilent);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Static sync fallback failed:", e);
+    }
     if (!isSilent) {
       alert("Error al cargar de la Nube: " + err.message);
     }
