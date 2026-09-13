@@ -6355,6 +6355,18 @@ function aiUpdateConnectionBadge(connected) {
   }
 }
 
+
+function getAiApiEndpoint(base, route) {
+  let clean = (base || aiState.serverUrl || 'http://localhost:11434').trim().replace(/\/+$/, '');
+  if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+    clean = 'http://' + clean;
+  }
+  if (clean.endsWith('/api/ollama') || clean.endsWith('/ollama')) {
+    return `${clean}/${route}`;
+  }
+  return `${clean}/api/${route}`;
+}
+
 async function checkAiServerHealth() {
   try {
     const endpoint = getAiServerEndpoint();
@@ -7024,7 +7036,15 @@ function openAiServerConfigModal() {
   const modelInput = document.getElementById('aiConfigModelName');
   const resultDiv = document.getElementById('aiConfigTestResult');
 
-  if (urlInput) urlInput.value = aiState.serverUrl || 'http://localhost:11434';
+  if (urlInput) {
+    if (aiState.serverUrl && aiState.serverUrl !== 'http://localhost:11434') {
+      urlInput.value = aiState.serverUrl;
+    } else if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      urlInput.value = 'http://192.168.1.10:3000/api/ollama';
+    } else {
+      urlInput.value = aiState.serverUrl || 'http://localhost:11434';
+    }
+  }
   if (modelInput) modelInput.value = aiState.model || 'qwen2.5:7b';
   if (resultDiv) resultDiv.classList.add('hidden');
   if (modal) modal.classList.remove('hidden');
@@ -7050,7 +7070,8 @@ async function testAiServerConnection() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${testUrl}/api/tags`, { signal: controller.signal });
+    const targetUrl = getAiApiEndpoint(testUrl, "tags");
+    const res = await fetch(targetUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (res.ok) {
