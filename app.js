@@ -3700,15 +3700,10 @@ function executeEnhancedPrint() {
   printArea.innerHTML = html;
   closePrintModal();
 
-  // Execute print with dedicated styling
-  document.body.classList.add('printing-dedicated');
+  // Execute print reliably without premature DOM wipeout
   setTimeout(() => {
     window.print();
-    setTimeout(() => {
-      document.body.classList.remove('printing-dedicated');
-      printArea.innerHTML = '';
-    }, 500);
-  }, 100);
+  }, 120);
 }
 
 function printSingleScript(scriptId) {
