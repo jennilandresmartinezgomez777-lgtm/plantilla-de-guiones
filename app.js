@@ -4957,8 +4957,8 @@ const TP_SAMPLE_SCRIPTS = {
 };
 
 const TP_DEFAULT_LIBRE_SLOTS = {
-  1: { title: 'Guión 1: Presentación', text: TP_SAMPLE_SCRIPTS.presentation },
-  2: { title: 'Guión 2: YouTube Video', text: TP_SAMPLE_SCRIPTS.youtube },
+  1: { title: 'Presentación', text: TP_SAMPLE_SCRIPTS.presentation },
+  2: { title: 'YouTube Video', text: TP_SAMPLE_SCRIPTS.youtube },
   3: { title: 'Guión 3', text: '' },
   4: { title: 'Guión 4', text: '' },
   5: { title: 'Guión 5', text: '' },
@@ -4971,14 +4971,14 @@ const TP_DEFAULT_LIBRE_SLOTS = {
 
 const TP_DEFAULT_REEL_SLOTS = {
   1: {
-    title: 'Reel 1: Presupuesto & Tarjeta',
+    title: 'Presupuesto Miami',
     gancho: '¿Cuánto gastas al mes viviendo en Miami?',
     historia: 'El latino promedio gasta más de 4,000 dólares al mes entre renta, comida, seguro y gasolina.\n\n¿Y sabes cuál es el peor error? Pagarlo todo con tarjeta de débito sin acumular beneficios.',
     moraleja: 'Si utilizas una tarjeta con cashback o puntos y pagas el balance completo cada mes, recuperas dinero y elevas tu puntaje crediticio.',
     cta: 'Escribe la palabra CREDITO en los comentarios y te envío una guía gratuita para optimizar tu score.'
   },
   2: {
-    title: 'Reel 2: 3 Errores Financieros',
+    title: '3 Errores Financieros',
     gancho: 'Deja de usar tu tarjeta de crédito hasta que no conozcas estos 3 trucos.',
     historia: '1. Revisa tu fecha de corte, no la fecha límite de pago.\n2. No uses más del 30% del límite asignado.\n3. Nunca saques dinero en efectivo del cajero con crédito.',
     moraleja: 'Corregir estos 3 hábitos te ahorrará miles en intereses y elevará tu aprobación bancaria.',
@@ -5007,6 +5007,22 @@ const tpSavedReelSlot = parseInt(localStorage.getItem('tp_active_reel_slot')) ||
 const tpSavedReelSection = localStorage.getItem('tp_active_reel_section') || 'all';
 const tpSavedOrientMode = localStorage.getItem('tp_orient_mode') || 'auto';
 const tpSavedGuidePos = parseInt(localStorage.getItem('tp_guide_pos')) || 40;
+
+function tpGetWordsPreview(text, maxWords = 4) {
+  if (!text || !text.trim()) return '(Vacío)';
+  const cleaned = text.trim().replace(/\s+/g, ' ');
+  const words = cleaned.split(' ');
+  if (words.length <= maxWords) {
+    return words.join(' ');
+  }
+  return words.slice(0, maxWords).join(' ') + '...';
+}
+
+function tpGetReelWordsPreview(reel, maxWords = 4) {
+  if (!reel) return '(Vacío)';
+  const text = reel.gancho || reel.historia || reel.moraleja || reel.cta || '';
+  return tpGetWordsPreview(text, maxWords);
+}
 
 function tpGetActiveDisplayScript() {
   if (tpState.mode === 'libre') {
@@ -5063,7 +5079,7 @@ const tpState = {
 tpState.scriptText = tpGetActiveDisplayScript();
 
 let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGuidePosLabel, tpControlBar;
-let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
+let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen, tpFullscreenCloseBtn;
 let tpLibreSlotSelect, tpReelSlotSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
 
 // Modal Elements
@@ -5078,6 +5094,71 @@ let tpReelGancho, tpReelHistoria, tpReelMoraleja, tpReelCTA;
 // Settings Modal
 let tpSettingsModal, tpBtnCloseSettings, tpBtnSaveSettings, tpToggleMirrorY, tpToggleGuideLine;
 let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatches;
+
+let isTpFullscreen = false;
+
+function tpToggleFullscreen(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const tpAppElem = document.getElementById('tpApp');
+  isTpFullscreen = !isTpFullscreen;
+
+  if (isTpFullscreen) {
+    if (tpAppElem) tpAppElem.classList.add('tp-app-fullscreen');
+    document.body.classList.add('tp-fullscreen-locked');
+    if (tpBtnFullscreen) tpBtnFullscreen.classList.add('tp-btn-active');
+
+    try {
+      if (!document.fullscreenElement && tpAppElem && tpAppElem.requestFullscreen) {
+        tpAppElem.requestFullscreen().catch(() => {});
+      } else if (!document.fullscreenElement && tpAppElem && tpAppElem.webkitRequestFullscreen) {
+        tpAppElem.webkitRequestFullscreen();
+      }
+    } catch(err) {}
+  } else {
+    if (tpAppElem) tpAppElem.classList.remove('tp-app-fullscreen');
+    document.body.classList.remove('tp-fullscreen-locked');
+    if (tpBtnFullscreen) tpBtnFullscreen.classList.remove('tp-btn-active');
+
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch(err) {}
+  }
+
+  setTimeout(() => {
+    if (typeof tpRecalculateWordPositions === 'function') {
+      tpRecalculateWordPositions();
+    }
+  }, 80);
+}
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && isTpFullscreen) {
+    const tpAppElem = document.getElementById('tpApp');
+    if (tpAppElem) tpAppElem.classList.remove('tp-app-fullscreen');
+    document.body.classList.remove('tp-fullscreen-locked');
+    if (tpBtnFullscreen) tpBtnFullscreen.classList.remove('tp-btn-active');
+    isTpFullscreen = false;
+    setTimeout(tpRecalculateWordPositions, 80);
+  }
+});
+
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement && isTpFullscreen) {
+    const tpAppElem = document.getElementById('tpApp');
+    if (tpAppElem) tpAppElem.classList.remove('tp-app-fullscreen');
+    document.body.classList.remove('tp-fullscreen-locked');
+    if (tpBtnFullscreen) tpBtnFullscreen.classList.remove('tp-btn-active');
+    isTpFullscreen = false;
+    setTimeout(tpRecalculateWordPositions, 80);
+  }
+});
 
 function tpSaveScriptsToStorage() {
   localStorage.setItem('tp_libre_scripts_v3', JSON.stringify(tpState.libreScripts));
@@ -5099,7 +5180,7 @@ function syncStudioScriptsToTeleprompter() {
   // Import top 5 into Reels
   clientScripts.slice(0, 5).forEach((s, idx) => {
     const slotNum = idx + 1;
-    const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Reel ' + slotNum}`;
+    const title = s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : ('Reel ' + slotNum);
     tpState.reelScripts[slotNum] = {
       title: title,
       gancho: s.gancho || '',
@@ -5112,7 +5193,7 @@ function syncStudioScriptsToTeleprompter() {
   // Also import top 10 into Libre
   clientScripts.slice(0, 10).forEach((s, idx) => {
     const slotNum = idx + 1;
-    const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Guión ' + slotNum}`;
+    const title = s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : ('Guión ' + slotNum);
     let textParts = [];
     if (s.gancho && s.gancho.trim()) textParts.push(s.gancho.trim());
     if (s.historia && s.historia.trim()) textParts.push(s.historia.trim());
@@ -5138,7 +5219,7 @@ function openScriptInTeleprompterPro(scriptId) {
   const script = state.scripts.find(s => s.id === scriptId);
   if (!script) return;
   
-  const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Reel 1'}`;
+  const title = script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Reel 1';
   
   tpState.mode = 'reel';
   tpState.activeReelSlot = 1;
@@ -5162,15 +5243,16 @@ function openScriptInTeleprompterPro(scriptId) {
 }
 
 function tpUpdateToolbarSelectors() {
-  // Populate Libre Dropdown (1 to 10)
+  // Populate Libre Dropdown (1 to 10) with smart words preview
   if (tpLibreSlotSelect) {
     tpLibreSlotSelect.innerHTML = '';
     for (let i = 1; i <= 10; i++) {
       const opt = document.createElement('option');
       opt.value = i;
       const slot = tpState.libreScripts[i] || { title: 'Guión ' + i, text: '' };
-      const hasText = slot.text && slot.text.trim() ? ' ●' : '';
-      opt.textContent = `📝 Guión ${i}: ${slot.title || ('Guión ' + i)}${hasText}`;
+      const hasText = slot.text && slot.text.trim();
+      const preview = tpGetWordsPreview(slot.text, 4);
+      opt.textContent = `📝 Guión ${i}: ${preview}${hasText ? ' ●' : ''}`;
       if (tpState.mode === 'libre' && i === tpState.activeLibreSlot) {
         opt.selected = true;
       }
@@ -5178,15 +5260,16 @@ function tpUpdateToolbarSelectors() {
     }
   }
 
-  // Populate Reel Dropdown (1 to 5 + Sections)
+  // Populate Reel Dropdown (1 to 5 + Sections) with smart words preview
   if (tpReelSlotSelect) {
     tpReelSlotSelect.innerHTML = '';
     for (let i = 1; i <= 5; i++) {
       const slot = tpState.reelScripts[i] || { title: 'Reel ' + i };
-      const hasContent = (slot.gancho || slot.historia || slot.moraleja || slot.cta) ? ' ●' : '';
+      const hasContent = (slot.gancho?.trim() || slot.historia?.trim() || slot.moraleja?.trim() || slot.cta?.trim());
+      const preview = tpGetReelWordsPreview(slot, 4);
       
       const optGroup = document.createElement('optgroup');
-      optGroup.label = `📱 Reel ${i}: ${(slot.title || '').substring(0, 22)}${hasContent}`;
+      optGroup.label = `📱 Reel ${i}: ${preview}${hasContent ? ' ●' : ''}`;
 
       const secAll = document.createElement('option');
       secAll.value = `${i}:all`;
@@ -5256,8 +5339,9 @@ function tpRenderLibreChips() {
     btn.type = 'button';
     btn.className = 'tp-slot-chip' + (i === tpState.editingLibreSlot ? ' active' : '');
     
-    const slot = tpState.libreScripts[i] || { title: 'Guión ' + i };
-    btn.textContent = `Guión ${i}: ${slot.title || ('Guión ' + i)}`;
+    const slot = tpState.libreScripts[i] || { title: 'Guión ' + i, text: '' };
+    const preview = tpGetWordsPreview(slot.text, 3);
+    btn.textContent = `Guión ${i}: ${preview}`;
 
     if (slot.text && slot.text.trim()) {
       const dot = document.createElement('span');
@@ -5297,7 +5381,8 @@ function tpRenderReelChips() {
     btn.className = 'tp-slot-chip' + (i === tpState.editingReelSlot ? ' active' : '');
     
     const reel = tpState.reelScripts[i] || { title: 'Reel ' + i };
-    btn.textContent = `Reel ${i}: ${reel.title || ('Reel ' + i)}`;
+    const preview = tpGetReelWordsPreview(reel, 3);
+    btn.textContent = `Reel ${i}: ${preview}`;
 
     if (reel.gancho?.trim() || reel.historia?.trim() || reel.moraleja?.trim() || reel.cta?.trim()) {
       const dot = document.createElement('span');
@@ -5660,6 +5745,7 @@ function initTeleprompterProEngine() {
   tpBtnEdit = document.getElementById('tp-btn-edit');
   tpBtnSettings = document.getElementById('tp-btn-settings');
   tpBtnFullscreen = document.getElementById('tp-btn-fullscreen');
+  tpFullscreenCloseBtn = document.getElementById('tp-fullscreen-close-btn');
   
   tpLibreSlotSelect = document.getElementById('tp-libre-slot-select');
   tpReelSlotSelect = document.getElementById('tp-reel-slot-select');
@@ -5826,19 +5912,11 @@ function setupTeleprompterProEventListeners() {
     });
   }
 
-  const toggleFullscreen = (e) => {
-    if (e) e.stopPropagation();
-    const elem = document.getElementById('tpApp') || document.documentElement;
-    if (!document.fullscreenElement) {
-      if (elem.requestFullscreen) elem.requestFullscreen().catch(err => {});
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-    }
-  };
-
-  if (tpBtnFullscreen) tpBtnFullscreen.addEventListener('click', toggleFullscreen);
+  if (tpBtnFullscreen) tpBtnFullscreen.addEventListener('click', tpToggleFullscreen);
+  if (tpFullscreenCloseBtn) tpFullscreenCloseBtn.addEventListener('click', tpToggleFullscreen);
+  
   const tpBtnExpandFullscreen = document.getElementById('tpBtnExpandFullscreen');
-  if (tpBtnExpandFullscreen) tpBtnExpandFullscreen.addEventListener('click', toggleFullscreen);
+  if (tpBtnExpandFullscreen) tpBtnExpandFullscreen.addEventListener('click', tpToggleFullscreen);
 
   const tpBtnSyncStudio = document.getElementById('tpBtnSyncStudio');
   if (tpBtnSyncStudio) {
@@ -5878,6 +5956,32 @@ function setupTeleprompterProEventListeners() {
   if (tpBtnCloseEditor) tpBtnCloseEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
   if (tpBtnCancelEditor) tpBtnCancelEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
 
+  // Live update Libre Chip text on typing
+  if (tpLibreScriptTextarea) {
+    tpLibreScriptTextarea.addEventListener('input', () => {
+      if (tpState.libreScripts[tpState.editingLibreSlot]) {
+        tpState.libreScripts[tpState.editingLibreSlot].text = tpLibreScriptTextarea.value;
+      }
+      tpRenderLibreChips();
+    });
+  }
+
+  // Live update Reel Chip text on typing
+  const updateReelSlotLive = () => {
+    if (tpState.reelScripts[tpState.editingReelSlot]) {
+      if (tpReelGancho) tpState.reelScripts[tpState.editingReelSlot].gancho = tpReelGancho.value;
+      if (tpReelHistoria) tpState.reelScripts[tpState.editingReelSlot].historia = tpReelHistoria.value;
+      if (tpReelMoraleja) tpState.reelScripts[tpState.editingReelSlot].moraleja = tpReelMoraleja.value;
+      if (tpReelCTA) tpState.reelScripts[tpState.editingReelSlot].cta = tpReelCTA.value;
+    }
+    tpRenderReelChips();
+  };
+
+  if (tpReelGancho) tpReelGancho.addEventListener('input', updateReelSlotLive);
+  if (tpReelHistoria) tpReelHistoria.addEventListener('input', updateReelSlotLive);
+  if (tpReelMoraleja) tpReelMoraleja.addEventListener('input', updateReelSlotLive);
+  if (tpReelCTA) tpReelCTA.addEventListener('input', updateReelSlotLive);
+
   // Save Modal Action
   if (tpBtnSaveEditor) {
     tpBtnSaveEditor.addEventListener('click', () => {
@@ -5914,10 +6018,18 @@ function setupTeleprompterProEventListeners() {
 
   // Mode Libre Buttons
   if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => {
-    if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
+    if (tpLibreScriptTextarea) {
+      tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
+      if (tpState.libreScripts[tpState.editingLibreSlot]) tpState.libreScripts[tpState.editingLibreSlot].text = TP_SAMPLE_SCRIPTS.presentation;
+      tpRenderLibreChips();
+    }
   });
   if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => {
-    if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
+    if (tpLibreScriptTextarea) {
+      tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
+      if (tpState.libreScripts[tpState.editingLibreSlot]) tpState.libreScripts[tpState.editingLibreSlot].text = TP_SAMPLE_SCRIPTS.youtube;
+      tpRenderLibreChips();
+    }
   });
 
   if (tpBtnClearCurrentLibre) {
@@ -5957,7 +6069,7 @@ function setupTeleprompterProEventListeners() {
 
       clientScripts.slice(0, 5).forEach((s, idx) => {
         const slotNum = idx + 1;
-        const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Reel ' + slotNum}`;
+        const title = s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : ('Reel ' + slotNum);
         tpState.reelScripts[slotNum] = {
           title: title,
           gancho: s.gancho || '',
@@ -6150,7 +6262,12 @@ function setupTeleprompterProEventListeners() {
         tpCycleOrientationMode();
         break;
       case 'KeyF':
-        toggleFullscreen(e);
+        tpToggleFullscreen(e);
+        break;
+      case 'Escape':
+        if (isTpFullscreen) {
+          tpToggleFullscreen(e);
+        }
         break;
       case 'KeyE':
         if (tpBtnEdit) tpBtnEdit.click();
