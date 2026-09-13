@@ -1384,6 +1384,36 @@ function setupEventListeners() {
   btnImportJSON.addEventListener('click', () => importFileInput.click());
   importFileInput.addEventListener('change', handleImportJSON);
 
+  // Quick Idea Modal
+  if (btnQuickIdea) btnQuickIdea.addEventListener('click', () => openQuickIdeaModal());
+  if (btnCloseQuickIdeaModal) btnCloseQuickIdeaModal.addEventListener('click', closeQuickIdeaModal);
+  if (btnCancelQuickIdeaModal) btnCancelQuickIdeaModal.addEventListener('click', closeQuickIdeaModal);
+  if (quickIdeaForm) quickIdeaForm.addEventListener('submit', handleQuickIdeaSubmit);
+
+  // Notes Modal
+  const btnNotes = document.getElementById('btnNotes');
+  const btnCloseNotesModal = document.getElementById('btnCloseNotesModal');
+  const notesModal = document.getElementById('notesModal');
+  if (btnNotes) btnNotes.addEventListener('click', () => openNotesModal());
+  if (btnCloseNotesModal) btnCloseNotesModal.addEventListener('click', closeNotesModal);
+  if (notesModal) {
+    notesModal.addEventListener('click', (e) => {
+      if (e.target === notesModal) closeNotesModal();
+    });
+  }
+
+  // Focus Modal Backdrop Click
+  const focusModal = document.getElementById('focusScriptModal');
+  if (focusModal) {
+    focusModal.addEventListener('click', (e) => {
+      if (e.target === focusModal) closeFocusModal();
+    });
+  }
+
+  // Viral Calculator Listeners
+  setupViralCalcEventListeners();
+}
+
 // ==========================================
 // DEVICE SYNC (PC ↔ IPAD) HELPERS
 // ==========================================
@@ -1608,36 +1638,6 @@ function checkUrlForSyncData() {
   } catch (e) {
     console.error("Error al sincronizar datos desde la URL:", e);
   }
-}
-
-  // Quick Idea Modal
-  if (btnQuickIdea) btnQuickIdea.addEventListener('click', () => openQuickIdeaModal());
-  if (btnCloseQuickIdeaModal) btnCloseQuickIdeaModal.addEventListener('click', closeQuickIdeaModal);
-  if (btnCancelQuickIdeaModal) btnCancelQuickIdeaModal.addEventListener('click', closeQuickIdeaModal);
-  if (quickIdeaForm) quickIdeaForm.addEventListener('submit', handleQuickIdeaSubmit);
-
-  // Notes Modal
-  const btnNotes = document.getElementById('btnNotes');
-  const btnCloseNotesModal = document.getElementById('btnCloseNotesModal');
-  const notesModal = document.getElementById('notesModal');
-  if (btnNotes) btnNotes.addEventListener('click', () => openNotesModal());
-  if (btnCloseNotesModal) btnCloseNotesModal.addEventListener('click', closeNotesModal);
-  if (notesModal) {
-    notesModal.addEventListener('click', (e) => {
-      if (e.target === notesModal) closeNotesModal();
-    });
-  }
-
-  // Focus Modal Backdrop Click
-  const focusModal = document.getElementById('focusScriptModal');
-  if (focusModal) {
-    focusModal.addEventListener('click', (e) => {
-      if (e.target === focusModal) closeFocusModal();
-    });
-  }
-
-  // Viral Calculator Listeners
-  setupViralCalcEventListeners();
 }
 
 function toggleFullScreen() {
