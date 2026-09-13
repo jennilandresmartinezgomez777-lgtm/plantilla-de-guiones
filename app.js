@@ -4795,6 +4795,9 @@ function renderDayRows(items) {
         </td>
         <td class="py-2.5 px-3 text-right whitespace-nowrap">
           <div class="flex items-center justify-end gap-1">
+            <button onclick="sendViralEvalIdToAiStudio('${item.id}')" title="Crear Guión con IA (14.5 pts)" class="p-1.5 text-purple-400 hover:text-white hover:bg-purple-600/30 rounded-lg transition cursor-pointer">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </button>
             <button onclick="convertViralEvalToScriptById('${item.id}')" title="Convertir a Guión" class="p-1.5 text-brand-400 hover:text-white hover:bg-brand-600/30 rounded-lg transition cursor-pointer">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
             </button>
