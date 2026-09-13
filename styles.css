@@ -109,6 +109,36 @@
     background: #e2e8f0;
     color: #0f172a;
   }
+
+  .print-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .print-kpi-card {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 6px 4px !important;
+    text-align: center !important;
+    background: #f8fafc !important;
+  }
+
+  .print-kpi-value {
+    font-size: 13pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    font-family: monospace !important;
+  }
+
+  .print-kpi-label {
+    font-size: 7pt !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: #475569 !important;
+    margin-top: 2px !important;
+  }
 }
 
 /* Custom Scrollbar */

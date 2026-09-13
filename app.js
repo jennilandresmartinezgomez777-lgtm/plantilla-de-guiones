@@ -3002,7 +3002,15 @@ function setPrintModule(moduleName) {
     }
   }
 
-  // Populate selection list based on module
+  // Reset print selection to match the active module
+  if (moduleName === 'matrix' || moduleName === 'cards') {
+    printSelectedIds = new Set(getFilteredScripts().map(s => s.id));
+  } else if (moduleName === 'viral') {
+    printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
+  } else if (moduleName === 'ideas') {
+    printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
+  }
+
   renderPrintSelectionList();
   refreshLucideIcons();
 }
@@ -3011,6 +3019,9 @@ function handlePrintViralModeChange() {
   const selectedRadio = document.querySelector('input[name="printViralMode"]:checked');
   if (selectedRadio) {
     printViralMode = selectedRadio.value;
+  }
+  if (printViralMode === 'history') {
+    printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
   }
   renderPrintSelectionList();
 }
@@ -3066,13 +3077,13 @@ function renderPrintSelectionList() {
   if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
     if (selectionArea) selectionArea.classList.remove('hidden');
     if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
-    if (selectionLabel) selectionLabel.textContent = currentPrintModule === 'matrix' ? 'Seleccionar guiones para la Matriz:' : 'Seleccionar fichas de guión a imprimir:';
-
-    const filtered = getFilteredScripts();
-    if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !filtered.some(s => s.id === id))) {
-      printSelectedIds = new Set(filtered.map(s => s.id));
+    if (selectionLabel) {
+      selectionLabel.textContent = currentPrintModule === 'matrix' 
+        ? 'Seleccionar guiones para la Matriz & Resumen:' 
+        : 'Seleccionar fichas de guión para grabación:';
     }
 
+    const filtered = getFilteredScripts();
     if (filtered.length === 0) {
       listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay guiones disponibles para el filtro actual.</p>`;
       if (counter) counter.textContent = `0 guiones seleccionados`;
@@ -3089,7 +3100,10 @@ function renderPrintSelectionList() {
           <span class="font-bold text-slate-300 shrink-0">#${script.number || '?'}</span>
           <span class="font-medium text-white truncate">${escapeHtml(script.ideaGanadora || 'Sin título')}</span>
         </label>
-        <span class="text-[10px] uppercase font-bold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded shrink-0">${escapeHtml(script.client)}</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">${escapeHtml(script.status || 'Idea')}</span>
+          <span class="text-[10px] uppercase font-bold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">${escapeHtml(script.client)}</span>
+        </div>
       `;
       listContainer.appendChild(item);
     });
@@ -3112,7 +3126,7 @@ function renderPrintSelectionList() {
           <p class="text-slate-400 text-[11px]">Potencial: <strong class="text-white">${escapeHtml(currentData.potential)}</strong> (Se imprimirá la ficha completa con todos los criterios evaluados).</p>
         </div>
       `;
-      if (counter) counter.textContent = `Se imprimirá la evaluación activa (1 ficha)`;
+      if (counter) counter.textContent = `Se imprimirá la evaluación activa (1 ficha ejecutiva)`;
 
     } else {
       // History mode
@@ -3120,10 +3134,6 @@ function renderPrintSelectionList() {
       if (selectionLabel) selectionLabel.textContent = 'Seleccionar evaluaciones del historial a imprimir:';
       
       const evals = state.viralEvaluations || [];
-      if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !evals.some(e => e.id === id))) {
-        printSelectedIds = new Set(evals.map(e => e.id));
-      }
-
       if (evals.length === 0) {
         listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay evaluaciones guardadas en el historial.</p>`;
         if (counter) counter.textContent = `0 evaluaciones seleccionadas`;
@@ -3154,10 +3164,6 @@ function renderPrintSelectionList() {
     if (selectionLabel) selectionLabel.textContent = 'Seleccionar ideas y notas a imprimir:';
 
     const ideas = getAllIdeasForPrint();
-    if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !ideas.some(i => i.id === id))) {
-      printSelectedIds = new Set(ideas.map(i => i.id));
-    }
-
     if (ideas.length === 0) {
       listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay ideas o notas registradas.</p>`;
       if (counter) counter.textContent = `0 ideas seleccionadas`;
@@ -3230,59 +3236,141 @@ function executeEnhancedPrint() {
   const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
   if (currentPrintModule === 'matrix') {
-    const scripts = getFilteredScripts().filter(s => printSelectedIds.has(s.id));
+    const allFiltered = getFilteredScripts();
+    const scripts = allFiltered.filter(s => printSelectedIds.has(s.id));
     if (scripts.length === 0) {
       alert('Por favor selecciona al menos un guión para imprimir.');
       return;
     }
 
+    const countTotal = scripts.length;
+    const countIdeas = scripts.filter(s => s.status === 'Idea').length;
+    const countRedactados = scripts.filter(s => s.status === 'Redactado').length;
+    const countPorGrabar = scripts.filter(s => s.status === 'Por Grabar').length;
+    const countEnEdicion = scripts.filter(s => s.status === 'En Edición').length;
+    const countEditados = scripts.filter(s => s.status === 'Editado').length;
+    const countPublicados = scripts.filter(s => s.status === 'Publicado').length;
+
+    const statusCategories = [
+      { key: 'Idea', label: 'Ideas', icon: '💡', count: countIdeas, bg: '#fef9c3', text: '#854d0e', border: '#fef08a' },
+      { key: 'Redactado', label: 'Redactados', icon: '📝', count: countRedactados, bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+      { key: 'Por Grabar', label: 'Por Grabar', icon: '🎬', count: countPorGrabar, bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+      { key: 'En Edición', label: 'En Edición', icon: '💻', count: countEnEdicion, bg: '#faf5ff', text: '#6b21a8', border: '#e9d5ff' },
+      { key: 'Editado', label: 'Editados', icon: '✂️', count: countEditados, bg: '#f5f3ff', text: '#5b21b6', border: '#ddd6fe' },
+      { key: 'Publicado', label: 'Publicados', icon: '🚀', count: countPublicados, bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' }
+    ];
+
     html = `
       <div class="print-doc-header">
         <div>
-          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a; letter-spacing: -0.5px;">BLEX STUDIO</h1>
-          <p style="font-size: 11pt; font-weight: 600; color: #475569; margin: 0;">Matriz Estratégica de Guiones</p>
+          <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a; letter-spacing: -0.5px;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 700; color: #16a34a; margin: 0;">📊 MATRIZ ESTRATÉGICA & RESUMEN DE PRODUCCIÓN</p>
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
           <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos los Clientes' : escapeHtml(state.activeClient)}</p>
-          <p style="margin: 2px 0 0 0;"><strong>Total Guiones:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Total Guiones Seleccionados:</strong> ${countTotal} | <strong>Fecha:</strong> ${dateStr}</p>
         </div>
       </div>
 
-      <table class="print-table">
-        <thead>
-          <tr>
-            <th style="width: 32px; text-align: center;">#</th>
-            <th style="width: 70px;">Cliente</th>
-            <th style="width: 130px;">Idea Ganadora</th>
-            <th style="width: 90px;">Formato / Obj.</th>
-            <th>🎣 Gancho (Hook)</th>
-            <th>📖 Historia / Desarrollo</th>
-            <th>💡 Moraleja</th>
-            <th>🚀 CTA</th>
-            <th style="width: 70px; text-align: center;">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${scripts.map(s => `
-            <tr class="print-avoid-break">
-              <td style="text-align: center; font-weight: bold; font-family: monospace;">#${s.number || '?'}</td>
-              <td style="font-weight: bold;">${escapeHtml(s.client || '')}</td>
-              <td style="font-weight: bold; color: #0f172a;">${escapeHtml(s.ideaGanadora || '')}</td>
-              <td>
-                <div style="font-size: 8.5pt; font-weight: 600;">${escapeHtml(s.formato || '-')}</div>
-                <div style="font-size: 8pt; color: #64748b; text-transform: uppercase;">${escapeHtml(s.objetivo || '')}</div>
-              </td>
-              <td style="font-size: 8.5pt;">${escapeHtml(s.gancho || '-')}</td>
-              <td style="font-size: 8.5pt;">${escapeHtml(s.historia || '-')}</td>
-              <td style="font-size: 8.5pt;">${escapeHtml(s.moraleja || '-')}</td>
-              <td style="font-size: 8.5pt;">${escapeHtml(s.cta || '-')}</td>
-              <td style="text-align: center;">
-                <span class="print-badge" style="font-size: 8pt;">${escapeHtml(s.status || 'Idea')}</span>
-              </td>
+      <!-- KPI METRICS SUMMARY BAR -->
+      <div class="print-kpi-grid">
+        <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
+          <div class="print-kpi-value" style="color: #22c55e;">${countTotal}</div>
+          <div class="print-kpi-label" style="color: #e2e8f0;">Total General</div>
+        </div>
+        ${statusCategories.map(cat => `
+          <div class="print-kpi-card" style="border-color: ${cat.border}; background: ${cat.bg};">
+            <div class="print-kpi-value" style="color: ${cat.text};">${cat.count}</div>
+            <div class="print-kpi-label" style="color: ${cat.text};">${cat.icon} ${cat.label}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- DESGLOSE DETALLADO POR ESTADO (CUÁNTOS Y CUÁLES SON) -->
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 14px 0;">
+          📋 Desglose Detallado por Estado de Producción
+        </h2>
+
+        ${statusCategories.map(cat => {
+          const groupScripts = scripts.filter(s => s.status === cat.key);
+          if (groupScripts.length === 0) return '';
+          return `
+            <div class="print-avoid-break" style="margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; background: ${cat.bg}; border: 1px solid ${cat.border}; padding: 6px 12px; border-radius: 6px 6px 0 0;">
+                <span style="font-size: 10pt; font-weight: 800; color: ${cat.text};">${cat.icon} ${cat.label.toUpperCase()} (${groupScripts.length})</span>
+                <span style="font-size: 8pt; font-weight: 600; color: ${cat.text};">${groupScripts.length === 1 ? '1 guión' : groupScripts.length + ' guiones'}</span>
+              </div>
+              <table class="print-table" style="margin-top: 0; border-top: none;">
+                <thead>
+                  <tr>
+                    <th style="width: 35px; text-align: center;">#</th>
+                    <th style="width: 75px;">Cliente</th>
+                    <th>Título / Idea Ganadora</th>
+                    <th style="width: 120px;">Formato / Obj.</th>
+                    <th style="width: 70px;">Actor</th>
+                    <th>Gancho Inicial</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${groupScripts.map(s => `
+                    <tr>
+                      <td style="text-align: center; font-weight: bold; font-family: monospace;">#${s.number || '?'}</td>
+                      <td style="font-weight: bold;">${escapeHtml(s.client)}</td>
+                      <td style="font-weight: 600; color: #0f172a;">${escapeHtml(s.ideaGanadora || '-')}</td>
+                      <td>
+                        <div style="font-size: 8.5pt; font-weight: 600;">${escapeHtml(s.formato || '-')}</div>
+                        <div style="font-size: 7.5pt; color: #64748b; text-transform: uppercase;">${escapeHtml(s.objetivo || '')}</div>
+                      </td>
+                      <td style="font-size: 8.5pt;">${escapeHtml(s.actor || 'Principal')}</td>
+                      <td style="font-size: 8.5pt; color: #334155;">${escapeHtml(s.gancho || '-')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- TABLA GENERAL DE MATRIZ COMPLETA -->
+      <div class="print-avoid-break" style="margin-top: 20px;">
+        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 10px 0;">
+          📊 Matriz General Completa (${countTotal} guiones)
+        </h2>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width: 30px; text-align: center;">#</th>
+              <th style="width: 70px;">Cliente</th>
+              <th style="width: 140px;">Título / Idea</th>
+              <th style="width: 90px;">Formato</th>
+              <th>🎣 Gancho</th>
+              <th>📖 Historia</th>
+              <th>💡 Moraleja</th>
+              <th>🚀 CTA</th>
+              <th style="width: 70px; text-align: center;">Estado</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${scripts.map(s => `
+              <tr class="print-avoid-break">
+                <td style="text-align: center; font-weight: bold; font-family: monospace;">#${s.number || '?'}</td>
+                <td style="font-weight: bold;">${escapeHtml(s.client)}</td>
+                <td style="font-weight: bold; color: #0f172a;">${escapeHtml(s.ideaGanadora || '')}</td>
+                <td style="font-size: 8pt;">${escapeHtml(s.formato || '-')}</td>
+                <td style="font-size: 8pt;">${escapeHtml(s.gancho || '-')}</td>
+                <td style="font-size: 8pt;">${escapeHtml(s.historia || '-')}</td>
+                <td style="font-size: 8pt;">${escapeHtml(s.moraleja || '-')}</td>
+                <td style="font-size: 8pt;">${escapeHtml(s.cta || '-')}</td>
+                <td style="text-align: center;">
+                  <span class="print-badge" style="font-size: 7.5pt;">${escapeHtml(s.status || 'Idea')}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
 
   } else if (currentPrintModule === 'cards') {
@@ -3295,12 +3383,12 @@ function executeEnhancedPrint() {
     html = `
       <div class="print-doc-header">
         <div>
-          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-          <p style="font-size: 11pt; font-weight: 600; color: #475569; margin: 0;">Fichas Detalladas de Producción y Grabación</p>
+          <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 700; color: #7c3aed; margin: 0;">🎴 FICHAS DETALLADAS DE PRODUCCIÓN Y GRABACIÓN</p>
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
           <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos' : escapeHtml(state.activeClient)}</p>
-          <p style="margin: 2px 0 0 0;"><strong>Fichas:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Total Fichas:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
         </div>
       </div>
 
@@ -3355,8 +3443,8 @@ function executeEnhancedPrint() {
       html = `
         <div class="print-doc-header">
           <div>
-            <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-            <p style="font-size: 11pt; font-weight: 600; color: #d97706; margin: 0;">Ficha de Evaluación de Potencial Viral</p>
+            <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 FICHA DE EVALUACIÓN DE POTENCIAL VIRAL</p>
           </div>
           <div style="text-align: right; font-size: 9pt; color: #64748b;">
             <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(data.client)}</p>
@@ -3367,12 +3455,12 @@ function executeEnhancedPrint() {
         <div class="print-card" style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
             <div>
-              <span style="font-size: 9pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada</span>
+              <span style="font-size: 9pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada en Pantalla</span>
               <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(data.title || '(Sin título ingresado)')}</h2>
               ${data.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(data.link)}</p>` : ''}
             </div>
             <div style="text-align: right;">
-              <div style="font-size: 24pt; font-weight: 900; font-family: monospace; color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'};">${data.totalScore} <span style="font-size: 12pt; color: #64748b;">/ 15</span></div>
+              <div style="font-size: 26pt; font-weight: 900; font-family: monospace; color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'};">${data.totalScore} <span style="font-size: 12pt; color: #64748b;">/ 15</span></div>
               <span class="print-badge" style="font-size: 9pt; background: ${data.totalScore >= 10 ? '#ecfdf5' : data.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${data.totalScore >= 10 ? '#065f46' : data.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${data.totalScore >= 10 ? '#a7f3d0' : data.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
                 ${escapeHtml(data.potential)}
               </span>
@@ -3456,27 +3544,51 @@ function executeEnhancedPrint() {
         return;
       }
 
+      const countViral = evals.filter(e => (e.totalScore || 0) >= 10).length;
+      const countMedio = evals.filter(e => (e.totalScore || 0) >= 7 && (e.totalScore || 0) < 10).length;
+      const avgScore = (evals.reduce((acc, curr) => acc + (curr.totalScore || 0), 0) / evals.length).toFixed(1);
+
       html = `
         <div class="print-doc-header">
           <div>
-            <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-            <p style="font-size: 11pt; font-weight: 600; color: #d97706; margin: 0;">Historial de Evaluaciones de Viralidad</p>
+            <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 HISTORIAL DE EVALUACIONES DE VIRALIDAD</p>
           </div>
           <div style="text-align: right; font-size: 9pt; color: #64748b;">
-            <p style="margin: 0;"><strong>Total Evaluaciones:</strong> ${evals.length}</p>
+            <p style="margin: 0;"><strong>Total Evaluaciones Seleccionadas:</strong> ${evals.length}</p>
             <p style="margin: 2px 0 0 0;"><strong>Fecha de Reporte:</strong> ${dateStr}</p>
+          </div>
+        </div>
+
+        <!-- KPI SUMMARY BAR -->
+        <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
+          <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
+            <div class="print-kpi-value" style="color: #f59e0b;">${evals.length}</div>
+            <div class="print-kpi-label" style="color: #e2e8f0;">Total Evaluadas</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
+            <div class="print-kpi-value" style="color: #b45309;">${avgScore} / 15</div>
+            <div class="print-kpi-label" style="color: #b45309;">Promedio General</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #bbf7d0; background: #f0fdf4;">
+            <div class="print-kpi-value" style="color: #166534;">${countViral}</div>
+            <div class="print-kpi-label" style="color: #166534;">🚀 Muy Alto / Viral</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #fed7aa; background: #fff7ed;">
+            <div class="print-kpi-value" style="color: #9a3412;">${countMedio}</div>
+            <div class="print-kpi-label" style="color: #9a3412;">⚡ Potencial Medio</div>
           </div>
         </div>
 
         <table class="print-table">
           <thead>
             <tr>
-              <th style="width: 80px;">Fecha</th>
-              <th style="width: 80px;">Cliente</th>
+              <th style="width: 75px;">Fecha</th>
+              <th style="width: 75px;">Cliente</th>
               <th>Idea Evaluada</th>
               <th style="width: 110px;">Formato</th>
               <th style="width: 80px; text-align: center;">Puntaje</th>
-              <th style="width: 100px; text-align: center;">Potencial</th>
+              <th style="width: 110px; text-align: center;">Potencial</th>
             </tr>
           </thead>
           <tbody>
@@ -3493,7 +3605,9 @@ function executeEnhancedPrint() {
                   ${e.totalScore || 0} / 15
                 </td>
                 <td style="text-align: center;">
-                  <span class="print-badge" style="font-size: 8pt;">${escapeHtml(e.potential || 'Evaluado')}</span>
+                  <span class="print-badge" style="font-size: 8pt; background: ${e.totalScore >= 10 ? '#ecfdf5' : e.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${e.totalScore >= 10 ? '#065f46' : e.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${e.totalScore >= 10 ? '#a7f3d0' : e.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
+                    ${escapeHtml(e.potential || 'Evaluado')}
+                  </span>
                 </td>
               </tr>
             `).join('')}
@@ -3509,37 +3623,76 @@ function executeEnhancedPrint() {
       return;
     }
 
+    const countScriptIdeas = allIdeas.filter(i => i.type === 'Idea de Guión').length;
+    const countNotes = allIdeas.filter(i => i.type.includes('Nota')).length;
+    
+    // Group count by client
+    const clientCounts = {};
+    allIdeas.forEach(i => {
+      clientCounts[i.client] = (clientCounts[i.client] || 0) + 1;
+    });
+
     html = `
       <div class="print-doc-header">
         <div>
-          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-          <p style="font-size: 11pt; font-weight: 600; color: #ca8a04; margin: 0;">Banco de Ideas y Notas Estratégicas</p>
+          <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 700; color: #ca8a04; margin: 0;">💡 BANCO DE IDEAS & NOTAS ESTRATÉGICAS</p>
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
-          <p style="margin: 0;"><strong>Total Registros:</strong> ${allIdeas.length}</p>
+          <p style="margin: 0;"><strong>Total Ideas / Notas:</strong> ${allIdeas.length}</p>
           <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
         </div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        ${allIdeas.map(item => `
-          <div class="print-card print-avoid-break">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="print-badge" style="background: #fef9c3; color: #854d0e; border-color: #fef08a;">${escapeHtml(item.type)}</span>
-                <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(item.title)}</span>
+      <!-- KPI METRICS SUMMARY -->
+      <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
+        <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
+          <div class="print-kpi-value" style="color: #eab308;">${allIdeas.length}</div>
+          <div class="print-kpi-label" style="color: #e2e8f0;">Total Ideas & Notas</div>
+        </div>
+        <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
+          <div class="print-kpi-value" style="color: #854d0e;">${countScriptIdeas}</div>
+          <div class="print-kpi-label" style="color: #854d0e;">💡 Ideas de Guiones</div>
+        </div>
+        <div class="print-kpi-card" style="border-color: #bae6fd; background: #f0f9ff;">
+          <div class="print-kpi-value" style="color: #0369a1;">${countNotes}</div>
+          <div class="print-kpi-label" style="color: #0369a1;">📝 Notas Estratégicas</div>
+        </div>
+        <div class="print-kpi-card" style="border-color: #e2e8f0; background: #f8fafc;">
+          <div class="print-kpi-value" style="color: #334155;">${Object.keys(clientCounts).length}</div>
+          <div class="print-kpi-label" style="color: #475569;">👥 Clientes con Ideas</div>
+        </div>
+      </div>
+
+      <!-- DESGLOSE DETALLADO DE TODAS LAS IDEAS -->
+      <div style="margin-top: 16px;">
+        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 14px 0;">
+          📋 Listado y Detalle de Ideas Seleccionadas (${allIdeas.length})
+        </h2>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${allIdeas.map((item, idx) => `
+            <div class="print-card print-avoid-break" style="margin-bottom: 12px; padding: 12px 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 9pt; font-weight: bold; font-family: monospace; color: #64748b;">#${idx + 1}</span>
+                  <span class="print-badge" style="background: ${item.type === 'Idea de Guión' ? '#fef9c3' : '#e0f2fe'}; color: ${item.type === 'Idea de Guión' ? '#854d0e' : '#0369a1'}; border-color: ${item.type === 'Idea de Guión' ? '#fef08a' : '#bae6fd'};">
+                    ${escapeHtml(item.type)}
+                  </span>
+                  <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(item.title)}</span>
+                </div>
+                <span class="print-badge" style="font-weight: 800;">${escapeHtml(item.client)}</span>
               </div>
-              <span class="print-badge">${escapeHtml(item.client)}</span>
+              <div class="print-section-box" style="border-left-color: ${item.type === 'Idea de Guión' ? '#eab308' : '#0284c7'}; white-space: pre-line; font-size: 9.5pt; color: #334155; line-height: 1.5; margin-top: 6px;">
+                ${escapeHtml(item.content)}
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 8pt; color: #64748b; margin-top: 6px;">
+                <span>📅 Registrado: ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : '-'}</span>
+                <span>BLEX STUDIO</span>
+              </div>
             </div>
-            <div class="print-section-box" style="border-left-color: #eab308; white-space: pre-line; font-size: 9.5pt; color: #334155; line-height: 1.5;">
-              ${escapeHtml(item.content)}
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 8pt; color: #64748b; margin-top: 8px;">
-              <span>Registrado: ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : '-'}</span>
-              <span>BLEX STUDIO — Banco de Ideas</span>
-            </div>
-          </div>
-        `).join('')}
+          `).join('')}
+        </div>
       </div>
     `;
   }
