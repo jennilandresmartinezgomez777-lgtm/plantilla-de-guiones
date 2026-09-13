@@ -977,7 +977,28 @@
                   <button class="tp-chip-btn" id="tp-preset-clear">Limpiar Texto</button>
                 </div>
 
-                <textarea class="tp-script-input" id="tp-script-textarea" placeholder="Escribe o pega aquí el texto de tu discurso para este guión..."></textarea>
+                <!-- Structured 4-Section Editor -->
+                <div class="space-y-3 mt-3">
+                  <div>
+                    <label class="block text-xs font-bold text-amber-400 mb-1">🎣 1. Gancho (Hook)</label>
+                    <textarea id="tp-editor-gancho" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-brand-500" placeholder="Frase corta para capturar la atención en los primeros 3 segundos..."></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-sky-400 mb-1">📖 2. Contexto / Historia (Cuerpo del guión)</label>
+                    <textarea id="tp-editor-historia" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-brand-500" placeholder="Desarrollo del guión, puntos principales o diálogo..."></textarea>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-bold text-purple-400 mb-1">💡 3. Moraleja / Conclusión</label>
+                      <textarea id="tp-editor-moraleja" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-brand-500" placeholder="Enseñanza o valor del video..."></textarea>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-emerald-400 mb-1">📣 4. Llamado a la Acción (CTA)</label>
+                      <textarea id="tp-editor-cta" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-brand-500" placeholder="Ej: Comenta CREDITO para la guía gratis..."></textarea>
+                    </div>
+                  </div>
+                  <textarea class="hidden" id="tp-script-textarea"></textarea>
+                </div>
               </div>
               <div class="tp-modal-footer">
                 <button class="tp-action-btn tp-action-btn-secondary" id="tp-btn-cancel-editor">Cancelar</button>
@@ -1523,6 +1544,10 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button id="btnOpenTeleprompterFocusScript" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
+            <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Grabar en Teleprónter</span>
+          </button>
           <button id="btnCopyFocusScript" type="button" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Copiar Guión</span>
@@ -1632,6 +1657,17 @@
               <i data-lucide="cloud-download" class="w-4 h-4 text-emerald-400"></i>
               <span>Cargar de Nube</span>
             </button>
+          </div>
+          <!-- Personal Cloud Sync Key -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+            <label class="block text-[11px] font-semibold text-slate-300">🔑 Clave Personal de Sincronización (para PC e iPad):</label>
+            <div class="flex gap-2">
+              <input type="text" id="syncPersonalCodeInput" placeholder="Ej: MI-ESTUDIO-1" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-emerald-500">
+              <button type="button" onclick="savePersonalSyncCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer whitespace-nowrap">
+                Guardar Clave
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-tight">Al usar la misma clave en tu PC e iPad, la sincronización en la nube será 100% directa y automática.</p>
           </div>
         </div>
 

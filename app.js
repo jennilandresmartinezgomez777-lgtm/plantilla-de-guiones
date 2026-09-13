@@ -1140,6 +1140,10 @@ function displayScriptInTeleprompter(scriptId) {
       </div>
 
       <div class="flex items-center gap-3">
+        <button onclick="openScriptInTeleprompterPro('${script.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
+          <i data-lucide="tv" class="w-4 h-4"></i>
+          <span>Cargar en Teleprónter Pro</span>
+        </button>
         <button onclick="copyFullScript('${script.id}', this)" class="bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md">
           <i data-lucide="copy" class="w-4 h-4"></i>
           <span>Copiar Guión Completo</span>
@@ -1200,6 +1204,98 @@ function displayScriptInTeleprompter(scriptId) {
 
     </div>
   `;
+}
+
+function openTeleprompterForScript(scriptId) {
+  openScriptInTeleprompterPro(scriptId);
+}
+
+let activeFocusScriptId = null;
+
+function openFocusScriptModal(scriptId) {
+  const script = state.scripts.find(s => s.id === scriptId);
+  if (!script) return;
+  activeFocusScriptId = scriptId;
+  const modal = document.getElementById('focusScriptModal');
+  const modalTitle = document.getElementById('focusModalTitle');
+  const modalBody = document.getElementById('focusModalBody');
+  const btnOpenTP = document.getElementById('btnOpenTeleprompterFocusScript');
+  const btnEdit = document.getElementById('btnEditFocusScript');
+  const btnPrint = document.getElementById('btnPrintFocusScript');
+  const btnCopy = document.getElementById('btnCopyFocusScript');
+
+  if (modalTitle) modalTitle.textContent = `#${script.number || ''} - ${script.ideaGanadora}`;
+  if (btnOpenTP) {
+    btnOpenTP.onclick = () => {
+      openScriptInTeleprompterPro(scriptId);
+      closeFocusModal();
+    };
+  }
+  if (btnEdit) {
+    btnEdit.onclick = () => {
+      closeFocusModal();
+      openEditScriptModal(scriptId);
+    };
+  }
+  if (btnPrint) {
+    btnPrint.onclick = () => printSingleScript(scriptId);
+  }
+  if (btnCopy) {
+    btnCopy.onclick = (e) => copyFullScript(scriptId, e.currentTarget);
+  }
+
+  if (modalBody) {
+    modalBody.innerHTML = `
+      <div class="space-y-6">
+        <div class="flex items-center gap-3">
+          <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded border border-brand-500/20">${script.client}</span>
+          <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2 py-1 rounded">Guión #${script.number || '-'}</span>
+          <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-1 rounded border border-amber-500/20">Formato: ${script.formato}</span>
+        </div>
+
+        <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO</span>
+            <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+          </div>
+          <p class="text-2xl font-bold text-amber-100">${script.gancho}</p>
+        </div>
+
+        <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
+            <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+          </div>
+          <p class="text-xl font-medium text-emerald-100 whitespace-pre-line">${script.historia}</p>
+        </div>
+
+        <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / VALOR</span>
+            <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+          </div>
+          <p class="text-xl font-medium text-rose-100 whitespace-pre-line">${script.moraleja}</p>
+        </div>
+
+        <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
+            <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+          </div>
+          <p class="text-2xl font-bold text-blue-100">${script.cta}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeFocusModal() {
+  const modal = document.getElementById('focusScriptModal');
+  if (modal) modal.classList.add('hidden');
+  activeFocusScriptId = null;
 }
 
 // COPY & PASTE HELPERS
@@ -1417,9 +1513,44 @@ function setupEventListeners() {
 // ==========================================
 // DEVICE SYNC (PC ↔ IPAD) HELPERS
 // ==========================================
+function getUuidFromSyncCode(code) {
+  if (!code || !code.trim()) return null;
+  let str = code.toLowerCase().trim();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  let hex = '';
+  for (let i = 0; i < 32; i++) {
+    const charCode = str.charCodeAt(i % str.length) ^ (Math.abs(hash + i * 17) % 256);
+    hex += charCode.toString(16).padStart(2, '0').substring(0, 1);
+  }
+  while (hex.length < 32) hex += 'a';
+  hex = hex.substring(0, 32);
+  return `${hex.substring(0,8)}-${hex.substring(8,12)}-4${hex.substring(12,15)}-a${hex.substring(16,19)}-${hex.substring(20,32)}`;
+}
+
+function savePersonalSyncCode() {
+  const input = document.getElementById('syncPersonalCodeInput');
+  if (!input) return;
+  const val = input.value.trim();
+  if (val) {
+    localStorage.setItem('blex_cloud_sync_code', val);
+    alert(`🔑 Clave personal '${val}' guardada en este dispositivo.\n\nColoca esta misma clave en tu otro dispositivo (PC / iPad) para sincronización directa sin enviar enlaces.`);
+  } else {
+    localStorage.removeItem('blex_cloud_sync_code');
+    alert("Se eliminó la clave personal de este dispositivo.");
+  }
+}
+
 function openSyncModal() {
   const modal = document.getElementById('syncModal');
   if (modal) modal.classList.remove('hidden');
+  const codeInput = document.getElementById('syncPersonalCodeInput');
+  if (codeInput) {
+    codeInput.value = localStorage.getItem('blex_cloud_sync_code') || '';
+  }
 }
 
 function closeSyncModal() {
@@ -1434,6 +1565,7 @@ function getFullAppStateJSON() {
     notes: state.notes,
     viralEvaluations: state.viralEvaluations,
     challengeStartDate: state.challengeStartDate,
+    tpStateScripts: (typeof tpState !== 'undefined' && tpState && tpState.scripts) ? tpState.scripts : null,
     exportedAt: new Date().toISOString()
   });
 }
@@ -1450,7 +1582,8 @@ async function saveStateToCloud() {
 
   try {
     const jsonStr = getFullAppStateJSON();
-    let blobId = localStorage.getItem('blex_cloud_blob_id');
+    let syncCode = localStorage.getItem('blex_cloud_sync_code');
+    let blobId = syncCode ? getUuidFromSyncCode(syncCode) : localStorage.getItem('blex_cloud_blob_id');
     
     let res;
     if (blobId) {
@@ -1474,8 +1607,10 @@ async function saveStateToCloud() {
       }
     }
 
-    if (blobId) {
-      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nID de Nube: ${blobId}\n\nAhora abre Blex Studio en tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Cargar de Nube'.`);
+    if (syncCode) {
+      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nClave de Sincronización: "${syncCode}"\n\nAbre Blex Studio en tu iPad, asegúrate de tener la clave "${syncCode}" en 'Sincronizar PC ↔ iPad' y presiona 'Cargar de Nube'.`);
+    } else if (blobId) {
+      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nID de Nube: ${blobId}\n\nAbre Blex Studio en tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Cargar de Nube'.`);
     } else {
       alert("☁️ ¡Guardado en la Nube con Éxito!");
     }
@@ -1493,11 +1628,16 @@ async function loadStateFromCloud() {
   const btn = document.getElementById('btnLoadCloud');
   const originalHTML = btn ? btn.innerHTML : '';
 
-  let blobId = localStorage.getItem('blex_cloud_blob_id');
+  let syncCode = localStorage.getItem('blex_cloud_sync_code');
+  let blobId = syncCode ? getUuidFromSyncCode(syncCode) : localStorage.getItem('blex_cloud_blob_id');
+
   if (!blobId) {
-    blobId = prompt("Ingresa el ID de Nube (obtenido al hacer clic en 'Guardar en Nube' en tu otro dispositivo):");
+    blobId = prompt("Ingresa el ID de Nube o tu Clave Personal:");
     if (!blobId || !blobId.trim()) return;
     blobId = blobId.trim();
+    if (!blobId.includes('-')) {
+      blobId = getUuidFromSyncCode(blobId);
+    }
   }
 
   if (btn) {
@@ -1508,11 +1648,14 @@ async function loadStateFromCloud() {
   try {
     const res = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
     if (!res.ok) {
-      const manualId = prompt("No se encontró esa copia de nube. Si guardaste desde otro dispositivo, ingresa su ID de Nube:");
+      const manualId = prompt("No se encontró esa copia en la nube. Ingresa tu Clave Personal de Nube (ej: MI-ESTUDIO-1) o el ID manual:");
       if (manualId && manualId.trim()) {
         blobId = manualId.trim();
+        if (!blobId.includes('-') || blobId.length < 30) {
+          blobId = getUuidFromSyncCode(blobId);
+        }
         const res2 = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
-        if (!res2.ok) throw new Error("ID de Nube no encontrado");
+        if (!res2.ok) throw new Error("Copia de Nube no encontrada con esa clave.");
         const data2 = await res2.json();
         applyCloudData(data2, blobId);
         return;
@@ -1538,11 +1681,21 @@ function applyCloudData(data, blobId) {
     if (data.notes) state.notes = data.notes;
     if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
     if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
-    localStorage.setItem('blex_cloud_blob_id', blobId);
+    if (blobId) localStorage.setItem('blex_cloud_blob_id', blobId);
+
+    if (data.tpStateScripts && typeof tpState !== 'undefined' && tpState) {
+      tpState.scripts = data.tpStateScripts;
+      tpSaveScriptsToStorage();
+      if (typeof tpUpdateQuickSlotDropdown === 'function') tpUpdateQuickSlotDropdown();
+      if (typeof tpRenderScript === 'function') tpRenderScript();
+    } else if (typeof syncStudioScriptsToTeleprompter === 'function') {
+      syncStudioScriptsToTeleprompter();
+    }
+
     saveState();
     renderAll();
     closeSyncModal();
-    alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones desde la Nube.");
+    alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones y el Teleprónter desde la Nube.");
   } else {
     alert("Los datos descargados no contienen una estructura válida de guiones.");
   }
@@ -3542,6 +3695,7 @@ let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGu
 let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
 let tpQuickSlotSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
 let tpEditorModal, tpScriptTextarea, tpSlotChipsContainer, tpSlotTitleInput, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
+let tpEditorGancho, tpEditorHistoria, tpEditorMoraleja, tpEditorCTA;
 let tpPresetSample1, tpPresetSample2, tpPresetClear, tpPresetSync;
 let tpSettingsModal, tpBtnCloseSettings, tpBtnSaveSettings, tpToggleMirrorY, tpToggleGuideLine;
 let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatches;
@@ -3550,6 +3704,25 @@ function tpSaveScriptsToStorage() {
   localStorage.setItem('tp_scripts_v2', JSON.stringify(tpState.scripts));
   localStorage.setItem('tp_active_slot', tpState.activeSlot);
   localStorage.setItem('tp_script', tpState.scriptText);
+}
+
+function tpAssembleScriptText(data) {
+  if (!data) return '';
+  let parts = [];
+  if (data.gancho && data.gancho.trim()) {
+    parts.push("🎣 GANCHO:\n" + data.gancho.trim());
+  }
+  if (data.historia && data.historia.trim()) {
+    parts.push("📖 CONTEXTO / HISTORIA:\n" + data.historia.trim());
+  }
+  if (data.moraleja && data.moraleja.trim()) {
+    parts.push("💡 MORALEJA:\n" + data.moraleja.trim());
+  }
+  if (data.cta && data.cta.trim()) {
+    parts.push("📣 LLAMADO A LA ACCIÓN (CTA):\n" + data.cta.trim());
+  }
+  if (parts.length === 0 && data.text) return data.text;
+  return parts.join("\n\n");
 }
 
 function syncStudioScriptsToTeleprompter() {
@@ -3563,13 +3736,15 @@ function syncStudioScriptsToTeleprompter() {
   clientScripts.slice(0, 10).forEach((s, idx) => {
     const slotNum = idx + 1;
     const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Guión ' + slotNum}`;
-    let text = `GANCHO:\n${s.gancho || ''}\n\nHISTORIA:\n${s.historia || ''}\n\nLLAMADO A LA ACCIÓN (CTA):\n${s.cta || ''}`;
-    if (s.moraleja) text += `\n\nMORALEJA:\n${s.moraleja}`;
-    
-    tpState.scripts[slotNum] = {
+    const data = {
       title: title,
-      text: text
+      gancho: s.gancho || '',
+      historia: s.historia || '',
+      moraleja: s.moraleja || '',
+      cta: s.cta || ''
     };
+    data.text = tpAssembleScriptText(data);
+    tpState.scripts[slotNum] = data;
   });
   
   tpState.scriptText = tpState.scripts[tpState.activeSlot]?.text || '';
@@ -3582,12 +3757,19 @@ function openScriptInTeleprompterPro(scriptId) {
   const script = state.scripts.find(s => s.id === scriptId);
   if (!script) return;
   
-  const text = `GANCHO:\n${script.gancho || ''}\n\nHISTORIA:\n${script.historia || ''}\n\nLLAMADO A LA ACCIÓN (CTA):\n${script.cta || ''}${script.moraleja ? '\n\nMORALEJA:\n' + script.moraleja : ''}`;
   const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Guión'}`;
+  const data = {
+    title: title,
+    gancho: script.gancho || '',
+    historia: script.historia || '',
+    moraleja: script.moraleja || '',
+    cta: script.cta || ''
+  };
+  data.text = tpAssembleScriptText(data);
 
   tpState.activeSlot = 1;
-  tpState.scripts[1] = { title, text };
-  tpState.scriptText = text;
+  tpState.scripts[1] = data;
+  tpState.scriptText = data.text;
   tpSaveScriptsToStorage();
   tpUpdateQuickSlotDropdown();
   tpRenderScript();
@@ -3638,14 +3820,23 @@ function tpRenderSlotChips() {
 
 function tpSwitchEditingSlot(newSlotNum) {
   if (tpState.scripts[tpState.editingSlot]) {
-    tpState.scripts[tpState.editingSlot].text = tpScriptTextarea.value;
-    tpState.scripts[tpState.editingSlot].title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+    const prev = tpState.scripts[tpState.editingSlot];
+    if (tpEditorGancho) prev.gancho = tpEditorGancho.value;
+    if (tpEditorHistoria) prev.historia = tpEditorHistoria.value;
+    if (tpEditorMoraleja) prev.moraleja = tpEditorMoraleja.value;
+    if (tpEditorCTA) prev.cta = tpEditorCTA.value;
+    if (tpSlotTitleInput) prev.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+    prev.text = tpAssembleScriptText(prev);
   }
 
   tpState.editingSlot = newSlotNum;
-  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, text: '' };
-  tpSlotTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
-  tpScriptTextarea.value = currentData.text || '';
+  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, gancho: '', historia: '', moraleja: '', cta: '', text: '' };
+  if (tpSlotTitleInput) tpSlotTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
+  if (tpEditorGancho) tpEditorGancho.value = currentData.gancho || '';
+  if (tpEditorHistoria) tpEditorHistoria.value = currentData.historia || '';
+  if (tpEditorMoraleja) tpEditorMoraleja.value = currentData.moraleja || '';
+  if (tpEditorCTA) tpEditorCTA.value = currentData.cta || '';
+  if (tpScriptTextarea) tpScriptTextarea.value = currentData.text || '';
   tpRenderSlotChips();
 }
 
@@ -3987,6 +4178,10 @@ function initTeleprompterProEngine() {
 
   tpEditorModal = document.getElementById('tp-editor-modal');
   tpScriptTextarea = document.getElementById('tp-script-textarea');
+  tpEditorGancho = document.getElementById('tp-editor-gancho');
+  tpEditorHistoria = document.getElementById('tp-editor-historia');
+  tpEditorMoraleja = document.getElementById('tp-editor-moraleja');
+  tpEditorCTA = document.getElementById('tp-editor-cta');
   tpSlotChipsContainer = document.getElementById('tp-slot-chips-container');
   tpSlotTitleInput = document.getElementById('tp-slot-title-input');
   tpBtnCloseEditor = document.getElementById('tp-btn-close-editor');
@@ -4136,8 +4331,13 @@ function setupTeleprompterProEventListeners() {
   if (tpBtnSaveEditor) {
     tpBtnSaveEditor.addEventListener('click', () => {
       if (tpState.scripts[tpState.editingSlot]) {
-        tpState.scripts[tpState.editingSlot].text = tpScriptTextarea.value;
-        tpState.scripts[tpState.editingSlot].title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+        const slot = tpState.scripts[tpState.editingSlot];
+        if (tpEditorGancho) slot.gancho = tpEditorGancho.value;
+        if (tpEditorHistoria) slot.historia = tpEditorHistoria.value;
+        if (tpEditorMoraleja) slot.moraleja = tpEditorMoraleja.value;
+        if (tpEditorCTA) slot.cta = tpEditorCTA.value;
+        if (tpSlotTitleInput) slot.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
+        slot.text = tpAssembleScriptText(slot);
       }
 
       tpState.activeSlot = tpState.editingSlot;
@@ -4151,9 +4351,21 @@ function setupTeleprompterProEventListeners() {
     });
   }
 
-  if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation);
-  if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube);
-  if (tpPresetClear) tpPresetClear.addEventListener('click', () => tpScriptTextarea.value = '');
+  if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => {
+    if (tpEditorHistoria) tpEditorHistoria.value = TP_SAMPLE_SCRIPTS.presentation;
+    if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
+  });
+  if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => {
+    if (tpEditorHistoria) tpEditorHistoria.value = TP_SAMPLE_SCRIPTS.youtube;
+    if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
+  });
+  if (tpPresetClear) tpPresetClear.addEventListener('click', () => {
+    if (tpEditorGancho) tpEditorGancho.value = '';
+    if (tpEditorHistoria) tpEditorHistoria.value = '';
+    if (tpEditorMoraleja) tpEditorMoraleja.value = '';
+    if (tpEditorCTA) tpEditorCTA.value = '';
+    if (tpScriptTextarea) tpScriptTextarea.value = '';
+  });
   if (tpPresetSync) {
     tpPresetSync.addEventListener('click', () => {
       syncStudioScriptsToTeleprompter();
