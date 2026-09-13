@@ -6364,15 +6364,18 @@ function getAiApiEndpoint(base, route) {
   if (clean.endsWith('/api/ollama') || clean.endsWith('/ollama')) {
     return `${clean}/${route}`;
   }
+  if (clean.endsWith('/api')) {
+    return `${clean}/${route}`;
+  }
   return `${clean}/api/${route}`;
 }
 
 async function checkAiServerHealth() {
   try {
-    const endpoint = getAiServerEndpoint();
+    const targetUrl = getAiApiEndpoint(aiState.serverUrl, 'tags');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${endpoint}/api/tags`, { signal: controller.signal });
+    const res = await fetch(targetUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (res.ok) {
       aiUpdateConnectionBadge(true);
@@ -6385,7 +6388,7 @@ async function checkAiServerHealth() {
 
 async function aiCallOllama(prompt, systemInstruction = '', temperature = 0.7) {
   aiState.isGenerating = true;
-  const endpoint = getAiServerEndpoint();
+  const targetUrl = getAiApiEndpoint(aiState.serverUrl, 'generate');
 
   const payload = {
     model: aiState.model,
@@ -6403,7 +6406,7 @@ async function aiCallOllama(prompt, systemInstruction = '', temperature = 0.7) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-    const response = await fetch(`${endpoint}/api/generate`, {
+    const response = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

@@ -19,6 +19,7 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
+  // CORS Headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Origin, Accept, Authorization');
@@ -29,10 +30,13 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Ollama Proxy route: /api/ollama/* -> http://127.0.0.1:11434/api/*
-  if (req.url.startsWith('/api/ollama/') || req.url.startsWith('/ollama/')) {
-    const targetPath = req.url.replace(/^\/(api\/)?ollama/, '/api');
-    const targetUrl = `${OLLAMA_HOST}${targetPath}`;
+  // Ollama Proxy route: handles /api/ollama/*, /api/ollama/api/*, /ollama/*
+  if (req.url.startsWith('/api/ollama') || req.url.startsWith('/ollama')) {
+    let cleanSub = req.url.replace(/^\/(api\/)?ollama\/?/, '');
+    if (cleanSub.startsWith('api/')) cleanSub = cleanSub.substring(4);
+    if (!cleanSub.startsWith('/')) cleanSub = '/' + cleanSub;
+
+    const targetUrl = `${OLLAMA_HOST}/api${cleanSub}`;
     
     try {
       let body = null;
