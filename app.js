@@ -4948,7 +4948,7 @@ function exportViralEvaluationsCSV() {
 }
 
 // ==========================================
-// TELEPROMPTER PRO (IPAD ENGINE) LOGIC
+// TELEPROMPTER PRO (IPAD ENGINE) LOGIC - DUAL MODE
 // ==========================================
 
 const TP_SAMPLE_SCRIPTS = {
@@ -4956,7 +4956,7 @@ const TP_SAMPLE_SCRIPTS = {
   youtube: `¡Qué tal amigos! Bienvenidos de nuevo al canal.\n\nEn el video de hoy vamos a analizar un tema súper interesante que me han estado pidiendo mucho en los comentarios.\n\nRecuerda darle me gusta a este video, suscribirte al canal si aún no lo has hecho, y activar la campanita de notificaciones.\n\n¡Comencemos!`
 };
 
-const TP_DEFAULT_SLOTS = {
+const TP_DEFAULT_LIBRE_SLOTS = {
   1: { title: 'Guión 1: Presentación', text: TP_SAMPLE_SCRIPTS.presentation },
   2: { title: 'Guión 2: YouTube Video', text: TP_SAMPLE_SCRIPTS.youtube },
   3: { title: 'Guión 3', text: '' },
@@ -4969,47 +4969,79 @@ const TP_DEFAULT_SLOTS = {
   10: { title: 'Guión 10', text: '' }
 };
 
-let tpStoredScripts = null;
+const TP_DEFAULT_REEL_SLOTS = {
+  1: {
+    title: 'Reel 1: Presupuesto & Tarjeta',
+    gancho: '¿Cuánto gastas al mes viviendo en Miami?',
+    historia: 'El latino promedio gasta más de 4,000 dólares al mes entre renta, comida, seguro y gasolina.\n\n¿Y sabes cuál es el peor error? Pagarlo todo con tarjeta de débito sin acumular beneficios.',
+    moraleja: 'Si utilizas una tarjeta con cashback o puntos y pagas el balance completo cada mes, recuperas dinero y elevas tu puntaje crediticio.',
+    cta: 'Escribe la palabra CREDITO en los comentarios y te envío una guía gratuita para optimizar tu score.'
+  },
+  2: {
+    title: 'Reel 2: 3 Errores Financieros',
+    gancho: 'Deja de usar tu tarjeta de crédito hasta que no conozcas estos 3 trucos.',
+    historia: '1. Revisa tu fecha de corte, no la fecha límite de pago.\n2. No uses más del 30% del límite asignado.\n3. Nunca saques dinero en efectivo del cajero con crédito.',
+    moraleja: 'Corregir estos 3 hábitos te ahorrará miles en intereses y elevará tu aprobación bancaria.',
+    cta: 'Comenta SCORE y te ayudo a evaluar tu perfil hoy mismo.'
+  },
+  3: { title: 'Reel 3', gancho: '', historia: '', moraleja: '', cta: '' },
+  4: { title: 'Reel 4', gancho: '', historia: '', moraleja: '', cta: '' },
+  5: { title: 'Reel 5', gancho: '', historia: '', moraleja: '', cta: '' }
+};
+
+let tpStoredLibre = null;
 try {
-  tpStoredScripts = JSON.parse(localStorage.getItem('tp_scripts_v2'));
+  tpStoredLibre = JSON.parse(localStorage.getItem('tp_libre_scripts_v3'));
 } catch(e) {}
+if (!tpStoredLibre) tpStoredLibre = TP_DEFAULT_LIBRE_SLOTS;
 
-if (!tpStoredScripts) {
-  tpStoredScripts = TP_DEFAULT_SLOTS;
-}
+let tpStoredReels = null;
+try {
+  tpStoredReels = JSON.parse(localStorage.getItem('tp_reel_scripts_v3'));
+} catch(e) {}
+if (!tpStoredReels) tpStoredReels = TP_DEFAULT_REEL_SLOTS;
 
-const tpActiveSlotNum = parseInt(localStorage.getItem('tp_active_slot')) || 1;
+const tpSavedMode = localStorage.getItem('tp_active_mode') || 'libre';
+const tpSavedLibreSlot = parseInt(localStorage.getItem('tp_active_libre_slot')) || 1;
+const tpSavedReelSlot = parseInt(localStorage.getItem('tp_active_reel_slot')) || 1;
+const tpSavedReelSection = localStorage.getItem('tp_active_reel_section') || 'all';
 const tpSavedOrientMode = localStorage.getItem('tp_orient_mode') || 'auto';
 const tpSavedGuidePos = parseInt(localStorage.getItem('tp_guide_pos')) || 40;
-const tpSavedActiveSection = localStorage.getItem('tp_active_section') || 'all';
 
-function tpGetSectionText(data, section) {
-  if (!data) return '';
-  const sec = section || 'all';
-  if (sec === 'all') {
-    return (data.text !== undefined && data.text !== null) ? data.text : tpAssembleScriptText(data);
+function tpGetActiveDisplayScript() {
+  if (tpState.mode === 'libre') {
+    const slot = tpState.libreScripts[tpState.activeLibreSlot] || { title: 'Guión ' + tpState.activeLibreSlot, text: '' };
+    return slot.text || '';
+  } else {
+    const slot = tpState.reelScripts[tpState.activeReelSlot] || { title: 'Reel ' + tpState.activeReelSlot, gancho: '', historia: '', moraleja: '', cta: '' };
+    const sec = tpState.activeReelSection || 'all';
+    if (sec === 'gancho') return slot.gancho && slot.gancho.trim() ? '🎣 GANCHO:\n' + slot.gancho.trim() : (slot.gancho || '');
+    if (sec === 'historia') return slot.historia && slot.historia.trim() ? '📖 CONTEXTO / HISTORIA:\n' + slot.historia.trim() : (slot.historia || '');
+    if (sec === 'moraleja') return slot.moraleja && slot.moraleja.trim() ? '💡 MORALEJA:\n' + slot.moraleja.trim() : (slot.moraleja || '');
+    if (sec === 'cta') return slot.cta && slot.cta.trim() ? '📣 CTA:\n' + slot.cta.trim() : (slot.cta || '');
+
+    let parts = [];
+    if (slot.gancho && slot.gancho.trim()) parts.push("🎣 GANCHO:\n" + slot.gancho.trim());
+    if (slot.historia && slot.historia.trim()) parts.push("📖 CONTEXTO / HISTORIA:\n" + slot.historia.trim());
+    if (slot.moraleja && slot.moraleja.trim()) parts.push("💡 MORALEJA:\n" + slot.moraleja.trim());
+    if (slot.cta && slot.cta.trim()) parts.push("📣 CTA:\n" + slot.cta.trim());
+    return parts.join("\n\n");
   }
-  if (sec === 'gancho') {
-    return (data.gancho && data.gancho.trim()) ? data.gancho.trim() : (data.text || '');
-  }
-  if (sec === 'historia') {
-    return (data.historia && data.historia.trim()) ? data.historia.trim() : (data.text || '');
-  }
-  if (sec === 'moraleja') {
-    return (data.moraleja && data.moraleja.trim()) ? data.moraleja.trim() : (data.text || '');
-  }
-  if (sec === 'cta') {
-    return (data.cta && data.cta.trim()) ? data.cta.trim() : (data.text || '');
-  }
-  return (data.text !== undefined && data.text !== null) ? data.text : tpAssembleScriptText(data);
 }
 
 const tpState = {
-  scripts: tpStoredScripts,
-  activeSlot: tpActiveSlotNum,
-  editingSlot: tpActiveSlotNum,
-  activeSection: tpSavedActiveSection,
-  scriptText: tpGetSectionText(tpStoredScripts[tpActiveSlotNum] || tpStoredScripts[1], tpSavedActiveSection),
+  mode: tpSavedMode, // 'libre' or 'reel'
+  libreScripts: tpStoredLibre,
+  reelScripts: tpStoredReels,
+  activeLibreSlot: tpSavedLibreSlot,
+  activeReelSlot: tpSavedReelSlot,
+  activeReelSection: tpSavedReelSection,
+  
+  editingMode: tpSavedMode,
+  editingLibreSlot: tpSavedLibreSlot,
+  editingReelSlot: tpSavedReelSlot,
+
+  scriptText: '',
   isPlaying: false,
   speed: parseInt(localStorage.getItem('tp_speed')) || 35,
   fontSize: parseInt(localStorage.getItem('tp_font_size')) || 64,
@@ -5028,38 +5060,32 @@ const tpState = {
   controlsTimeout: null
 };
 
+tpState.scriptText = tpGetActiveDisplayScript();
+
 let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGuidePosLabel, tpControlBar;
 let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
-let tpQuickSlotSelect, tpSectionSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
-let tpEditorModal, tpScriptTextarea, tpSlotChipsContainer, tpSlotTitleInput, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
-let tpPresetSample1, tpPresetSample2, tpPresetClear, tpPresetSync;
+let tpLibreSlotSelect, tpReelSlotSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
+
+// Modal Elements
+let tpEditorModal, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
+let tpTabModeLibre, tpTabModeReel, tpPanelModeLibre, tpPanelModeReel;
+// Libre Panel
+let tpLibreChipsContainer, tpLibreTitleInput, tpLibreScriptTextarea, tpPresetSample1, tpPresetSample2, tpBtnClearCurrentLibre, tpBtnClearAllLibre;
+// Reel Panel
+let tpReelChipsContainer, tpReelTitleInput, tpPresetSyncReels, tpBtnClearCurrentReel, tpBtnClearAllReels;
+let tpReelGancho, tpReelHistoria, tpReelMoraleja, tpReelCTA;
+
+// Settings Modal
 let tpSettingsModal, tpBtnCloseSettings, tpBtnSaveSettings, tpToggleMirrorY, tpToggleGuideLine;
 let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatches;
 
 function tpSaveScriptsToStorage() {
-  localStorage.setItem('tp_scripts_v2', JSON.stringify(tpState.scripts));
-  localStorage.setItem('tp_active_slot', tpState.activeSlot);
-  localStorage.setItem('tp_active_section', tpState.activeSection);
-  localStorage.setItem('tp_script', tpState.scriptText);
-}
-
-function tpAssembleScriptText(data) {
-  if (!data) return '';
-  if (data.text !== undefined && data.text !== null && data.text.trim()) return data.text;
-  let parts = [];
-  if (data.gancho && data.gancho.trim()) {
-    parts.push(data.gancho.trim());
-  }
-  if (data.historia && data.historia.trim()) {
-    parts.push(data.historia.trim());
-  }
-  if (data.moraleja && data.moraleja.trim()) {
-    parts.push(data.moraleja.trim());
-  }
-  if (data.cta && data.cta.trim()) {
-    parts.push(data.cta.trim());
-  }
-  return parts.join("\n\n");
+  localStorage.setItem('tp_libre_scripts_v3', JSON.stringify(tpState.libreScripts));
+  localStorage.setItem('tp_reel_scripts_v3', JSON.stringify(tpState.reelScripts));
+  localStorage.setItem('tp_active_mode', tpState.mode);
+  localStorage.setItem('tp_active_libre_slot', tpState.activeLibreSlot);
+  localStorage.setItem('tp_active_reel_slot', tpState.activeReelSlot);
+  localStorage.setItem('tp_active_reel_section', tpState.activeReelSection);
 }
 
 function syncStudioScriptsToTeleprompter() {
@@ -5070,6 +5096,20 @@ function syncStudioScriptsToTeleprompter() {
     
   if (!clientScripts || clientScripts.length === 0) return;
 
+  // Import top 5 into Reels
+  clientScripts.slice(0, 5).forEach((s, idx) => {
+    const slotNum = idx + 1;
+    const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Reel ' + slotNum}`;
+    tpState.reelScripts[slotNum] = {
+      title: title,
+      gancho: s.gancho || '',
+      historia: s.historia || '',
+      moraleja: s.moraleja || '',
+      cta: s.cta || ''
+    };
+  });
+
+  // Also import top 10 into Libre
   clientScripts.slice(0, 10).forEach((s, idx) => {
     const slotNum = idx + 1;
     const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Guión ' + slotNum}`;
@@ -5079,21 +5119,15 @@ function syncStudioScriptsToTeleprompter() {
     if (s.moraleja && s.moraleja.trim()) textParts.push(s.moraleja.trim());
     if (s.cta && s.cta.trim()) textParts.push(s.cta.trim());
     const fullText = textParts.join("\n\n") || (s.ideaGanadora || '');
-
-    const data = {
+    tpState.libreScripts[slotNum] = {
       title: title,
-      gancho: s.gancho || '',
-      historia: s.historia || '',
-      moraleja: s.moraleja || '',
-      cta: s.cta || '',
       text: fullText
     };
-    tpState.scripts[slotNum] = data;
   });
-  
-  tpState.scriptText = tpGetSectionText(tpState.scripts[tpState.activeSlot], tpState.activeSection);
+
+  tpState.scriptText = tpGetActiveDisplayScript();
   tpSaveScriptsToStorage();
-  tpUpdateQuickSlotDropdown();
+  tpUpdateToolbarSelectors();
   tpRenderScript();
 }
 
@@ -5104,60 +5138,128 @@ function openScriptInTeleprompterPro(scriptId) {
   const script = state.scripts.find(s => s.id === scriptId);
   if (!script) return;
   
-  const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Guión'}`;
-  let textParts = [];
-  if (script.gancho && script.gancho.trim()) textParts.push(script.gancho.trim());
-  if (script.historia && script.historia.trim()) textParts.push(script.historia.trim());
-  if (script.moraleja && script.moraleja.trim()) textParts.push(script.moraleja.trim());
-  if (script.cta && script.cta.trim()) textParts.push(script.cta.trim());
-  const fullText = textParts.join("\n\n") || (script.ideaGanadora || '');
-
-  const data = {
+  const title = `#${script.number || 1} ${script.ideaGanadora ? script.ideaGanadora.substring(0, 25) : 'Reel 1'}`;
+  
+  tpState.mode = 'reel';
+  tpState.activeReelSlot = 1;
+  tpState.activeReelSection = 'all';
+  
+  tpState.reelScripts[1] = {
     title: title,
     gancho: script.gancho || '',
     historia: script.historia || '',
     moraleja: script.moraleja || '',
-    cta: script.cta || '',
-    text: fullText
+    cta: script.cta || ''
   };
 
-  tpState.activeSlot = 1;
-  tpState.scripts[1] = data;
-  tpState.scriptText = tpGetSectionText(data, tpState.activeSection);
+  tpState.scriptText = tpGetActiveDisplayScript();
   tpSaveScriptsToStorage();
-  tpUpdateQuickSlotDropdown();
+  tpUpdateToolbarSelectors();
   tpRenderScript();
   tpResetToTop();
   
   switchView('teleprompter_pro');
 }
 
-function tpUpdateQuickSlotDropdown() {
-  if (!tpQuickSlotSelect) return;
-  tpQuickSlotSelect.innerHTML = '';
-  for (let i = 1; i <= 10; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    const slotTitle = tpState.scripts[i]?.title || ('Guión ' + i);
-    const hasText = tpState.scripts[i]?.text?.trim() ? ' ●' : '';
-    opt.textContent = slotTitle + hasText;
-    if (i === tpState.activeSlot) opt.selected = true;
-    tpQuickSlotSelect.appendChild(opt);
+function tpUpdateToolbarSelectors() {
+  // Populate Libre Dropdown (1 to 10)
+  if (tpLibreSlotSelect) {
+    tpLibreSlotSelect.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      const slot = tpState.libreScripts[i] || { title: 'Guión ' + i, text: '' };
+      const hasText = slot.text && slot.text.trim() ? ' ●' : '';
+      opt.textContent = `📝 Guión ${i}: ${slot.title || ('Guión ' + i)}${hasText}`;
+      if (tpState.mode === 'libre' && i === tpState.activeLibreSlot) {
+        opt.selected = true;
+      }
+      tpLibreSlotSelect.appendChild(opt);
+    }
+  }
+
+  // Populate Reel Dropdown (1 to 5 + Sections)
+  if (tpReelSlotSelect) {
+    tpReelSlotSelect.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const slot = tpState.reelScripts[i] || { title: 'Reel ' + i };
+      const hasContent = (slot.gancho || slot.historia || slot.moraleja || slot.cta) ? ' ●' : '';
+      
+      const optGroup = document.createElement('optgroup');
+      optGroup.label = `📱 Reel ${i}: ${(slot.title || '').substring(0, 22)}${hasContent}`;
+
+      const secAll = document.createElement('option');
+      secAll.value = `${i}:all`;
+      secAll.textContent = `▶ Reel ${i}: Todo Completo`;
+      if (tpState.mode === 'reel' && tpState.activeReelSlot === i && tpState.activeReelSection === 'all') secAll.selected = true;
+      optGroup.appendChild(secAll);
+
+      const secGancho = document.createElement('option');
+      secGancho.value = `${i}:gancho`;
+      secGancho.textContent = `  🎣 1. Gancho (Hook)`;
+      if (tpState.mode === 'reel' && tpState.activeReelSlot === i && tpState.activeReelSection === 'gancho') secGancho.selected = true;
+      optGroup.appendChild(secGancho);
+
+      const secHist = document.createElement('option');
+      secHist.value = `${i}:historia`;
+      secHist.textContent = `  📖 2. Contexto / Historia`;
+      if (tpState.mode === 'reel' && tpState.activeReelSlot === i && tpState.activeReelSection === 'historia') secHist.selected = true;
+      optGroup.appendChild(secHist);
+
+      const secMor = document.createElement('option');
+      secMor.value = `${i}:moraleja`;
+      secMor.textContent = `  💡 3. Moraleja`;
+      if (tpState.mode === 'reel' && tpState.activeReelSlot === i && tpState.activeReelSection === 'moraleja') secMor.selected = true;
+      optGroup.appendChild(secMor);
+
+      const secCTA = document.createElement('option');
+      secCTA.value = `${i}:cta`;
+      secCTA.textContent = `  📣 4. CTA Final`;
+      if (tpState.mode === 'reel' && tpState.activeReelSlot === i && tpState.activeReelSection === 'cta') secCTA.selected = true;
+      optGroup.appendChild(secCTA);
+
+      tpReelSlotSelect.appendChild(optGroup);
+    }
   }
 }
 
-function tpRenderSlotChips() {
-  if (!tpSlotChipsContainer) return;
-  tpSlotChipsContainer.innerHTML = '';
+function tpSwitchEditorTab(mode) {
+  tpState.editingMode = mode;
+  if (mode === 'libre') {
+    if (tpTabModeLibre) {
+      tpTabModeLibre.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 bg-cyan-600 text-white shadow-md shadow-cyan-950/50 cursor-pointer';
+    }
+    if (tpTabModeReel) {
+      tpTabModeReel.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer';
+    }
+    if (tpPanelModeLibre) tpPanelModeLibre.classList.remove('hidden');
+    if (tpPanelModeReel) tpPanelModeReel.classList.add('hidden');
+    tpSwitchEditingLibreSlot(tpState.editingLibreSlot || 1);
+  } else {
+    if (tpTabModeReel) {
+      tpTabModeReel.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 bg-amber-500 text-slate-950 shadow-md shadow-amber-950/50 cursor-pointer';
+    }
+    if (tpTabModeLibre) {
+      tpTabModeLibre.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5 cursor-pointer';
+    }
+    if (tpPanelModeReel) tpPanelModeReel.classList.remove('hidden');
+    if (tpPanelModeLibre) tpPanelModeLibre.classList.add('hidden');
+    tpSwitchEditingReelSlot(tpState.editingReelSlot || 1);
+  }
+}
+
+function tpRenderLibreChips() {
+  if (!tpLibreChipsContainer) return;
+  tpLibreChipsContainer.innerHTML = '';
   for (let i = 1; i <= 10; i++) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'tp-slot-chip' + (i === tpState.editingSlot ? ' active' : '');
+    btn.className = 'tp-slot-chip' + (i === tpState.editingLibreSlot ? ' active' : '');
     
-    const title = tpState.scripts[i]?.title || ('Guión ' + i);
-    btn.textContent = title;
+    const slot = tpState.libreScripts[i] || { title: 'Guión ' + i };
+    btn.textContent = `Guión ${i}: ${slot.title || ('Guión ' + i)}`;
 
-    if (tpState.scripts[i]?.text?.trim()) {
+    if (slot.text && slot.text.trim()) {
       const dot = document.createElement('span');
       dot.className = 'tp-dot-has-text';
       btn.appendChild(dot);
@@ -5165,25 +5267,71 @@ function tpRenderSlotChips() {
 
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      tpSwitchEditingSlot(i);
+      tpSwitchEditingLibreSlot(i);
     });
 
-    tpSlotChipsContainer.appendChild(btn);
+    tpLibreChipsContainer.appendChild(btn);
   }
 }
 
-function tpSwitchEditingSlot(newSlotNum) {
-  if (tpState.scripts[tpState.editingSlot]) {
-    const prev = tpState.scripts[tpState.editingSlot];
-    if (tpSlotTitleInput) prev.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
-    if (tpScriptTextarea) prev.text = tpScriptTextarea.value;
+function tpSwitchEditingLibreSlot(newSlotNum) {
+  if (tpState.libreScripts[tpState.editingLibreSlot]) {
+    const prev = tpState.libreScripts[tpState.editingLibreSlot];
+    if (tpLibreTitleInput) prev.title = tpLibreTitleInput.value.trim() || ('Guión ' + tpState.editingLibreSlot);
+    if (tpLibreScriptTextarea) prev.text = tpLibreScriptTextarea.value;
   }
 
-  tpState.editingSlot = newSlotNum;
-  const currentData = tpState.scripts[newSlotNum] || { title: 'Guión ' + newSlotNum, text: '' };
-  if (tpSlotTitleInput) tpSlotTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
-  if (tpScriptTextarea) tpScriptTextarea.value = currentData.text || '';
-  tpRenderSlotChips();
+  tpState.editingLibreSlot = newSlotNum;
+  const currentData = tpState.libreScripts[newSlotNum] || { title: 'Guión ' + newSlotNum, text: '' };
+  if (tpLibreTitleInput) tpLibreTitleInput.value = currentData.title || ('Guión ' + newSlotNum);
+  if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = currentData.text || '';
+  tpRenderLibreChips();
+}
+
+function tpRenderReelChips() {
+  if (!tpReelChipsContainer) return;
+  tpReelChipsContainer.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tp-slot-chip' + (i === tpState.editingReelSlot ? ' active' : '');
+    
+    const reel = tpState.reelScripts[i] || { title: 'Reel ' + i };
+    btn.textContent = `Reel ${i}: ${reel.title || ('Reel ' + i)}`;
+
+    if (reel.gancho?.trim() || reel.historia?.trim() || reel.moraleja?.trim() || reel.cta?.trim()) {
+      const dot = document.createElement('span');
+      dot.className = 'tp-dot-has-text';
+      btn.appendChild(dot);
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tpSwitchEditingReelSlot(i);
+    });
+
+    tpReelChipsContainer.appendChild(btn);
+  }
+}
+
+function tpSwitchEditingReelSlot(newSlotNum) {
+  if (tpState.reelScripts[tpState.editingReelSlot]) {
+    const prev = tpState.reelScripts[tpState.editingReelSlot];
+    if (tpReelTitleInput) prev.title = tpReelTitleInput.value.trim() || ('Reel ' + tpState.editingReelSlot);
+    if (tpReelGancho) prev.gancho = tpReelGancho.value;
+    if (tpReelHistoria) prev.historia = tpReelHistoria.value;
+    if (tpReelMoraleja) prev.moraleja = tpReelMoraleja.value;
+    if (tpReelCTA) prev.cta = tpReelCTA.value;
+  }
+
+  tpState.editingReelSlot = newSlotNum;
+  const currentData = tpState.reelScripts[newSlotNum] || { title: 'Reel ' + newSlotNum, gancho: '', historia: '', moraleja: '', cta: '' };
+  if (tpReelTitleInput) tpReelTitleInput.value = currentData.title || ('Reel ' + newSlotNum);
+  if (tpReelGancho) tpReelGancho.value = currentData.gancho || '';
+  if (tpReelHistoria) tpReelHistoria.value = currentData.historia || '';
+  if (tpReelMoraleja) tpReelMoraleja.value = currentData.moraleja || '';
+  if (tpReelCTA) tpReelCTA.value = currentData.cta || '';
+  tpRenderReelChips();
 }
 
 function tpApplyStylesAndTransforms() {
@@ -5512,8 +5660,9 @@ function initTeleprompterProEngine() {
   tpBtnEdit = document.getElementById('tp-btn-edit');
   tpBtnSettings = document.getElementById('tp-btn-settings');
   tpBtnFullscreen = document.getElementById('tp-btn-fullscreen');
-  tpQuickSlotSelect = document.getElementById('tp-quick-slot-select');
-  tpSectionSelect = document.getElementById('tp-section-select');
+  
+  tpLibreSlotSelect = document.getElementById('tp-libre-slot-select');
+  tpReelSlotSelect = document.getElementById('tp-reel-slot-select');
   
   tpSpeedSlider = document.getElementById('tp-speed-slider');
   tpSpeedVal = document.getElementById('tp-speed-val');
@@ -5523,22 +5672,38 @@ function initTeleprompterProEngine() {
   tpStatusDot = document.getElementById('tp-status-dot');
   tpStatusText = document.getElementById('tp-status-text');
 
+  // Modal Elements
   tpEditorModal = document.getElementById('tp-editor-modal');
-  tpScriptTextarea = document.getElementById('tp-script-textarea');
-  tpEditorGancho = document.getElementById('tp-editor-gancho');
-  tpEditorHistoria = document.getElementById('tp-editor-historia');
-  tpEditorMoraleja = document.getElementById('tp-editor-moraleja');
-  tpEditorCTA = document.getElementById('tp-editor-cta');
-  tpSlotChipsContainer = document.getElementById('tp-slot-chips-container');
-  tpSlotTitleInput = document.getElementById('tp-slot-title-input');
   tpBtnCloseEditor = document.getElementById('tp-btn-close-editor');
   tpBtnCancelEditor = document.getElementById('tp-btn-cancel-editor');
   tpBtnSaveEditor = document.getElementById('tp-btn-save-editor');
+
+  tpTabModeLibre = document.getElementById('tp-tab-mode-libre');
+  tpTabModeReel = document.getElementById('tp-tab-mode-reel');
+  tpPanelModeLibre = document.getElementById('tp-panel-mode-libre');
+  tpPanelModeReel = document.getElementById('tp-panel-mode-reel');
+
+  // Mode Libre
+  tpLibreChipsContainer = document.getElementById('tp-libre-chips-container');
+  tpLibreTitleInput = document.getElementById('tp-libre-title-input');
+  tpLibreScriptTextarea = document.getElementById('tp-libre-script-textarea');
   tpPresetSample1 = document.getElementById('tp-preset-sample1');
   tpPresetSample2 = document.getElementById('tp-preset-sample2');
-  tpPresetClear = document.getElementById('tp-preset-clear');
-  tpPresetSync = document.getElementById('tp-preset-sync');
+  tpBtnClearCurrentLibre = document.getElementById('tp-btn-clear-current-libre');
+  tpBtnClearAllLibre = document.getElementById('tp-btn-clear-all-libre');
 
+  // Mode Reel
+  tpReelChipsContainer = document.getElementById('tp-reel-chips-container');
+  tpReelTitleInput = document.getElementById('tp-reel-title-input');
+  tpPresetSyncReels = document.getElementById('tp-preset-sync-reels');
+  tpBtnClearCurrentReel = document.getElementById('tp-btn-clear-current-reel');
+  tpBtnClearAllReels = document.getElementById('tp-btn-clear-all-reels');
+  tpReelGancho = document.getElementById('tp-reel-gancho');
+  tpReelHistoria = document.getElementById('tp-reel-historia');
+  tpReelMoraleja = document.getElementById('tp-reel-moraleja');
+  tpReelCTA = document.getElementById('tp-reel-cta');
+
+  // Settings Modal
   tpSettingsModal = document.getElementById('tp-settings-modal');
   tpBtnCloseSettings = document.getElementById('tp-btn-close-settings');
   tpBtnSaveSettings = document.getElementById('tp-btn-save-settings');
@@ -5552,34 +5717,41 @@ function initTeleprompterProEngine() {
 
   if (!tpPrompterView) return;
 
-  syncStudioScriptsToTeleprompter();
   tpApplyStylesAndTransforms();
-  tpUpdateQuickSlotDropdown();
+  tpUpdateToolbarSelectors();
   tpRenderScript();
   setupTeleprompterProEventListeners();
   requestAnimationFrame(tpRenderLoop);
 }
 
 function setupTeleprompterProEventListeners() {
-  if (tpQuickSlotSelect) {
-    tpQuickSlotSelect.addEventListener('change', (e) => {
+  if (tpLibreSlotSelect) {
+    tpLibreSlotSelect.addEventListener('change', (e) => {
       const chosenSlot = parseInt(e.target.value);
-      tpState.activeSlot = chosenSlot;
-      const activeData = tpState.scripts[chosenSlot];
-      tpState.scriptText = tpGetSectionText(activeData, tpState.activeSection);
+      if (!chosenSlot) return;
+      tpState.mode = 'libre';
+      tpState.activeLibreSlot = chosenSlot;
+      tpState.scriptText = tpGetActiveDisplayScript();
       tpSaveScriptsToStorage();
+      tpUpdateToolbarSelectors();
       tpRenderScript();
       tpResetToTop();
     });
   }
 
-  if (tpSectionSelect) {
-    tpSectionSelect.value = tpState.activeSection || 'all';
-    tpSectionSelect.addEventListener('change', (e) => {
-      tpState.activeSection = e.target.value;
-      localStorage.setItem('tp_active_section', tpState.activeSection);
-      const activeData = tpState.scripts[tpState.activeSlot];
-      tpState.scriptText = tpGetSectionText(activeData, tpState.activeSection);
+  if (tpReelSlotSelect) {
+    tpReelSlotSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      const parts = val.split(':');
+      const chosenSlot = parseInt(parts[0]);
+      const chosenSec = parts[1] || 'all';
+      tpState.mode = 'reel';
+      tpState.activeReelSlot = chosenSlot;
+      tpState.activeReelSection = chosenSec;
+      tpState.scriptText = tpGetActiveDisplayScript();
+      tpSaveScriptsToStorage();
+      tpUpdateToolbarSelectors();
       tpRenderScript();
       tpResetToTop();
     });
@@ -5672,7 +5844,20 @@ function setupTeleprompterProEventListeners() {
   if (tpBtnSyncStudio) {
     tpBtnSyncStudio.addEventListener('click', () => {
       syncStudioScriptsToTeleprompter();
-      alert("✅ ¡Guiones de Blex Studio importados con éxito a las 10 carpetas del Teleprónter!");
+      alert("✅ ¡Guiones de Blex Studio sincronizados correctamente con el Teleprónter!");
+    });
+  }
+
+  // Edit Mode & Tabs
+  if (tpTabModeLibre) {
+    tpTabModeLibre.addEventListener('click', () => {
+      tpSwitchEditorTab('libre');
+    });
+  }
+
+  if (tpTabModeReel) {
+    tpTabModeReel.addEventListener('click', () => {
+      tpSwitchEditorTab('reel');
     });
   }
 
@@ -5680,7 +5865,12 @@ function setupTeleprompterProEventListeners() {
     tpBtnEdit.addEventListener('click', (e) => {
       e.stopPropagation();
       tpPause();
-      tpSwitchEditingSlot(tpState.activeSlot);
+      tpSwitchEditorTab(tpState.mode || 'libre');
+      if (tpState.mode === 'libre') {
+        tpSwitchEditingLibreSlot(tpState.activeLibreSlot || 1);
+      } else {
+        tpSwitchEditingReelSlot(tpState.activeReelSlot || 1);
+      }
       if (tpEditorModal) tpEditorModal.classList.add('open');
     });
   }
@@ -5688,41 +5878,133 @@ function setupTeleprompterProEventListeners() {
   if (tpBtnCloseEditor) tpBtnCloseEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
   if (tpBtnCancelEditor) tpBtnCancelEditor.addEventListener('click', () => tpEditorModal.classList.remove('open'));
 
+  // Save Modal Action
   if (tpBtnSaveEditor) {
     tpBtnSaveEditor.addEventListener('click', () => {
-      if (tpState.scripts[tpState.editingSlot]) {
-        const slot = tpState.scripts[tpState.editingSlot];
-        if (tpSlotTitleInput) slot.title = tpSlotTitleInput.value.trim() || ('Guión ' + tpState.editingSlot);
-        if (tpScriptTextarea) slot.text = tpScriptTextarea.value;
+      if (tpState.editingMode === 'libre') {
+        if (tpState.libreScripts[tpState.editingLibreSlot]) {
+          const slot = tpState.libreScripts[tpState.editingLibreSlot];
+          if (tpLibreTitleInput) slot.title = tpLibreTitleInput.value.trim() || ('Guión ' + tpState.editingLibreSlot);
+          if (tpLibreScriptTextarea) slot.text = tpLibreScriptTextarea.value;
+        }
+        tpState.mode = 'libre';
+        tpState.activeLibreSlot = tpState.editingLibreSlot;
+      } else {
+        if (tpState.reelScripts[tpState.editingReelSlot]) {
+          const slot = tpState.reelScripts[tpState.editingReelSlot];
+          if (tpReelTitleInput) slot.title = tpReelTitleInput.value.trim() || ('Reel ' + tpState.editingReelSlot);
+          if (tpReelGancho) slot.gancho = tpReelGancho.value;
+          if (tpReelHistoria) slot.historia = tpReelHistoria.value;
+          if (tpReelMoraleja) slot.moraleja = tpReelMoraleja.value;
+          if (tpReelCTA) slot.cta = tpReelCTA.value;
+        }
+        tpState.mode = 'reel';
+        tpState.activeReelSlot = tpState.editingReelSlot;
+        tpState.activeReelSection = 'all';
       }
 
-      tpState.activeSlot = tpState.editingSlot;
-      tpState.scriptText = tpGetSectionText(tpState.scripts[tpState.activeSlot], tpState.activeSection);
-
+      tpState.scriptText = tpGetActiveDisplayScript();
       tpSaveScriptsToStorage();
-      tpUpdateQuickSlotDropdown();
+      tpUpdateToolbarSelectors();
       tpRenderScript();
       tpResetToTop();
       if (tpEditorModal) tpEditorModal.classList.remove('open');
     });
   }
 
+  // Mode Libre Buttons
   if (tpPresetSample1) tpPresetSample1.addEventListener('click', () => {
-    if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
+    if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.presentation;
   });
   if (tpPresetSample2) tpPresetSample2.addEventListener('click', () => {
-    if (tpScriptTextarea) tpScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
+    if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = TP_SAMPLE_SCRIPTS.youtube;
   });
-  if (tpPresetClear) tpPresetClear.addEventListener('click', () => {
-    if (tpScriptTextarea) tpScriptTextarea.value = '';
-  });
-  if (tpPresetSync) {
-    tpPresetSync.addEventListener('click', () => {
-      syncStudioScriptsToTeleprompter();
-      tpSwitchEditingSlot(tpState.editingSlot);
+
+  if (tpBtnClearCurrentLibre) {
+    tpBtnClearCurrentLibre.addEventListener('click', () => {
+      if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = '';
+      if (tpState.libreScripts[tpState.editingLibreSlot]) {
+        tpState.libreScripts[tpState.editingLibreSlot].text = '';
+      }
+      tpRenderLibreChips();
     });
   }
 
+  if (tpBtnClearAllLibre) {
+    tpBtnClearAllLibre.addEventListener('click', () => {
+      if (confirm('⚠️ ¿Estás seguro de que deseas vaciar el texto de los 10 Guiones Libres?')) {
+        for (let i = 1; i <= 10; i++) {
+          tpState.libreScripts[i] = { title: 'Guión ' + i, text: '' };
+        }
+        if (tpLibreTitleInput) tpLibreTitleInput.value = 'Guión ' + tpState.editingLibreSlot;
+        if (tpLibreScriptTextarea) tpLibreScriptTextarea.value = '';
+        tpRenderLibreChips();
+      }
+    });
+  }
+
+  // Mode Reel Buttons
+  if (tpPresetSyncReels) {
+    tpPresetSyncReels.addEventListener('click', () => {
+      const clientScripts = state.activeClient === 'ALL'
+        ? state.scripts
+        : state.scripts.filter(s => s.client === state.activeClient);
+        
+      if (!clientScripts || clientScripts.length === 0) {
+        alert("No hay guiones guardados en Blex Studio para importar.");
+        return;
+      }
+
+      clientScripts.slice(0, 5).forEach((s, idx) => {
+        const slotNum = idx + 1;
+        const title = `#${s.number || slotNum} ${s.ideaGanadora ? s.ideaGanadora.substring(0, 25) : 'Reel ' + slotNum}`;
+        tpState.reelScripts[slotNum] = {
+          title: title,
+          gancho: s.gancho || '',
+          historia: s.historia || '',
+          moraleja: s.moraleja || '',
+          cta: s.cta || ''
+        };
+      });
+
+      tpSwitchEditingReelSlot(tpState.editingReelSlot);
+      alert("✅ ¡Se han importado los guiones de Blex Studio a los 5 Reels!");
+    });
+  }
+
+  if (tpBtnClearCurrentReel) {
+    tpBtnClearCurrentReel.addEventListener('click', () => {
+      if (tpReelGancho) tpReelGancho.value = '';
+      if (tpReelHistoria) tpReelHistoria.value = '';
+      if (tpReelMoraleja) tpReelMoraleja.value = '';
+      if (tpReelCTA) tpReelCTA.value = '';
+      if (tpState.reelScripts[tpState.editingReelSlot]) {
+        tpState.reelScripts[tpState.editingReelSlot].gancho = '';
+        tpState.reelScripts[tpState.editingReelSlot].historia = '';
+        tpState.reelScripts[tpState.editingReelSlot].moraleja = '';
+        tpState.reelScripts[tpState.editingReelSlot].cta = '';
+      }
+      tpRenderReelChips();
+    });
+  }
+
+  if (tpBtnClearAllReels) {
+    tpBtnClearAllReels.addEventListener('click', () => {
+      if (confirm('⚠️ ¿Estás seguro de que deseas vaciar los 5 Reels estructurados?')) {
+        for (let i = 1; i <= 5; i++) {
+          tpState.reelScripts[i] = { title: 'Reel ' + i, gancho: '', historia: '', moraleja: '', cta: '' };
+        }
+        if (tpReelTitleInput) tpReelTitleInput.value = 'Reel ' + tpState.editingReelSlot;
+        if (tpReelGancho) tpReelGancho.value = '';
+        if (tpReelHistoria) tpReelHistoria.value = '';
+        if (tpReelMoraleja) tpReelMoraleja.value = '';
+        if (tpReelCTA) tpReelCTA.value = '';
+        tpRenderReelChips();
+      }
+    });
+  }
+
+  // Settings Modal Listeners
   if (tpBtnSettings) {
     tpBtnSettings.addEventListener('click', (e) => {
       e.stopPropagation();
