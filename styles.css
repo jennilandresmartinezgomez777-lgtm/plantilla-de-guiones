@@ -1,14 +1,32 @@
-/* Custom styles for Content & Script Studio */
-
 /* Dedicated Print Styles for Screen vs Print */
 @media screen {
   #dedicatedPrintArea {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
 }
 
 @media print {
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+  }
+
+  html {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
   body {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
     background-color: #ffffff !important;
     color: #0f172a !important;
     font-size: 10pt;
@@ -20,6 +38,7 @@
   #app,
   header,
   nav,
+  footer,
   .no-print,
   #scriptModal,
   #quickIdeaModal,
@@ -29,6 +48,11 @@
   #focusScriptModal,
   #printModal {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
   .print\:hidden {
@@ -53,11 +77,14 @@
   #dedicatedPrintArea {
     display: block !important;
     visibility: visible !important;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     background: #ffffff !important;
     color: #0f172a !important;
-    padding: 0.5cm !important;
+    padding: 8mm !important;
     margin: 0 !important;
   }
 
