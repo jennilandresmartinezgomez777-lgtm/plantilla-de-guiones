@@ -100,8 +100,8 @@
 #tpApp {
   position: relative;
   width: 100%;
-  height: calc(100vh - 12rem);
-  min-height: 650px;
+  height: calc(100dvh - 245px);
+  min-height: 420px;
   background-color: #000000;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -110,6 +110,13 @@
   border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 1024px) {
+  #tpApp {
+    height: calc(100dvh - 235px);
+    min-height: 380px;
+  }
 }
 
 #tpApp:fullscreen {
@@ -233,22 +240,22 @@
 
 .tp-control-bar {
   position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  bottom: max(12px, env(safe-area-inset-bottom, 12px));
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(18, 18, 22, 0.94);
+  background: rgba(18, 18, 22, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 28px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: calc(100% - 32px);
-  max-width: 960px;
+  gap: 8px;
+  width: calc(100% - 24px);
+  max-width: 920px;
   z-index: 100;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
   transition: opacity 0.3s ease, transform 0.3s ease;
