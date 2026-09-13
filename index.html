@@ -103,6 +103,17 @@
             <span class="hidden sm:inline">Nuevo Guión</span>
           </button>
 
+          <!-- Save Platform Data Button -->
+          <button id="btnSavePlatformData" onclick="savePlatformDataToCloud(false)" title="Guardar todo en la Nube (Vercel/GitHub)" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-400/30 transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer whitespace-nowrap">
+            <i data-lucide="save" class="w-4 h-4 text-emerald-100"></i>
+            <span>Guardar Datos</span>
+          </button>
+
+          <!-- Auto-Save 1h Badge -->
+          <div id="autoSaveBadge" title="Guardado automático en nube cada 1 hora" class="bg-slate-800/90 border border-slate-700 text-slate-300 font-mono text-[11px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0 select-none shadow-inner">
+            ⏰ Auto: 60m
+          </div>
+
           <!-- Device Sync Button (PC ↔ iPad) -->
           <button id="btnSyncDevicesHeader" onclick="openSyncModal()" title="Sincronizar PC ↔ iPad" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
             <span id="cloudStatusDot" title="Nube Sincronizada" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>

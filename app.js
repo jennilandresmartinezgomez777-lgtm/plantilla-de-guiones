@@ -478,6 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
       loadStateFromCloud(true);
     }
   }, 600);
+
+  // Initialize 1-hour Auto-Save Timer
+  if (typeof initAutoSaveTimer === 'function') {
+    initAutoSaveTimer();
+  }
 });
 
 function saveState() {
@@ -1616,19 +1621,100 @@ function updateCloudStatusBadge(isSuccess) {
   }
 }
 
+// AUTO SAVE TIMER LOGIC (Every 1 hour / 3600 seconds)
+let autoSaveIntervalTimer = null;
+let autoSaveCountdownSeconds = 3600;
+let autoSaveCountdownTimer = null;
+
+function initAutoSaveTimer() {
+  autoSaveCountdownSeconds = 3600;
+  if (autoSaveCountdownTimer) clearInterval(autoSaveCountdownTimer);
+  if (autoSaveIntervalTimer) clearInterval(autoSaveIntervalTimer);
+
+  updateAutoSaveBadgeUI();
+
+  // Update badge UI countdown every 60s
+  autoSaveCountdownTimer = setInterval(() => {
+    autoSaveCountdownSeconds -= 60;
+    if (autoSaveCountdownSeconds <= 0) {
+      autoSaveCountdownSeconds = 3600;
+    }
+    updateAutoSaveBadgeUI();
+  }, 60000);
+
+  // Trigger auto-save every 1 hour (3600000 ms)
+  autoSaveIntervalTimer = setInterval(() => {
+    console.log("⏰ Auto-guardado de 1 hora ejecutado automáticamente");
+    savePlatformDataToCloud(true);
+  }, 3600000);
+}
+
+function updateAutoSaveBadgeUI() {
+  const badge = document.getElementById('autoSaveBadge');
+  if (badge) {
+    const mins = Math.max(1, Math.ceil(autoSaveCountdownSeconds / 60));
+    badge.innerText = `⏰ Auto: ${mins}m`;
+    badge.title = `Guardado automático en nube cada 1 hora. Próximo guardado en ${mins} minutos.`;
+  }
+}
+
+function showToastNotification(message, iconName = 'check-circle') {
+  let toastContainer = document.getElementById('blexToastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'blexToastContainer';
+    toastContainer.className = 'fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'bg-slate-900 border border-emerald-500/50 text-emerald-300 text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl shadow-emerald-950/80 flex items-center gap-2.5 transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto';
+  toast.innerHTML = `
+    <i data-lucide="${iconName}" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+    <span>${message}</span>
+  `;
+
+  toastContainer.appendChild(toast);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  requestAnimationFrame(() => {
+    toast.classList.remove('translate-y-4', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('translate-y-0', 'opacity-100');
+    toast.classList.add('translate-y-4', 'opacity-0');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+async function savePlatformDataToCloud(isSilent = false) {
+  return await saveStateToCloud(isSilent);
+}
+
 async function saveStateToCloud(isSilent = false) {
-  const btn = document.getElementById('btnSaveCloud');
-  const originalHTML = btn ? btn.innerHTML : '';
-  if (btn && !isSilent) {
-    btn.disabled = true;
-    btn.innerHTML = '<span>☁️ Guardando...</span>';
+  const btnHeader = document.getElementById('btnSavePlatformData');
+  const btnModal = document.getElementById('btnSaveCloud');
+  const originalHeaderHTML = btnHeader ? btnHeader.innerHTML : '';
+  const originalModalHTML = btnModal ? btnModal.innerHTML : '';
+
+  if (btnHeader && !isSilent) {
+    btnHeader.disabled = true;
+    btnHeader.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Guardando...</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+  if (btnModal && !isSilent) {
+    btnModal.disabled = true;
+    btnModal.innerHTML = '<span>☁️ Guardando...</span>';
   }
   updateCloudStatusBadge(false);
 
   try {
     const payloadObj = JSON.parse(getFullAppStateJSON());
+    payloadObj.updatedAt = new Date().toISOString();
+
     let syncCode = localStorage.getItem('blex_cloud_sync_code');
-    
     let syncEndpoint = '/api/sync';
     if (syncCode) {
       syncEndpoint += `?channel=${encodeURIComponent(syncCode)}`;
@@ -1642,10 +1728,14 @@ async function saveStateToCloud(isSilent = false) {
 
     if (res.ok) {
       updateCloudStatusBadge(true);
+      autoSaveCountdownSeconds = 3600; // Reset 1-hour timer on manual save
+      updateAutoSaveBadgeUI();
+
       if (!isSilent) {
-        alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nTus ${state.scripts.length} guiones y ${state.notes.length} notas han sido respaldados en la Nube.\n\nAbre Blex Studio en tu iPad y presiona 'Cargar de Nube' (o se actualizará automáticamente).`);
+        const scriptCount = state.scripts ? state.scripts.length : 0;
+        showToastNotification(`💾 ¡Datos Guardados con Éxito! (${scriptCount} guiones e ideas en Nube/Vercel)`);
       }
-      return;
+      return true;
     }
 
     if (!isSilent) {
@@ -1657,11 +1747,17 @@ async function saveStateToCloud(isSilent = false) {
       alert("No se pudo conectar a la nube. Verifica tu conexión a internet.");
     }
   } finally {
-    if (btn && !isSilent) {
-      btn.disabled = false;
-      btn.innerHTML = originalHTML;
+    if (btnHeader && !isSilent) {
+      btnHeader.disabled = false;
+      btnHeader.innerHTML = originalHeaderHTML;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    if (btnModal && !isSilent) {
+      btnModal.disabled = false;
+      btnModal.innerHTML = originalModalHTML;
     }
   }
+  return false;
 }
 
 async function loadStateFromCloud(isSilent = false) {
