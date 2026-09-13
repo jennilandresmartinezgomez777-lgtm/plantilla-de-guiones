@@ -3463,13 +3463,151 @@ function deselectAllPrintItems() {
 function selectAllPrintScripts() { selectAllPrintItems(); }
 function deselectAllPrintScripts() { deselectAllPrintItems(); }
 function togglePrintScriptId(id) { togglePrintItemId(id); }
-function handleExecutePrint() { executeEnhancedPrint(); }
+function handleExecutePrint() { executeEnhancedPrint(false); }
 
-function executeEnhancedPrint() {
-  const printArea = document.getElementById('dedicatedPrintArea');
-  if (!printArea) return;
-  
-  let html = '';
+function getStandalonePrintStyles() {
+  return `
+    @page {
+      size: A4 portrait;
+      margin: 10mm 10mm 12mm 10mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 9.5pt;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+    }
+    .print-doc-container {
+      width: 100%;
+      max-width: 100%;
+      padding: 6mm 8mm;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+    .print-doc-header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .print-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .print-kpi-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 4px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .print-kpi-value {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0f172a;
+      font-family: monospace, sans-serif;
+    }
+    .print-kpi-label {
+      font-size: 6.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      font-size: 8.5pt;
+    }
+    .print-table th {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 6px 8px !important;
+      font-weight: 700;
+      text-align: left;
+    }
+    .print-table td {
+      border: 1px solid #cbd5e1 !important;
+      padding: 6px 8px !important;
+      color: #1e293b !important;
+      vertical-align: middle;
+    }
+    .print-card {
+      border: 1px solid #cbd5e1;
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .print-section-box {
+      background-color: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      border-left-width: 4px;
+    }
+    .print-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8pt;
+      font-weight: 700;
+      border: 1px solid #cbd5e1;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .print-avoid-break {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .print-page-break {
+      page-break-after: always;
+      break-after: page;
+    }
+    .no-print-bar {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      font-family: sans-serif;
+    }
+    @media print {
+      .no-print-bar {
+        display: none !important;
+      }
+      .print-doc-container {
+        padding: 0 !important;
+      }
+    }
+  `;
+}
+
+function generateCompletePrintDocument(forNewTab = false) {
+  let bodyContent = '';
   const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
   if (currentPrintModule === 'matrix') {
@@ -3477,7 +3615,7 @@ function executeEnhancedPrint() {
     const scripts = allFiltered.filter(s => printSelectedIds.has(s.id));
     if (scripts.length === 0) {
       alert('Por favor selecciona al menos un guión para imprimir.');
-      return;
+      return null;
     }
 
     const countTotal = scripts.length;
@@ -3497,7 +3635,7 @@ function executeEnhancedPrint() {
       { key: 'Publicado', label: 'Publicados', icon: '🚀', count: countPublicados, bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' }
     ];
 
-    html = `
+    bodyContent = `
       <div class="print-doc-header">
         <div>
           <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a; letter-spacing: -0.5px;">BLEX STUDIO</h1>
@@ -3614,10 +3752,10 @@ function executeEnhancedPrint() {
     const scripts = getFilteredScripts().filter(s => printSelectedIds.has(s.id));
     if (scripts.length === 0) {
       alert('Por favor selecciona al menos un guión para imprimir.');
-      return;
+      return null;
     }
 
-    html = `
+    bodyContent = `
       <div class="print-doc-header">
         <div>
           <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
@@ -3677,7 +3815,7 @@ function executeEnhancedPrint() {
     if (printViralMode === 'current') {
       const data = getCurrentViralFormData();
 
-      html = `
+      bodyContent = `
         <div class="print-doc-header">
           <div>
             <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
@@ -3778,14 +3916,14 @@ function executeEnhancedPrint() {
       const evals = (state.viralEvaluations || []).filter(e => printSelectedIds.has(e.id));
       if (evals.length === 0) {
         alert('Por favor selecciona al menos una evaluación del historial para imprimir.');
-        return;
+        return null;
       }
 
       const countViral = evals.filter(e => (e.totalScore || 0) >= 10).length;
       const countMedio = evals.filter(e => (e.totalScore || 0) >= 7 && (e.totalScore || 0) < 10).length;
       const avgScore = (evals.reduce((acc, curr) => acc + (curr.totalScore || 0), 0) / evals.length).toFixed(1);
 
-      html = `
+      bodyContent = `
         <div class="print-doc-header">
           <div>
             <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
@@ -3857,7 +3995,7 @@ function executeEnhancedPrint() {
     const allIdeas = getAllIdeasForPrint().filter(i => printSelectedIds.has(i.id));
     if (allIdeas.length === 0) {
       alert('Por favor selecciona al menos una idea o nota para imprimir.');
-      return;
+      return null;
     }
 
     const countScriptIdeas = allIdeas.filter(i => i.type === 'Idea de Guión').length;
@@ -3869,7 +4007,7 @@ function executeEnhancedPrint() {
       clientCounts[i.client] = (clientCounts[i.client] || 0) + 1;
     });
 
-    html = `
+    bodyContent = `
       <div class="print-doc-header">
         <div>
           <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
@@ -3934,19 +4072,137 @@ function executeEnhancedPrint() {
     `;
   }
 
-  printArea.innerHTML = html;
+  const topBarHtml = forNewTab ? `
+    <div class="no-print-bar">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <strong style="font-size: 14px; letter-spacing: 0.5px;">BLEX STUDIO • Vista Previa de Impresión</strong>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="window.print()" style="background: #16a34a; color: #fff; font-weight: bold; padding: 6px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          🖨️ Imprimir / Guardar PDF
+        </button>
+        <button onclick="window.close()" style="background: #334155; color: #fff; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+          Cerrar Pestaña
+        </button>
+      </div>
+    </div>
+  ` : '';
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>BLEX STUDIO - Impresión</title>
+  <style>
+    ${getStandalonePrintStyles()}
+  </style>
+</head>
+<body>
+  ${topBarHtml}
+  <div class="print-doc-container">
+    ${bodyContent}
+  </div>
+</body>
+</html>`;
+}
+
+function executeEnhancedPrint(openInNewTab = false) {
+  const fullHtml = generateCompletePrintDocument(openInNewTab);
+  if (!fullHtml) return;
+
   closePrintModal();
 
-  // Execute print reliably without premature DOM wipeout
+  if (openInNewTab) {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(fullHtml);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch(e) {}
+      }, 300);
+    } else {
+      alert('Por favor habilita las ventanas emergentes en tu navegador para abrir la pestaña de impresión.');
+    }
+    return;
+  }
+
+  // Pure Isolated Iframe Printing (Guarantees zero blank pages across all devices)
+  let printIframe = document.getElementById('blexPrintIframe');
+  if (printIframe) {
+    printIframe.remove();
+  }
+
+  printIframe = document.createElement('iframe');
+  printIframe.id = 'blexPrintIframe';
+  printIframe.style.position = 'fixed';
+  printIframe.style.top = '-9999px';
+  printIframe.style.left = '-9999px';
+  printIframe.style.width = '1024px';
+  printIframe.style.height = '768px';
+  printIframe.style.border = 'none';
+  printIframe.style.zIndex = '-9999';
+  document.body.appendChild(printIframe);
+
+  const iframeDoc = printIframe.contentDocument || printIframe.contentWindow.document;
+  iframeDoc.open();
+  iframeDoc.write(fullHtml);
+  iframeDoc.close();
+
   setTimeout(() => {
-    window.print();
-  }, 120);
+    try {
+      printIframe.contentWindow.focus();
+      printIframe.contentWindow.print();
+    } catch (err) {
+      console.warn('Iframe print fallback to window.open:', err);
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(fullHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 200);
+      }
+    }
+  }, 250);
 }
 
 function printSingleScript(scriptId) {
   currentPrintModule = 'cards';
   printSelectedIds = new Set([scriptId]);
-  executeEnhancedPrint();
+  executeEnhancedPrint(false);
+}
+
+function printCurrentViralEvaluation() {
+  currentPrintModule = 'viral';
+  printViralMode = 'current';
+  executeEnhancedPrint(false);
+}
+
+function printViralHistory() {
+  currentPrintModule = 'viral';
+  printViralMode = 'history';
+  printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
+  executeEnhancedPrint(false);
+}
+
+function printSingleViralEvaluation(evalId) {
+  const evals = state.viralEvaluations || [];
+  const item = evals.find(e => e.id === evalId);
+  if (!item) return;
+  currentPrintModule = 'viral';
+  printViralMode = 'history';
+  printSelectedIds = new Set([evalId]);
+  executeEnhancedPrint(false);
+}
+
+function printIdeasAndNotes() {
+  currentPrintModule = 'ideas';
+  printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
+  executeEnhancedPrint(false);
 }
 
 // EXPORT / IMPORT JSON
@@ -4850,8 +5106,8 @@ function renderDayRows(items) {
             <button onclick="loadViralEvaluationIntoCalc('${item.id}')" title="Cargar en Calculadora" class="p-1.5 text-amber-400 hover:text-white hover:bg-amber-600/30 rounded-lg transition cursor-pointer">
               <i data-lucide="edit-2" class="w-4 h-4"></i>
             </button>
-            <button onclick="copyViralEvaluationRow('${item.id}', this)" title="Copiar resumen" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
-              <i data-lucide="copy" class="w-4 h-4"></i>
+            <button onclick="printSingleViralEvaluation('${item.id}')" title="Imprimir esta evaluación" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition cursor-pointer">
+              <i data-lucide="printer" class="w-4 h-4"></i>
             </button>
             <button onclick="deleteViralEvaluation('${item.id}')" title="Eliminar evaluación" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="trash-2" class="w-4 h-4"></i>

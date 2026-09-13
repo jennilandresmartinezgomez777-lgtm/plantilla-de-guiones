@@ -33,7 +33,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=5.1">
+  <link rel="stylesheet" href="styles.css?v=5.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -671,6 +671,10 @@
                   <i data-lucide="trophy" class="w-4 h-4"></i>
                   <span>Ver Historial</span>
                 </button>
+                <button type="button" onclick="printCurrentViralEvaluation()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-300 font-semibold px-3 py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer" title="Imprimir / Guardar en PDF esta evaluación">
+                  <i data-lucide="printer" class="w-4 h-4 text-amber-400"></i>
+                  <span class="hidden sm:inline">Imprimir</span>
+                </button>
                 <button id="btnCopyViralCalcSummary" type="button" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 font-semibold px-3 py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer" title="Copiar resumen">
                   <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
@@ -780,6 +784,10 @@
                 <button type="button" onclick="switchViralTab('eval')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md cursor-pointer">
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                   <span>Evaluar Otra Idea</span>
+                </button>
+                <button type="button" onclick="printViralHistory()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Imprimir / Exportar Historial a PDF">
+                  <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span class="hidden sm:inline">Imprimir</span>
                 </button>
                 <button id="btnExportViralCSV" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Exportar CSV">
                   <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -1512,14 +1520,20 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-800 shrink-0">
-        <button id="btnCancelPrintModal" type="button" onclick="closePrintModal()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-xs sm:text-sm cursor-pointer">
+      <div class="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-800 shrink-0">
+        <button id="btnCancelPrintModal" type="button" onclick="closePrintModal()" class="px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-xs sm:text-sm cursor-pointer">
           Cancelar
         </button>
-        <button id="btnExecutePrint" type="button" onclick="executeEnhancedPrint()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-brand-950/60 flex items-center gap-2 cursor-pointer">
-          <i data-lucide="printer" class="w-4 h-4"></i>
-          <span>Imprimir / Exportar a PDF</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="executeEnhancedPrint(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold px-3.5 py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Abrir documento limpio en una pestaña nueva">
+            <i data-lucide="external-link" class="w-4 h-4 text-cyan-400"></i>
+            <span>Abrir en Pestaña</span>
+          </button>
+          <button id="btnExecutePrint" type="button" onclick="executeEnhancedPrint(false)" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-bold px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-brand-950/60 flex items-center gap-2 cursor-pointer">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Imprimir / Guardar PDF</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -1690,11 +1704,17 @@
           <!-- Dynamic client pills: [Jennil] [Natalia] -->
         </div>
 
-        <!-- Add Note Button -->
-        <button id="btnAddNewNote" onclick="addNewNoteForActiveClient()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>Nueva Nota</span>
-        </button>
+        <!-- Add Note and Print Buttons -->
+        <div class="flex items-center gap-2">
+          <button onclick="printIdeasAndNotes()" class="bg-slate-800 hover:bg-slate-700 text-yellow-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir / Exportar a PDF las notas e ideas">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-yellow-400"></i>
+            <span>Imprimir</span>
+          </button>
+          <button id="btnAddNewNote" onclick="addNewNoteForActiveClient()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Nueva Nota</span>
+          </button>
+        </div>
       </div>
 
       <!-- Notes Modal Body -->
@@ -1814,6 +1834,6 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="app.js?v=5.1&t=1789310000"></script>
+  <script src="app.js?v=5.2&t=1789315000"></script>
 </body>
 </html>
