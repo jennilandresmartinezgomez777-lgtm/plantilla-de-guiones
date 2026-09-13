@@ -331,6 +331,10 @@
                 <span id="viralHistTabBadge" class="text-xs font-bold px-1.5 py-0.2 rounded-full bg-slate-800 text-sky-400 border border-slate-700">0</span>
               </button>
             </div>
+            <button id="btnPrintViralGuide" type="button" onclick="printViralGuide()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir Guía Oficial y Conceptos Técnicos de Viralidad">
+              <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span class="hidden sm:inline">Guía & Conceptos</span>
+            </button>
             <button id="btnResetViralCalc" type="button" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Reiniciar calculadora">
               <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
               <span class="hidden sm:inline">Limpiar</span>
@@ -1477,22 +1481,32 @@
         </div>
       </div>
 
-      <!-- Viral Sub-Options Container (Visible only when 'viral' module is selected) -->
+      <!-- Viral Sub-Options Container (3 Distinct Points for Viral Printing) -->
       <div id="printViralOptionsContainer" class="hidden space-y-2 p-3 bg-slate-950 rounded-xl border border-slate-800/80 shrink-0">
-        <label class="block text-xs font-semibold text-amber-300">Modo de Impresión Viral:</label>
-        <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs">
-            <input type="radio" name="printViralMode" value="current" checked onchange="handlePrintViralModeChange()" class="text-amber-500 focus:ring-amber-500">
+        <label class="block text-xs font-semibold text-amber-300">Selecciona qué deseas imprimir de la Calculadora Viral:</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <!-- Opción 1: Conceptos Básicos y Criterios -->
+          <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs transition select-none">
+            <input type="radio" name="printViralMode" value="guide" onchange="handlePrintViralModeChange()" class="mt-0.5 text-amber-500 focus:ring-amber-500">
             <div>
-              <p class="font-bold text-white">🎯 Evaluación Actual</p>
-              <p class="text-[10px] text-slate-400">Criterios y puntaje activo</p>
+              <p class="font-bold text-white">📚 1. Guía & Conceptos</p>
+              <p class="text-[10px] text-slate-400">Manual de criterios y formatos</p>
             </div>
           </label>
-          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs">
-            <input type="radio" name="printViralMode" value="history" onchange="handlePrintViralModeChange()" class="text-amber-500 focus:ring-amber-500">
+          <!-- Opción 2: Historial de Evaluaciones -->
+          <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs transition select-none">
+            <input type="radio" name="printViralMode" value="history" onchange="handlePrintViralModeChange()" class="mt-0.5 text-amber-500 focus:ring-amber-500">
             <div>
-              <p class="font-bold text-white">📋 Historial de Ideas</p>
-              <p class="text-[10px] text-slate-400">Tabla de evaluaciones</p>
+              <p class="font-bold text-white">📋 2. Historial de Ideas</p>
+              <p class="text-[10px] text-slate-400">Todo o selección personalizada</p>
+            </div>
+          </label>
+          <!-- Opción 3: Evaluación Actual en Pantalla -->
+          <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs transition select-none">
+            <input type="radio" name="printViralMode" value="current" checked onchange="handlePrintViralModeChange()" class="mt-0.5 text-amber-500 focus:ring-amber-500">
+            <div>
+              <p class="font-bold text-white">🎯 3. Evaluación Actual</p>
+              <p class="text-[10px] text-slate-400">Ficha de la idea en pantalla</p>
             </div>
           </label>
         </div>

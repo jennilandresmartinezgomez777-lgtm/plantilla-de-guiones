@@ -3348,27 +3348,43 @@ function renderPrintSelectionList() {
     if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${filtered.length} guión(es)`;
 
   } else if (currentPrintModule === 'viral') {
-    if (printViralMode === 'current') {
+    if (printViralMode === 'guide') {
       if (buttonsWrapper) buttonsWrapper.classList.add('hidden');
-      if (selectionLabel) selectionLabel.textContent = 'Evaluación Activa de Viralidad:';
+      if (selectionLabel) selectionLabel.textContent = '📚 Manual y Conceptos de Viralidad:';
+      
+      listContainer.innerHTML = `
+        <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-300 text-sm">📖 Guía de Criterios y Reglas BLEX</span>
+            <span class="font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">Manual Completo</span>
+          </div>
+          <p class="text-slate-300">Incluye la explicación de los <strong>6 Criterios Ponderados</strong> (+10.0 pts), los <strong>4 Grupos de Formatos</strong> (+4.5 pts) y la <strong>Escala de Dictámenes</strong>.</p>
+          <p class="text-[11px] text-amber-400 font-semibold">✓ Listo para imprimir como documento de referencia y capacitación.</p>
+        </div>
+      `;
+      if (counter) counter.textContent = `Se imprimirá la Guía Técnica de Conceptos y Criterios`;
+
+    } else if (printViralMode === 'current') {
+      if (buttonsWrapper) buttonsWrapper.classList.add('hidden');
+      if (selectionLabel) selectionLabel.textContent = '🎯 Evaluación de la Idea Actual en Pantalla:';
       
       const currentData = getCurrentViralFormData();
       listContainer.innerHTML = `
-        <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2 text-xs">
+        <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2 text-xs">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-amber-300 text-sm">🎯 ${escapeHtml(currentData.title || '(Sin título evaluado aún)')}</span>
-            <span class="font-mono font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">${currentData.totalScore} / 15 pts</span>
+            <span class="font-bold text-amber-300 text-sm truncate max-w-[280px]">🎯 ${escapeHtml(currentData.title || '(Idea en evaluación)')}</span>
+            <span class="font-mono font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">${currentData.totalScore} / 14.5 pts</span>
           </div>
           <p class="text-slate-300"><strong>Cliente:</strong> ${escapeHtml(currentData.client)} | <strong>Formato:</strong> ${escapeHtml(currentData.format)}</p>
-          <p class="text-slate-400 text-[11px]">Potencial: <strong class="text-white">${escapeHtml(currentData.potential)}</strong> (Se imprimirá la ficha completa con todos los criterios evaluados).</p>
+          <p class="text-slate-400 text-[11px]">Potencial: <strong class="text-white">${escapeHtml(currentData.potential)}</strong> (Se imprimirá la ficha técnica con todos los criterios y dictamen).</p>
         </div>
       `;
-      if (counter) counter.textContent = `Se imprimirá la evaluación activa (1 ficha ejecutiva)`;
+      if (counter) counter.textContent = `Se imprimirá la Ficha de Evaluación Activa (1 ficha ejecutiva)`;
 
     } else {
       // History mode
       if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
-      if (selectionLabel) selectionLabel.textContent = 'Seleccionar evaluaciones del historial a imprimir:';
+      if (selectionLabel) selectionLabel.textContent = '📋 Seleccionar evaluaciones del historial a imprimir:';
       
       const evals = state.viralEvaluations || [];
       if (evals.length === 0) {
@@ -3384,15 +3400,18 @@ function renderPrintSelectionList() {
         el.innerHTML = `
           <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
             <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintItemId('${item.id}')" class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500 cursor-pointer">
-            <span class="font-bold text-amber-400 shrink-0 font-mono">${item.totalScore}/15</span>
+            <span class="font-bold text-amber-400 shrink-0 font-mono">${(item.totalScore || 0).toFixed(1)}/14.5</span>
             <span class="font-medium text-white truncate">${escapeHtml(item.title || 'Sin título')}</span>
           </label>
-          <span class="text-[10px] uppercase font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded shrink-0">${escapeHtml(item.client || 'General')}</span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.totalScore >= 10 ? 'bg-emerald-500/10 text-emerald-400' : item.totalScore >= 7 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'}">${escapeHtml(item.potential || 'Bajo')}</span>
+            <span class="text-[10px] uppercase font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">${escapeHtml(item.client || 'General')}</span>
+          </div>
         `;
         listContainer.appendChild(el);
       });
 
-      if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${evals.length} evaluación(es)`;
+      if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${evals.length} evaluación(es) del historial`;
     }
 
   } else if (currentPrintModule === 'ideas') {
@@ -3812,14 +3831,194 @@ function generateCompletePrintDocument(forNewTab = false) {
     `;
 
   } else if (currentPrintModule === 'viral') {
-    if (printViralMode === 'current') {
+    if (printViralMode === 'guide') {
+      bodyContent = `
+        <div class="print-doc-header">
+          <div>
+            <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a; letter-spacing: -0.5px;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">📚 MANUAL TÉCNICO DE VIRALIDAD & RETENCIÓN DE AUDIENCIA</p>
+          </div>
+          <div style="text-align: right; font-size: 9pt; color: #64748b;">
+            <p style="margin: 0;"><strong>Guía Metodológica Oficial</strong></p>
+            <p style="margin: 2px 0 0 0;"><strong>Fecha de Emisión:</strong> ${dateStr}</p>
+          </div>
+        </div>
+
+        <!-- KPI SUMMARY SUMMARY OF THE METHODOLOGY -->
+        <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
+          <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
+            <div class="print-kpi-value" style="color: #f59e0b;">14.5 pts</div>
+            <div class="print-kpi-label" style="color: #e2e8f0;">Puntaje Máximo Posible</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
+            <div class="print-kpi-value" style="color: #b45309;">6 Criterios</div>
+            <div class="print-kpi-label" style="color: #b45309;">Base de Viralidad (+10.0 pts)</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #ddd6fe; background: #faf5ff;">
+            <div class="print-kpi-value" style="color: #6b21a8;">4 Grupos</div>
+            <div class="print-kpi-label" style="color: #6b21a8;">Formatos de Retención (+4.5 pts)</div>
+          </div>
+          <div class="print-kpi-card" style="border-color: #bbf7d0; background: #f0fdf4;">
+            <div class="print-kpi-value" style="color: #166534;">≥ 10.0 pts</div>
+            <div class="print-kpi-label" style="color: #166534;">🚀 Umbral Viral Aprobado</div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 1: LOS 6 CRITERIOS BASE PONDERADOS (10.0 PTS MAX) -->
+        <div class="print-avoid-break" style="margin-bottom: 16px;">
+          <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 10px 0;">
+            🎯 1. Los 6 Criterios de Viralidad Ponderados (Máx 10.0 Puntos)
+          </h2>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th style="width: 35px; text-align: center;">#</th>
+                <th style="width: 170px;">Criterio Estratégico</th>
+                <th style="width: 80px; text-align: center;">Puntaje</th>
+                <th>Definición y Regla de Cumplimiento</th>
+                <th style="width: 130px;">Impacto Psicológico</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">1</td>
+                <td style="font-weight: bold; color: #0f172a;">Regla del Niño de 5 Años</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.5 pts</td>
+                <td>El concepto y el gancho se entienden al instante. Cero palabras técnicas o tecnicismos abstractos.</td>
+                <td style="font-size: 8pt; color: #475569;">Elimina fricción cognitiva inmediata en los primeros 3 segundos.</td>
+              </tr>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">2</td>
+                <td style="font-weight: bold; color: #0f172a;">Regla del 50 de 100</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.5 pts</td>
+                <td>Si le preguntas a 100 personas al azar en la calle, al menos a 50 les interesa o afecta directamente.</td>
+                <td style="font-size: 8pt; color: #475569;">Garantiza mercado masivo y consumo transversal del algoritmo.</td>
+              </tr>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">3</td>
+                <td style="font-weight: bold; color: #0f172a;">Referencia Viral Comprobada</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.0 pts</td>
+                <td>El concepto o gancho está modelado de un video validado que superó las 100k a 1M+ reproducciones.</td>
+                <td style="font-size: 8pt; color: #475569;">Reduce riesgo; reproduce patrones de retención probados.</td>
+              </tr>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">4</td>
+                <td style="font-weight: bold; color: #0f172a;">Mercado de Alto Consumo</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+0.5 pts</td>
+                <td>Temáticas de altísimo tráfico: dinero, ahorro, salud, hábitos, relaciones, psicología o tecnología.</td>
+                <td style="font-size: 8pt; color: #475569;">Aumenta ratio de compartidos por WhatsApp y guardados.</td>
+              </tr>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">5</td>
+                <td style="font-weight: bold; color: #0f172a;">Tendencia o Novedad</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+1.5 pts</td>
+                <td>Se conecta con un tema en conversación activa: noticias del día, cambios normativos o coyuntura.</td>
+                <td style="font-size: 8pt; color: #475569;">Aprovecha picos de búsqueda e interés del momento (Trend Hijacking).</td>
+              </tr>
+              <tr>
+                <td style="text-align: center; font-weight: bold;">6</td>
+                <td style="font-weight: bold; color: #0f172a;">Controversia o Debate</td>
+                <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+1.0 pts</td>
+                <td>Contiene una opinión contundente o postura sana que estimula comentarios y opiniones opuestas.</td>
+                <td style="font-size: 8pt; color: #475569;">Dispara la tasa de comentarios, métrica clave para el algoritmo.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- SECCIÓN 2: LOS 4 GRUPOS DE FORMATOS AUDIOVISUALES (4.5 PTS MAX) -->
+        <div class="print-avoid-break" style="margin-bottom: 16px;">
+          <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 10px 0;">
+            📹 2. Los 4 Grupos de Formatos Audiovisuales & Niveles de Retención (+4.5 pts)
+          </h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            
+            <div class="print-section-box" style="border-left-color: #8b5cf6;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 9pt; color: #6d28d9; text-transform: uppercase;">🎬 Grupo 1: Inmersión Total</strong>
+                <span class="print-badge" style="background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe;">+3.5 a +4.5 pts</span>
+              </div>
+              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Máxima retención. La cámara es el espectador viviendo la experiencia en primera persona o con dinamismo cinematográfico.</p>
+              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
+                <li><strong>POV (Point of View):</strong> +4.5 pts (El usuario siente que lo está viviendo)</li>
+                <li><strong>Vlog Dinámico:</strong> +4.0 pts (Cambios continuos de plano y acción)</li>
+                <li><strong>Formato Dinámico:</strong> +3.5 pts (B-Roll ágil y estímulos visuales)</li>
+              </ul>
+            </div>
+
+            <div class="print-section-box" style="border-left-color: #0284c7;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 9pt; color: #0369a1; text-transform: uppercase;">🎙️ Grupo 2: Efecto Testigo & Curiosidad</strong>
+                <span class="print-badge" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;">+2.5 a +3.5 pts</span>
+              </div>
+              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Activa el voyerismo social y la curiosidad natural al observar una interacción espontánea entre dos personas.</p>
+              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
+                <li><strong>Prima Pregunta:</strong> +3.5 pts (Interrupción callejera o pregunta rápida)</li>
+                <li><strong>Entrevista Dinámica:</strong> +3.0 pts (Diálogo fluido con micrófono visible)</li>
+                <li><strong>Mirando a la Nada:</strong> +2.5 pts (Habla a un tercero fuera de cuadro)</li>
+              </ul>
+            </div>
+
+            <div class="print-section-box" style="border-left-color: #0d9488;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 9pt; color: #0f766e; text-transform: uppercase;">🟩 Grupo 3: Demostración & Comentario</strong>
+                <span class="print-badge" style="background: #f0fdfa; color: #0f766e; border-color: #99f6e4;">+2.0 a +2.5 pts</span>
+              </div>
+              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Soporte visual con reacción o análisis simultáneo de pruebas, capturas o eventos en tiempo real.</p>
+              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
+                <li><strong>Pantalla Dividida (Split):</strong> +2.5 pts (Doble estímulo visual simultáneo)</li>
+                <li><strong>Pantalla Verde (Green Screen):</strong> +2.0 pts (Reacción sobre artículo o noticia)</li>
+              </ul>
+            </div>
+
+            <div class="print-section-box" style="border-left-color: #f59e0b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 9pt; color: #b45309; text-transform: uppercase;">🗣️ Grupo 4: Exposición Frontal</strong>
+                <span class="print-badge" style="background: #fefce8; color: #b45309; border-color: #fef08a;">+1.0 a +1.5 pts</span>
+              </div>
+              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Formato tradicional de mayor fricción que requiere ganchos hiper-potentes para retener al usuario.</p>
+              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
+                <li><strong>Formato Selfie:</strong> +1.5 pts (Cámara en mano, espontaneidad y cercanía)</li>
+                <li><strong>Hablando a Cámara (Talking Head):</strong> +1.0 pt (Busto parlante con trípode fijo)</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: MATRIZ DE DECISIÓN Y ESCALA DE DICTÁMENES -->
+        <div class="print-avoid-break">
+          <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 10px 0;">
+            ⚖️ 3. Escala de Dictámenes & Matriz de Producción BLEX
+          </h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <div style="border: 1.5px solid #a7f3d0; background: #ecfdf5; border-radius: 8px; padding: 8px 10px;">
+              <div style="font-size: 11pt; font-weight: 900; color: #065f46;">🟢 10.0 – 14.5 pts</div>
+              <strong style="font-size: 8.5pt; color: #047857; display: block; margin: 2px 0;">ALTO POTENCIAL VIRAL</strong>
+              <p style="font-size: 7.8pt; color: #064e3b; margin: 0; line-height: 1.35;">Aprobado para guionizado y grabación con máxima prioridad. Excelente combinación de atractivo masivo e inmersión.</p>
+            </div>
+            <div style="border: 1.5px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 8px 10px;">
+              <div style="font-size: 11pt; font-weight: 900; color: #92400e;">🟡 7.0 – 9.5 pts</div>
+              <strong style="font-size: 8.5pt; color: #b45309; display: block; margin: 2px 0;">POTENCIAL MEDIO</strong>
+              <p style="font-size: 7.8pt; color: #78350f; margin: 0; line-height: 1.35;">Viable para audiencia tibia. Para público frío, optimizar el gancho de 0-3 segundos o migrar a un formato con mayor inmersión.</p>
+            </div>
+            <div style="border: 1.5px solid #fecaca; background: #fef2f2; border-radius: 8px; padding: 8px 10px;">
+              <div style="font-size: 11pt; font-weight: 900; color: #991b1b;">🔴 0.0 – 6.5 pts</div>
+              <strong style="font-size: 8.5pt; color: #b91c1c; display: block; margin: 2px 0;">POTENCIAL BAJO</strong>
+              <p style="font-size: 7.8pt; color: #7f1d1d; margin: 0; line-height: 1.35;">No producir en este estado. Se recomienda reformular la idea, hacerla comprensible por cualquiera o buscar un caso real más sólido.</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+    } else if (printViralMode === 'current') {
       const data = getCurrentViralFormData();
 
       bodyContent = `
         <div class="print-doc-header">
           <div>
             <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 FICHA DE EVALUACIÓN DE POTENCIAL VIRAL</p>
+            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 FICHA EJECUTIVA DE EVALUACIÓN VIRAL</p>
           </div>
           <div style="text-align: right; font-size: 9pt; color: #64748b;">
             <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(data.client)}</p>
@@ -3827,92 +4026,92 @@ function generateCompletePrintDocument(forNewTab = false) {
           </div>
         </div>
 
-        <div class="print-card" style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+        <div class="print-card" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px;">
             <div>
-              <span style="font-size: 9pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada en Pantalla</span>
+              <span style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada en Pantalla</span>
               <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(data.title || '(Sin título ingresado)')}</h2>
               ${data.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(data.link)}</p>` : ''}
             </div>
             <div style="text-align: right;">
-              <div style="font-size: 26pt; font-weight: 900; font-family: monospace; color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'};">${data.totalScore} <span style="font-size: 12pt; color: #64748b;">/ 15</span></div>
-              <span class="print-badge" style="font-size: 9pt; background: ${data.totalScore >= 10 ? '#ecfdf5' : data.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${data.totalScore >= 10 ? '#065f46' : data.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${data.totalScore >= 10 ? '#a7f3d0' : data.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
+              <div style="font-size: 26pt; font-weight: 900; font-family: monospace; color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'};">${data.totalScore.toFixed(1)} <span style="font-size: 12pt; color: #64748b;">/ 14.5</span></div>
+              <span class="print-badge" style="font-size: 8.5pt; background: ${data.totalScore >= 10 ? '#ecfdf5' : data.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${data.totalScore >= 10 ? '#065f46' : data.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${data.totalScore >= 10 ? '#a7f3d0' : data.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
                 ${escapeHtml(data.potential)}
               </span>
             </div>
           </div>
 
-          <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 10px 0;">Desglose de Criterios de Viralidad</h3>
-          <table class="print-table" style="margin-bottom: 16px;">
+          <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 8px 0;">Desglose de los 6 Criterios de Viralidad</h3>
+          <table class="print-table" style="margin-bottom: 14px;">
             <thead>
               <tr>
                 <th>Criterio Evaluado</th>
-                <th style="width: 100px; text-align: center;">Ponderación</th>
-                <th style="width: 140px; text-align: center;">Resultado</th>
+                <th style="width: 90px; text-align: center;">Ponderación</th>
+                <th style="width: 130px; text-align: center;">Resultado</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
+                <td><strong>1. Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
                 <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.nino ? '#059669' : '#94a3b8'};">${data.criteria.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.nino ? '#059669' : '#94a3b8'};">${data.criteria.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
               <tr>
-                <td><strong>Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
+                <td><strong>2. Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
                 <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.cincuenta ? '#059669' : '#94a3b8'};">${data.criteria.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.cincuenta ? '#059669' : '#94a3b8'};">${data.criteria.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
               <tr>
-                <td><strong>Referencia Viral Comprobada:</strong> Inspirado en un video con más de 100k reproducciones.</td>
+                <td><strong>3. Referencia Viral Comprobada:</strong> Gancho o formato modelado de un video validado con >100k views.</td>
                 <td style="text-align: center; font-weight: 600;">2.0 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.refViral ? '#059669' : '#94a3b8'};">${data.criteria.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.refViral ? '#059669' : '#94a3b8'};">${data.criteria.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
               <tr>
-                <td><strong>Mercado Altamente Viral:</strong> Temáticas masivas como dinero, salud, relaciones, ahorro o éxito.</td>
+                <td><strong>4. Mercado Altamente Viral:</strong> Temáticas masivas de alto consumo habitual (dinero, salud, relaciones, ahorro).</td>
                 <td style="text-align: center; font-weight: 600;">0.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.mercadoViral ? '#059669' : '#94a3b8'};">${data.criteria.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.mercadoViral ? '#059669' : '#94a3b8'};">${data.criteria.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
               <tr>
-                <td><strong>Tendencia o Novedad:</strong> Utiliza un tema de conversación caliente o reciente.</td>
+                <td><strong>5. Tendencia o Novedad:</strong> Utiliza una conversación activa, noticia del momento o coyuntura.</td>
                 <td style="text-align: center; font-weight: 600;">1.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.tendencia ? '#059669' : '#94a3b8'};">${data.criteria.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.tendencia ? '#059669' : '#94a3b8'};">${data.criteria.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
               <tr>
-                <td><strong>Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas.</td>
+                <td><strong>6. Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas sanas.</td>
                 <td style="text-align: center; font-weight: 600;">1.0 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.controversia ? '#059669' : '#94a3b8'};">${data.criteria.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0)'}</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.controversia ? '#059669' : '#94a3b8'};">${data.criteria.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0.0)'}</td>
               </tr>
             </tbody>
           </table>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
             <div class="print-section-box" style="border-left-color: #8b5cf6;">
-              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
-              <p style="font-size: 10pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(data.format)}</p>
-              <p style="font-size: 8.5pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: +${data.formatScore} / 4.5 pts</p>
+              <strong style="font-size: 8pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
+              <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(data.format)}</p>
+              <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: <strong>+${data.formatScore.toFixed(1)} / 4.5 pts</strong></p>
             </div>
             <div class="print-section-box" style="border-left-color: #10b981;">
-              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios</strong>
-              <p style="font-size: 10pt; font-weight: bold; margin: 0; color: #0f172a;">${data.criteriaScore} / 10.0 Puntos</p>
-              <p style="font-size: 8.5pt; color: #64748b; margin: 2px 0 0 0;">Total Final = ${data.totalScore} / 15.0 pts</p>
+              <strong style="font-size: 8pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios Base</strong>
+              <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${data.criteriaScore.toFixed(1)} / 10.0 Puntos</p>
+              <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Total Final = <strong>${data.totalScore.toFixed(1)} / 14.5 pts</strong></p>
             </div>
           </div>
 
           <div class="print-section-box" style="border-left-color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'}; background-color: #fafafa;">
-            <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Recomendación y Dictamen BLEX STUDIO:</strong>
-            <p style="font-size: 9.5pt; margin: 0; color: #1e293b; line-height: 1.4;">
+            <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Dictamen Estratégico y Recomendación BLEX STUDIO:</strong>
+            <p style="font-size: 9pt; margin: 0; color: #1e293b; line-height: 1.45;">
               ${data.totalScore >= 10 
                 ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Esta idea cuenta con una estructura óptima de retención, simplicidad y atractivo masivo. Se recomienda proceder a guionizado y grabación con máxima prioridad.' 
                 : data.totalScore >= 7 
-                ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable, pero se sugiere reforzar el gancho inicial de 0-3 segundos o simplificar aún más el mensaje para maximizar el ratio de compartidos.' 
-                : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
+                ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable para comunidad. Para tráfico frío, se sugiere reforzar el gancho inicial de 0-3 segundos o subir a un formato de mayor inmersión (POV, Vlog o Dinámico).' 
+                : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque, simplificar el mensaje para que cualquiera lo comprenda al instante o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
             </p>
           </div>
         </div>
       `;
 
     } else {
-      // History Mode
+      // History Mode (Custom selection of selected evaluations)
       const evals = (state.viralEvaluations || []).filter(e => printSelectedIds.has(e.id));
       if (evals.length === 0) {
         alert('Por favor selecciona al menos una evaluación del historial para imprimir.');
@@ -3921,74 +4120,180 @@ function generateCompletePrintDocument(forNewTab = false) {
 
       const countViral = evals.filter(e => (e.totalScore || 0) >= 10).length;
       const countMedio = evals.filter(e => (e.totalScore || 0) >= 7 && (e.totalScore || 0) < 10).length;
+      const countBajo = evals.filter(e => (e.totalScore || 0) < 7).length;
       const avgScore = (evals.reduce((acc, curr) => acc + (curr.totalScore || 0), 0) / evals.length).toFixed(1);
 
-      bodyContent = `
-        <div class="print-doc-header">
-          <div>
-            <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 HISTORIAL DE EVALUACIONES DE VIRALIDAD</p>
-          </div>
-          <div style="text-align: right; font-size: 9pt; color: #64748b;">
-            <p style="margin: 0;"><strong>Total Evaluaciones Seleccionadas:</strong> ${evals.length}</p>
-            <p style="margin: 2px 0 0 0;"><strong>Fecha de Reporte:</strong> ${dateStr}</p>
-          </div>
-        </div>
+      // If user selected only 1 evaluation from history, print detailed executive sheet for it!
+      if (evals.length === 1) {
+        const item = evals[0];
+        const crit = item.criteria || {};
 
-        <!-- KPI SUMMARY BAR -->
-        <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
-          <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
-            <div class="print-kpi-value" style="color: #f59e0b;">${evals.length}</div>
-            <div class="print-kpi-label" style="color: #e2e8f0;">Total Evaluadas</div>
+        bodyContent = `
+          <div class="print-doc-header">
+            <div>
+              <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+              <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 FICHA EJECUTIVA DE EVALUACIÓN VIRAL</p>
+            </div>
+            <div style="text-align: right; font-size: 9pt; color: #64748b;">
+              <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(item.client || 'General')}</p>
+              <p style="margin: 2px 0 0 0;"><strong>Fecha de Evaluación:</strong> ${item.createdAt ? new Date(item.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : dateStr}</p>
+            </div>
           </div>
-          <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
-            <div class="print-kpi-value" style="color: #b45309;">${avgScore} / 15</div>
-            <div class="print-kpi-label" style="color: #b45309;">Promedio General</div>
-          </div>
-          <div class="print-kpi-card" style="border-color: #bbf7d0; background: #f0fdf4;">
-            <div class="print-kpi-value" style="color: #166534;">${countViral}</div>
-            <div class="print-kpi-label" style="color: #166534;">🚀 Muy Alto / Viral</div>
-          </div>
-          <div class="print-kpi-card" style="border-color: #fed7aa; background: #fff7ed;">
-            <div class="print-kpi-value" style="color: #9a3412;">${countMedio}</div>
-            <div class="print-kpi-label" style="color: #9a3412;">⚡ Potencial Medio</div>
-          </div>
-        </div>
 
-        <table class="print-table">
-          <thead>
-            <tr>
-              <th style="width: 75px;">Fecha</th>
-              <th style="width: 75px;">Cliente</th>
-              <th>Idea Evaluada</th>
-              <th style="width: 110px;">Formato</th>
-              <th style="width: 80px; text-align: center;">Puntaje</th>
-              <th style="width: 110px; text-align: center;">Potencial</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${evals.map(e => `
-              <tr class="print-avoid-break">
-                <td style="font-size: 8.5pt; color: #64748b;">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-ES') : '-'}</td>
-                <td style="font-weight: bold;">${escapeHtml(e.client || 'General')}</td>
-                <td style="font-weight: 600; color: #0f172a;">
-                  ${escapeHtml(e.title || 'Sin título')}
-                  ${e.link ? `<div style="font-size: 7.5pt; color: #0284c7;">${escapeHtml(e.link)}</div>` : ''}
-                </td>
-                <td style="font-size: 8.5pt;">${escapeHtml(e.format || '-')}</td>
-                <td style="text-align: center; font-weight: bold; font-family: monospace; font-size: 10pt; color: ${e.totalScore >= 10 ? '#059669' : e.totalScore >= 7 ? '#d97706' : '#dc2626'};">
-                  ${e.totalScore || 0} / 15
-                </td>
-                <td style="text-align: center;">
-                  <span class="print-badge" style="font-size: 8pt; background: ${e.totalScore >= 10 ? '#ecfdf5' : e.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${e.totalScore >= 10 ? '#065f46' : e.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${e.totalScore >= 10 ? '#a7f3d0' : e.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
-                    ${escapeHtml(e.potential || 'Evaluado')}
-                  </span>
-                </td>
+          <div class="print-card" style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px;">
+              <div>
+                <span style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Registrada en Historial</span>
+                <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(item.title || '(Sin título ingresado)')}</h2>
+                ${item.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(item.link)}</p>` : ''}
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 26pt; font-weight: 900; font-family: monospace; color: ${(item.totalScore || 0) >= 10 ? '#059669' : (item.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'};">${(item.totalScore || 0).toFixed(1)} <span style="font-size: 12pt; color: #64748b;">/ 14.5</span></div>
+                <span class="print-badge" style="font-size: 8.5pt; background: ${(item.totalScore || 0) >= 10 ? '#ecfdf5' : (item.totalScore || 0) >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${(item.totalScore || 0) >= 10 ? '#065f46' : (item.totalScore || 0) >= 7 ? '#92400e' : '#991b1b'}; border-color: ${(item.totalScore || 0) >= 10 ? '#a7f3d0' : (item.totalScore || 0) >= 7 ? '#fde68a' : '#fecaca'};">
+                  ${escapeHtml(item.potential || 'Evaluado')}
+                </span>
+              </div>
+            </div>
+
+            <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 8px 0;">Desglose de los 6 Criterios de Viralidad</h3>
+            <table class="print-table" style="margin-bottom: 14px;">
+              <thead>
+                <tr>
+                  <th>Criterio Evaluado</th>
+                  <th style="width: 90px; text-align: center;">Ponderación</th>
+                  <th style="width: 130px; text-align: center;">Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1. Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
+                  <td style="text-align: center; font-weight: 600;">2.5 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.nino ? '#059669' : '#94a3b8'};">${crit.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+                <tr>
+                  <td><strong>2. Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
+                  <td style="text-align: center; font-weight: 600;">2.5 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.cincuenta ? '#059669' : '#94a3b8'};">${crit.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+                <tr>
+                  <td><strong>3. Referencia Viral Comprobada:</strong> Gancho o formato modelado de un video validado con >100k views.</td>
+                  <td style="text-align: center; font-weight: 600;">2.0 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.refViral ? '#059669' : '#94a3b8'};">${crit.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+                <tr>
+                  <td><strong>4. Mercado Altamente Viral:</strong> Temáticas masivas de alto consumo habitual (dinero, salud, relaciones, ahorro).</td>
+                  <td style="text-align: center; font-weight: 600;">0.5 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.mercadoViral ? '#059669' : '#94a3b8'};">${crit.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+                <tr>
+                  <td><strong>5. Tendencia o Novedad:</strong> Utiliza una conversación activa, noticia del momento o coyuntura.</td>
+                  <td style="text-align: center; font-weight: 600;">1.5 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.tendencia ? '#059669' : '#94a3b8'};">${crit.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+                <tr>
+                  <td><strong>6. Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas sanas.</td>
+                  <td style="text-align: center; font-weight: 600;">1.0 pts</td>
+                  <td style="text-align: center; font-weight: 700; color: ${crit.controversia ? '#059669' : '#94a3b8'};">${crit.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0.0)'}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="print-section-box" style="border-left-color: #8b5cf6;">
+                <strong style="font-size: 8pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
+                <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(item.format || 'No especificado')}</p>
+                <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: <strong>+${(item.formatScore || 0).toFixed(1)} / 4.5 pts</strong></p>
+              </div>
+              <div class="print-section-box" style="border-left-color: #10b981;">
+                <strong style="font-size: 8pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios Base</strong>
+                <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${(item.criteriaScore || 0).toFixed(1)} / 10.0 Puntos</p>
+                <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Total Final = <strong>${(item.totalScore || 0).toFixed(1)} / 14.5 pts</strong></p>
+              </div>
+            </div>
+
+            <div class="print-section-box" style="border-left-color: ${(item.totalScore || 0) >= 10 ? '#059669' : (item.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'}; background-color: #fafafa;">
+              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Dictamen Estratégico BLEX STUDIO:</strong>
+              <p style="font-size: 9pt; margin: 0; color: #1e293b; line-height: 1.45;">
+                ${(item.totalScore || 0) >= 10 
+                  ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Esta idea cuenta con una estructura óptima de retención, simplicidad y atractivo masivo. Se recomienda proceder a guionizado y grabación con máxima prioridad.' 
+                  : (item.totalScore || 0) >= 7 
+                  ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable para comunidad. Para tráfico frío, se sugiere reforzar el gancho inicial de 0-3 segundos o subir a un formato de mayor inmersión.' 
+                  : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
+              </p>
+            </div>
+          </div>
+        `;
+      } else {
+        // Multiple selected evaluations from history: render Comparative Report & KPI table
+        bodyContent = `
+          <div class="print-doc-header">
+            <div>
+              <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+              <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 REPORTE DE HISTORIAL & RANKING DE VIRALIDAD</p>
+            </div>
+            <div style="text-align: right; font-size: 9pt; color: #64748b;">
+              <p style="margin: 0;"><strong>Total Evaluaciones Seleccionadas:</strong> ${evals.length}</p>
+              <p style="margin: 2px 0 0 0;"><strong>Fecha de Reporte:</strong> ${dateStr}</p>
+            </div>
+          </div>
+
+          <!-- KPI SUMMARY BAR -->
+          <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
+            <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
+              <div class="print-kpi-value" style="color: #f59e0b;">${evals.length}</div>
+              <div class="print-kpi-label" style="color: #e2e8f0;">Total Seleccionadas</div>
+            </div>
+            <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
+              <div class="print-kpi-value" style="color: #b45309;">${avgScore} / 14.5</div>
+              <div class="print-kpi-label" style="color: #b45309;">Promedio General</div>
+            </div>
+            <div class="print-kpi-card" style="border-color: #bbf7d0; background: #f0fdf4;">
+              <div class="print-kpi-value" style="color: #166534;">${countViral}</div>
+              <div class="print-kpi-label" style="color: #166534;">🚀 Muy Alto / Viral</div>
+            </div>
+            <div class="print-kpi-card" style="border-color: #fed7aa; background: #fff7ed;">
+              <div class="print-kpi-value" style="color: #9a3412;">${countMedio} (Medio) / ${countBajo} (Bajo)</div>
+              <div class="print-kpi-label" style="color: #9a3412;">⚡ Potencial Medio / Bajo</div>
+            </div>
+          </div>
+
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th style="width: 30px; text-align: center;">#</th>
+                <th style="width: 75px;">Fecha</th>
+                <th style="width: 75px;">Cliente</th>
+                <th>Idea Evaluada & Enlace</th>
+                <th style="width: 110px;">Formato</th>
+                <th style="width: 85px; text-align: center;">Puntaje</th>
+                <th style="width: 110px; text-align: center;">Potencial</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+            </thead>
+            <tbody>
+              ${evals.map((e, idx) => `
+                <tr class="print-avoid-break">
+                  <td style="text-align: center; font-weight: bold; font-family: monospace; color: #64748b;">#${idx + 1}</td>
+                  <td style="font-size: 8.5pt; color: #64748b;">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-ES') : '-'}</td>
+                  <td style="font-weight: bold;">${escapeHtml(e.client || 'General')}</td>
+                  <td style="font-weight: 600; color: #0f172a;">
+                    ${escapeHtml(e.title || 'Sin título')}
+                    ${e.link ? `<div style="font-size: 7.5pt; color: #0284c7; font-weight: normal;">🔗 ${escapeHtml(e.link)}</div>` : ''}
+                  </td>
+                  <td style="font-size: 8.5pt;">${escapeHtml(e.format || '-')}</td>
+                  <td style="text-align: center; font-weight: bold; font-family: monospace; font-size: 10pt; color: ${(e.totalScore || 0) >= 10 ? '#059669' : (e.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'};">
+                    ${(e.totalScore || 0).toFixed(1)} / 14.5
+                  </td>
+                  <td style="text-align: center;">
+                    <span class="print-badge" style="font-size: 8pt; background: ${(e.totalScore || 0) >= 10 ? '#ecfdf5' : (e.totalScore || 0) >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${(e.totalScore || 0) >= 10 ? '#065f46' : (e.totalScore || 0) >= 7 ? '#92400e' : '#991b1b'}; border-color: ${(e.totalScore || 0) >= 10 ? '#a7f3d0' : (e.totalScore || 0) >= 7 ? '#fde68a' : '#fecaca'};">
+                      ${escapeHtml(e.potential || 'Evaluado')}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      }
     }
 
   } else if (currentPrintModule === 'ideas') {
@@ -4176,6 +4481,12 @@ function printSingleScript(scriptId) {
   executeEnhancedPrint(false);
 }
 
+function printViralGuide() {
+  currentPrintModule = 'viral';
+  printViralMode = 'guide';
+  executeEnhancedPrint(false);
+}
+
 function printCurrentViralEvaluation() {
   currentPrintModule = 'viral';
   printViralMode = 'current';
@@ -4204,6 +4515,13 @@ function printIdeasAndNotes() {
   printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
   executeEnhancedPrint(false);
 }
+
+window.printViralGuide = printViralGuide;
+window.printCurrentViralEvaluation = printCurrentViralEvaluation;
+window.printViralHistory = printViralHistory;
+window.printSingleViralEvaluation = printSingleViralEvaluation;
+window.printIdeasAndNotes = printIdeasAndNotes;
+window.printSingleScript = printSingleScript;
 
 // EXPORT / IMPORT JSON
 function handleExportJSON() {
