@@ -319,12 +319,14 @@ const savedClients = JSON.parse(localStorage.getItem('css_clients'));
 const savedScripts = JSON.parse(localStorage.getItem('css_scripts'));
 const savedNotes = JSON.parse(localStorage.getItem('css_notes'));
 const savedViralEvals = JSON.parse(localStorage.getItem('css_viral_evaluations'));
+const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
 
 let state = {
   clients: (savedClients && savedClients.length > 0) ? savedClients : INITIAL_CLIENTS,
   scripts: (savedScripts && savedScripts.length > 0) ? savedScripts : INITIAL_SCRIPTS,
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   viralEvaluations: (savedViralEvals && Array.isArray(savedViralEvals)) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
+  challengeStartDate: savedChallengeStartDate || new Date().toISOString().split('T')[0],
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
@@ -455,6 +457,33 @@ function saveState() {
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
   localStorage.setItem('css_notes', JSON.stringify(state.notes));
   localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+  if (state.challengeStartDate) {
+    localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+  }
+}
+
+function renderChallengeCountdown() {
+  const badgeText = document.getElementById('challengeDaysText');
+  if (!badgeText) return;
+
+  if (!state.challengeStartDate) {
+    state.challengeStartDate = new Date().toISOString().split('T')[0];
+    localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+  }
+
+  const parts = state.challengeStartDate.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const startDate = new Date(year, month, day);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = today.getTime() - startDate.getTime();
+  const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+  const remainingDays = Math.max(0, 365 - diffDays);
+
+  badgeText.textContent = `${remainingDays} ${remainingDays === 1 ? 'día' : 'días'}`;
 }
 
 function refreshLucideIcons() {
@@ -550,6 +579,7 @@ function renderClientSelect() {
 }
 
 function renderAll() {
+  renderChallengeCountdown();
   const filtered = getFilteredScripts();
   const baseScriptsForStats = state.activeClient === 'ALL' 
     ? state.scripts 
@@ -1275,6 +1305,25 @@ function showPasteSuccess(btnElement) {
 
 // EVENT HANDLERS & MODALS
 function setupEventListeners() {
+  // Challenge Badge Click Handler
+  const challengeBadge = document.getElementById('challengeBadge');
+  if (challengeBadge) {
+    challengeBadge.addEventListener('click', () => {
+      const current = state.challengeStartDate || new Date().toISOString().split('T')[0];
+      const input = prompt("🔥 Reto 365 Días\n\nIngresa la fecha de inicio del reto (AAAA-MM-DD):", current);
+      if (input && input.trim()) {
+        const trimmed = input.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          state.challengeStartDate = trimmed;
+          saveState();
+          renderChallengeCountdown();
+        } else {
+          alert("Por favor ingresa la fecha en formato AAAA-MM-DD (ejemplo: 2026-01-01)");
+        }
+      }
+    });
+  }
+
   // Tab Switching
   if (tabViralCalc) tabViralCalc.addEventListener('click', () => switchView('viral_calc'));
   tabMatrix.addEventListener('click', () => switchView('matrix'));
