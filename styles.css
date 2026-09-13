@@ -5,14 +5,13 @@
   body {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    font-size: 12pt;
+    font-size: 11pt;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .print\:hidden {
-    display: none !important;
-  }
-
-  .no-print {
     display: none !important;
   }
 
@@ -20,42 +19,95 @@
     display: block !important;
   }
 
-  /* Card styling for print */
-  .script-card-print {
-    break-inside: avoid;
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-avoid-break {
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Dedicated Print Container Styles */
+  body.printing-dedicated #app {
+    display: none !important;
+  }
+
+  body.printing-dedicated #dedicatedPrintArea {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0.8cm !important;
+  }
+
+  .print-doc-header {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 10px;
+    font-size: 10pt;
+  }
+
+  .print-table th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
     border: 1px solid #cbd5e1 !important;
-    background-color: #f8fafc !important;
-    color: #0f172a !important;
-    box-shadow: none !important;
-    margin-bottom: 1.5rem !important;
-    padding: 1rem !important;
-    border-radius: 0.5rem !important;
+    padding: 8px 10px !important;
+    font-weight: 700;
+    text-align: left;
   }
 
-  .script-card-print * {
-    color: #0f172a !important;
-  }
-
-  .script-card-print .badge-print {
-    border: 1px solid #94a3b8 !important;
-    background-color: #e2e8f0 !important;
+  .print-table td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 7px 10px !important;
     color: #1e293b !important;
   }
 
-  table {
-    width: 100% !important;
-    border-collapse: collapse !important;
+  .print-card {
+    border: 1px solid #94a3b8 !important;
+    background-color: #f8fafc !important;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  th, td {
-    border: 1px solid #cbd5e1 !important;
-    padding: 8px !important;
-    color: #0f172a !important;
+  .print-section-box {
+    border-left: 3px solid #3b82f6;
+    background-color: #ffffff;
+    padding: 10px 14px;
+    margin-top: 10px;
+    border-radius: 4px;
+    border-top: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
   }
 
-  th {
-    background-color: #f1f5f9 !important;
+  .print-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9pt;
+    font-weight: bold;
+    border: 1px solid #cbd5e1;
+    background: #e2e8f0;
+    color: #0f172a;
   }
 }
 

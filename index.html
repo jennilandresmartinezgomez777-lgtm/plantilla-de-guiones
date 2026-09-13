@@ -1384,70 +1384,103 @@
     </div>
   </div>
 
-  <!-- MODAL: PRINT / PDF SELECTION -->
-  <div id="printModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
+  <!-- MODAL: PRINT / PDF EXPORT STUDIO -->
+  <div id="printModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
       
       <!-- Modal Header -->
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="printer" class="w-5 h-5 text-brand-500"></i>
-          Opciones de Impresión / PDF
-        </h3>
-        <button id="btnClosePrintModal" class="p-1 text-slate-400 hover:text-white rounded-lg transition">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-slate-950 border border-purple-500/40 flex items-center justify-center text-cyan-400 shadow-sm shadow-purple-950/50">
+            <i data-lucide="printer" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white">Centro de Impresión & Exportación PDF</h3>
+            <p class="text-[11px] text-slate-400">Imprime o exporta cualquier sección de la plataforma</p>
+          </div>
+        </div>
+        <button id="btnClosePrintModal" onclick="closePrintModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Format Selection -->
-      <div class="space-y-2">
-        <label class="block text-xs font-semibold text-slate-400">Estilo de Impresión</label>
-        <div class="grid grid-cols-2 gap-3">
-          <label class="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-brand-500 transition">
-            <input type="radio" name="printFormat" value="cards" checked class="text-brand-500 focus:ring-brand-500">
+      <!-- Module Selection Tabs -->
+      <div class="space-y-1.5 shrink-0">
+        <label class="block text-xs font-semibold text-slate-300">¿Qué deseas imprimir o exportar?</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <!-- Tab 1: Matriz -->
+          <button type="button" onclick="setPrintModule('matrix')" id="btnPrintTabMatrix" class="print-module-tab p-2.5 rounded-xl border border-brand-500 bg-brand-500/10 text-white font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="table" class="w-4 h-4 text-brand-400"></i>
+            <span>📊 Matriz</span>
+          </button>
+          <!-- Tab 2: Fichas -->
+          <button type="button" onclick="setPrintModule('cards')" id="btnPrintTabCards" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-purple-400"></i>
+            <span>🎴 Fichas (Guión)</span>
+          </button>
+          <!-- Tab 3: Viralidad -->
+          <button type="button" onclick="setPrintModule('viral')" id="btnPrintTabViral" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
+            <span>🔥 Viralidad</span>
+          </button>
+          <!-- Tab 4: Ideas -->
+          <button type="button" onclick="setPrintModule('ideas')" id="btnPrintTabIdeas" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-400"></i>
+            <span>💡 Ideas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Viral Sub-Options Container (Visible only when 'viral' module is selected) -->
+      <div id="printViralOptionsContainer" class="hidden space-y-2 p-3 bg-slate-950 rounded-xl border border-slate-800/80 shrink-0">
+        <label class="block text-xs font-semibold text-amber-300">Modo de Impresión Viral:</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs">
+            <input type="radio" name="printViralMode" value="current" checked onchange="handlePrintViralModeChange()" class="text-amber-500 focus:ring-amber-500">
             <div>
-              <p class="text-xs font-bold text-white">🎴 Fichas Detalladas</p>
-              <p class="text-[11px] text-slate-400">1 guión completo por hoja</p>
+              <p class="font-bold text-white">🎯 Evaluación Actual</p>
+              <p class="text-[10px] text-slate-400">Criterios y puntaje activo</p>
             </div>
           </label>
-          <label class="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-brand-500 transition">
-            <input type="radio" name="printFormat" value="matrix" class="text-brand-500 focus:ring-brand-500">
+          <label class="flex items-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 cursor-pointer text-xs">
+            <input type="radio" name="printViralMode" value="history" onchange="handlePrintViralModeChange()" class="text-amber-500 focus:ring-amber-500">
             <div>
-              <p class="text-xs font-bold text-white">📊 Matriz Resumida</p>
-              <p class="text-[11px] text-slate-400">Tabla con todos los títulos</p>
+              <p class="font-bold text-white">📋 Historial de Ideas</p>
+              <p class="text-[10px] text-slate-400">Tabla de evaluaciones</p>
             </div>
           </label>
         </div>
       </div>
 
-      <!-- Script Selection Controls -->
-      <div class="space-y-3 pt-2 border-t border-slate-800">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold text-slate-400">Seleccionar Guiones a Imprimir</label>
-          <div class="flex items-center gap-2">
-            <button id="btnSelectAllPrint" class="text-xs text-brand-400 hover:underline font-semibold">Seleccionar Todos</button>
+      <!-- Dynamic Selection List Area -->
+      <div id="printSelectionArea" class="flex-1 min-h-0 flex flex-col space-y-2">
+        <div class="flex items-center justify-between shrink-0">
+          <label id="printSelectionLabel" class="text-xs font-semibold text-slate-300">Seleccionar guiones a imprimir:</label>
+          <div class="flex items-center gap-2" id="printSelectButtonsWrapper">
+            <button id="btnSelectAllPrint" type="button" onclick="selectAllPrintItems()" class="text-xs text-brand-400 hover:underline font-semibold cursor-pointer">Seleccionar Todos</button>
             <span class="text-slate-600">•</span>
-            <button id="btnDeselectAllPrint" class="text-xs text-slate-400 hover:underline">Desmarcar Todos</button>
+            <button id="btnDeselectAllPrint" type="button" onclick="deselectAllPrintItems()" class="text-xs text-slate-400 hover:underline cursor-pointer">Desmarcar</button>
           </div>
         </div>
 
         <!-- Scrollable Checkbox List -->
-        <div id="printScriptsList" class="space-y-2 max-h-64 overflow-y-auto pr-1 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
-          <!-- Checkbox items injected via JS -->
+        <div id="printScriptsList" class="space-y-1.5 overflow-y-auto pr-1 bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex-1 max-h-52">
+          <!-- Checkbox items dynamically rendered via JS -->
         </div>
 
-        <p id="printSelectionCounter" class="text-xs text-slate-400 font-medium text-right">
-          Se imprimirán 0 guiones
+        <p id="printSelectionCounter" class="text-xs text-slate-400 font-medium text-right shrink-0">
+          Se imprimirán 0 elementos
         </p>
       </div>
 
       <!-- Modal Footer -->
-      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-        <button id="btnCancelPrintModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-sm">
+      <div class="flex items-center justify-between gap-3 pt-3 border-t border-slate-800 shrink-0">
+        <button id="btnCancelPrintModal" type="button" onclick="closePrintModal()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-xs sm:text-sm cursor-pointer">
           Cancelar
         </button>
-        <button id="btnExecutePrint" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition shadow-md shadow-brand-900/50 flex items-center gap-2">
-          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Exportar PDF
+        <button id="btnExecutePrint" type="button" onclick="executeEnhancedPrint()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-brand-950/60 flex items-center gap-2 cursor-pointer">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>Imprimir / Exportar a PDF</span>
         </button>
       </div>
 
@@ -1741,6 +1774,8 @@
     </div>
   </div>
 
-  <script src="app.js?v=4.5&t=1789240500"></script>
+  <div id="dedicatedPrintArea" class="hidden print:block"></div>
+
+  <script src="app.js?v=4.7&t=1789270000"></script>
 </body>
 </html>

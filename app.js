@@ -780,7 +780,9 @@ try {
   console.warn("Storage sync failed:", e);
 }
 
-// PRINT SELECTION STATE
+// PRINT SELECTION & STUDIO STATE
+let currentPrintModule = 'matrix'; // 'matrix' | 'cards' | 'viral' | 'ideas'
+let printViralMode = 'current'; // 'current' | 'history'
 let printSelectedIds = new Set();
 
 // DOM ELEMENTS
@@ -2943,134 +2945,623 @@ function deleteClientByName(clientName) {
   }
 }
 
-// PRINT / PDF SELECTION LOGIC
+// HTML Escape Helper
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ==========================================
+// MODULAR PRINT & EXPORT PDF STUDIO
+// ==========================================
+
 function openPrintModal() {
-  const filtered = getFilteredScripts();
-  printSelectedIds = new Set(filtered.map(s => s.id));
-  renderPrintScriptsList(filtered);
-  printModal.classList.remove('hidden');
+  currentPrintModule = 'matrix';
+  printViralMode = 'current';
+  setPrintModule('matrix');
+  if (printModal) printModal.classList.remove('hidden');
   refreshLucideIcons();
 }
 
 function closePrintModal() {
-  printModal.classList.add('hidden');
+  if (printModal) printModal.classList.add('hidden');
 }
 
-function renderPrintScriptsList(filteredScripts) {
-  if (!printScriptsList) return;
-  printScriptsList.innerHTML = '';
+function setPrintModule(moduleName) {
+  currentPrintModule = moduleName;
+  
+  // Update Tab active classes
+  const tabs = [
+    { id: 'btnPrintTabMatrix', name: 'matrix', activeBorder: 'border-brand-500', activeBg: 'bg-brand-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabCards', name: 'cards', activeBorder: 'border-purple-500', activeBg: 'bg-purple-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabViral', name: 'viral', activeBorder: 'border-amber-500', activeBg: 'bg-amber-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabIdeas', name: 'ideas', activeBorder: 'border-yellow-500', activeBg: 'bg-yellow-500/10', activeText: 'text-white' }
+  ];
 
-  if (filteredScripts.length === 0) {
-    printScriptsList.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay guiones disponibles.</p>`;
-    return;
-  }
-
-  filteredScripts.forEach(script => {
-    const isChecked = printSelectedIds.has(script.id);
-    const item = document.createElement('div');
-    item.className = "flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition";
-    
-    item.innerHTML = `
-      <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
-        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintScriptId('${script.id}')" class="rounded border-slate-700 bg-slate-950 text-brand-500 focus:ring-brand-500 cursor-pointer">
-        <span class="font-bold text-slate-300 shrink-0">#${script.number || '?'}</span>
-        <span class="font-medium text-white truncate">${script.ideaGanadora}</span>
-      </label>
-      <span class="text-[10px] uppercase font-bold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded shrink-0">${script.client}</span>
-    `;
-    printScriptsList.appendChild(item);
+  tabs.forEach(tab => {
+    const el = document.getElementById(tab.id);
+    if (!el) return;
+    if (tab.name === moduleName) {
+      el.className = `print-module-tab p-2.5 rounded-xl border ${tab.activeBorder} ${tab.activeBg} ${tab.activeText} font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer shadow-sm`;
+    } else {
+      el.className = `print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer`;
+    }
   });
 
-  updatePrintSelectionCounter(filteredScripts.length);
+  const viralOptionsContainer = document.getElementById('printViralOptionsContainer');
+  if (viralOptionsContainer) {
+    if (moduleName === 'viral') {
+      viralOptionsContainer.classList.remove('hidden');
+    } else {
+      viralOptionsContainer.classList.add('hidden');
+    }
+  }
+
+  // Populate selection list based on module
+  renderPrintSelectionList();
+  refreshLucideIcons();
 }
 
-function togglePrintScriptId(id) {
+function handlePrintViralModeChange() {
+  const selectedRadio = document.querySelector('input[name="printViralMode"]:checked');
+  if (selectedRadio) {
+    printViralMode = selectedRadio.value;
+  }
+  renderPrintSelectionList();
+}
+
+function getAllIdeasForPrint() {
+  const ideasList = [];
+  
+  // Ideas from scripts
+  (state.scripts || []).forEach(s => {
+    if (s.status === 'Idea' || (!s.gancho && !s.historia)) {
+      ideasList.push({
+        id: s.id,
+        type: 'Idea de Guión',
+        title: s.ideaGanadora || 'Idea sin título',
+        client: s.client || 'General',
+        content: s.contextoAdicional || s.historia || s.gancho || 'Sin contenido adicional',
+        date: s.createdAt || new Date().toISOString()
+      });
+    }
+  });
+
+  // Ideas / Notes from client notes
+  if (state.notes && typeof state.notes === 'object') {
+    Object.entries(state.notes).forEach(([client, notes]) => {
+      if (Array.isArray(notes)) {
+        notes.forEach(note => {
+          ideasList.push({
+            id: note.id,
+            type: 'Nota / Idea Estratégica',
+            title: note.title || 'Nota sin título',
+            client: client,
+            content: note.content || '',
+            date: note.updatedAt || new Date().toISOString()
+          });
+        });
+      }
+    });
+  }
+
+  return ideasList;
+}
+
+function renderPrintSelectionList() {
+  const selectionArea = document.getElementById('printSelectionArea');
+  const selectionLabel = document.getElementById('printSelectionLabel');
+  const buttonsWrapper = document.getElementById('printSelectButtonsWrapper');
+  const listContainer = document.getElementById('printScriptsList');
+  const counter = document.getElementById('printSelectionCounter');
+
+  if (!listContainer) return;
+  listContainer.innerHTML = '';
+
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+    if (selectionArea) selectionArea.classList.remove('hidden');
+    if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
+    if (selectionLabel) selectionLabel.textContent = currentPrintModule === 'matrix' ? 'Seleccionar guiones para la Matriz:' : 'Seleccionar fichas de guión a imprimir:';
+
+    const filtered = getFilteredScripts();
+    if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !filtered.some(s => s.id === id))) {
+      printSelectedIds = new Set(filtered.map(s => s.id));
+    }
+
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay guiones disponibles para el filtro actual.</p>`;
+      if (counter) counter.textContent = `0 guiones seleccionados`;
+      return;
+    }
+
+    filtered.forEach(script => {
+      const isChecked = printSelectedIds.has(script.id);
+      const item = document.createElement('div');
+      item.className = "flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition";
+      item.innerHTML = `
+        <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintItemId('${script.id}')" class="rounded border-slate-700 bg-slate-950 text-brand-500 focus:ring-brand-500 cursor-pointer">
+          <span class="font-bold text-slate-300 shrink-0">#${script.number || '?'}</span>
+          <span class="font-medium text-white truncate">${escapeHtml(script.ideaGanadora || 'Sin título')}</span>
+        </label>
+        <span class="text-[10px] uppercase font-bold text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded shrink-0">${escapeHtml(script.client)}</span>
+      `;
+      listContainer.appendChild(item);
+    });
+
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${filtered.length} guión(es)`;
+
+  } else if (currentPrintModule === 'viral') {
+    if (printViralMode === 'current') {
+      if (buttonsWrapper) buttonsWrapper.classList.add('hidden');
+      if (selectionLabel) selectionLabel.textContent = 'Evaluación Activa de Viralidad:';
+      
+      const currentData = getCurrentViralFormData();
+      listContainer.innerHTML = `
+        <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-300 text-sm">🎯 ${escapeHtml(currentData.title || '(Sin título evaluado aún)')}</span>
+            <span class="font-mono font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">${currentData.totalScore} / 15 pts</span>
+          </div>
+          <p class="text-slate-300"><strong>Cliente:</strong> ${escapeHtml(currentData.client)} | <strong>Formato:</strong> ${escapeHtml(currentData.format)}</p>
+          <p class="text-slate-400 text-[11px]">Potencial: <strong class="text-white">${escapeHtml(currentData.potential)}</strong> (Se imprimirá la ficha completa con todos los criterios evaluados).</p>
+        </div>
+      `;
+      if (counter) counter.textContent = `Se imprimirá la evaluación activa (1 ficha)`;
+
+    } else {
+      // History mode
+      if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
+      if (selectionLabel) selectionLabel.textContent = 'Seleccionar evaluaciones del historial a imprimir:';
+      
+      const evals = state.viralEvaluations || [];
+      if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !evals.some(e => e.id === id))) {
+        printSelectedIds = new Set(evals.map(e => e.id));
+      }
+
+      if (evals.length === 0) {
+        listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay evaluaciones guardadas en el historial.</p>`;
+        if (counter) counter.textContent = `0 evaluaciones seleccionadas`;
+        return;
+      }
+
+      evals.forEach(item => {
+        const isChecked = printSelectedIds.has(item.id);
+        const el = document.createElement('div');
+        el.className = "flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition";
+        el.innerHTML = `
+          <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintItemId('${item.id}')" class="rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500 cursor-pointer">
+            <span class="font-bold text-amber-400 shrink-0 font-mono">${item.totalScore}/15</span>
+            <span class="font-medium text-white truncate">${escapeHtml(item.title || 'Sin título')}</span>
+          </label>
+          <span class="text-[10px] uppercase font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded shrink-0">${escapeHtml(item.client || 'General')}</span>
+        `;
+        listContainer.appendChild(el);
+      });
+
+      if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${evals.length} evaluación(es)`;
+    }
+
+  } else if (currentPrintModule === 'ideas') {
+    if (selectionArea) selectionArea.classList.remove('hidden');
+    if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
+    if (selectionLabel) selectionLabel.textContent = 'Seleccionar ideas y notas a imprimir:';
+
+    const ideas = getAllIdeasForPrint();
+    if (printSelectedIds.size === 0 || Array.from(printSelectedIds).some(id => !ideas.some(i => i.id === id))) {
+      printSelectedIds = new Set(ideas.map(i => i.id));
+    }
+
+    if (ideas.length === 0) {
+      listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay ideas o notas registradas.</p>`;
+      if (counter) counter.textContent = `0 ideas seleccionadas`;
+      return;
+    }
+
+    ideas.forEach(item => {
+      const isChecked = printSelectedIds.has(item.id);
+      const el = document.createElement('div');
+      el.className = "flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition";
+      el.innerHTML = `
+        <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintItemId('${item.id}')" class="rounded border-slate-700 bg-slate-950 text-yellow-500 focus:ring-yellow-500 cursor-pointer">
+          <span class="font-bold text-yellow-400 shrink-0 text-[10px] uppercase">[${item.type.includes('Nota') ? 'NOTA' : 'IDEA'}]</span>
+          <span class="font-medium text-white truncate">${escapeHtml(item.title)}</span>
+        </label>
+        <span class="text-[10px] uppercase font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded shrink-0">${escapeHtml(item.client)}</span>
+      `;
+      listContainer.appendChild(el);
+    });
+
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${ideas.length} idea(s)/nota(s)`;
+  }
+}
+
+function togglePrintItemId(id) {
   if (printSelectedIds.has(id)) {
     printSelectedIds.delete(id);
   } else {
     printSelectedIds.add(id);
   }
-  updatePrintSelectionCounter(getFilteredScripts().length);
-}
-
-function updatePrintSelectionCounter(total) {
-  if (printSelectionCounter) {
-    printSelectionCounter.textContent = `Se imprimirán ${printSelectedIds.size} de ${total} guión(es)`;
+  
+  const counter = document.getElementById('printSelectionCounter');
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${getFilteredScripts().length} guión(es)`;
+  } else if (currentPrintModule === 'viral') {
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${(state.viralEvaluations || []).length} evaluación(es)`;
+  } else if (currentPrintModule === 'ideas') {
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${getAllIdeasForPrint().length} idea(s)/nota(s)`;
   }
 }
 
-function selectAllPrintScripts() {
-  const filtered = getFilteredScripts();
-  printSelectedIds = new Set(filtered.map(s => s.id));
-  renderPrintScriptsList(filtered);
+function selectAllPrintItems() {
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+    printSelectedIds = new Set(getFilteredScripts().map(s => s.id));
+  } else if (currentPrintModule === 'viral') {
+    printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
+  } else if (currentPrintModule === 'ideas') {
+    printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
+  }
+  renderPrintSelectionList();
 }
 
-function deselectAllPrintScripts() {
+function deselectAllPrintItems() {
   printSelectedIds.clear();
-  renderPrintScriptsList(getFilteredScripts());
+  renderPrintSelectionList();
 }
 
-function handleExecutePrint() {
-  const selectedFormatRadio = document.querySelector('input[name="printFormat"]:checked');
-  const format = selectedFormatRadio ? selectedFormatRadio.value : 'cards';
+// Backwards compatibility aliases
+function selectAllPrintScripts() { selectAllPrintItems(); }
+function deselectAllPrintScripts() { deselectAllPrintItems(); }
+function togglePrintScriptId(id) { togglePrintItemId(id); }
+function handleExecutePrint() { executeEnhancedPrint(); }
 
-  switchView(format);
+function executeEnhancedPrint() {
+  const printArea = document.getElementById('dedicatedPrintArea');
+  if (!printArea) return;
+  
+  let html = '';
+  const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  if (format === 'cards') {
-    const cardElements = cardsGrid.children;
-    const filtered = getFilteredScripts();
-    Array.from(cardElements).forEach((card, idx) => {
-      const script = filtered[idx];
-      if (script && !printSelectedIds.has(script.id)) {
-        card.classList.add('no-print');
-      } else {
-        card.classList.remove('no-print');
+  if (currentPrintModule === 'matrix') {
+    const scripts = getFilteredScripts().filter(s => printSelectedIds.has(s.id));
+    if (scripts.length === 0) {
+      alert('Por favor selecciona al menos un guión para imprimir.');
+      return;
+    }
+
+    html = `
+      <div class="print-doc-header">
+        <div>
+          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a; letter-spacing: -0.5px;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 600; color: #475569; margin: 0;">Matriz Estratégica de Guiones</p>
+        </div>
+        <div style="text-align: right; font-size: 9pt; color: #64748b;">
+          <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos los Clientes' : escapeHtml(state.activeClient)}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Total Guiones:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
+        </div>
+      </div>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th style="width: 32px; text-align: center;">#</th>
+            <th style="width: 70px;">Cliente</th>
+            <th style="width: 130px;">Idea Ganadora</th>
+            <th style="width: 90px;">Formato / Obj.</th>
+            <th>🎣 Gancho (Hook)</th>
+            <th>📖 Historia / Desarrollo</th>
+            <th>💡 Moraleja</th>
+            <th>🚀 CTA</th>
+            <th style="width: 70px; text-align: center;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scripts.map(s => `
+            <tr class="print-avoid-break">
+              <td style="text-align: center; font-weight: bold; font-family: monospace;">#${s.number || '?'}</td>
+              <td style="font-weight: bold;">${escapeHtml(s.client || '')}</td>
+              <td style="font-weight: bold; color: #0f172a;">${escapeHtml(s.ideaGanadora || '')}</td>
+              <td>
+                <div style="font-size: 8.5pt; font-weight: 600;">${escapeHtml(s.formato || '-')}</div>
+                <div style="font-size: 8pt; color: #64748b; text-transform: uppercase;">${escapeHtml(s.objetivo || '')}</div>
+              </td>
+              <td style="font-size: 8.5pt;">${escapeHtml(s.gancho || '-')}</td>
+              <td style="font-size: 8.5pt;">${escapeHtml(s.historia || '-')}</td>
+              <td style="font-size: 8.5pt;">${escapeHtml(s.moraleja || '-')}</td>
+              <td style="font-size: 8.5pt;">${escapeHtml(s.cta || '-')}</td>
+              <td style="text-align: center;">
+                <span class="print-badge" style="font-size: 8pt;">${escapeHtml(s.status || 'Idea')}</span>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+  } else if (currentPrintModule === 'cards') {
+    const scripts = getFilteredScripts().filter(s => printSelectedIds.has(s.id));
+    if (scripts.length === 0) {
+      alert('Por favor selecciona al menos un guión para imprimir.');
+      return;
+    }
+
+    html = `
+      <div class="print-doc-header">
+        <div>
+          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 600; color: #475569; margin: 0;">Fichas Detalladas de Producción y Grabación</p>
+        </div>
+        <div style="text-align: right; font-size: 9pt; color: #64748b;">
+          <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos' : escapeHtml(state.activeClient)}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Fichas:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        ${scripts.map(s => `
+          <div class="print-card print-avoid-break">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px;">
+              <div>
+                <span style="font-size: 12pt; font-weight: 800; color: #0f172a; margin-right: 8px;">#${s.number || '?'}</span>
+                <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(s.ideaGanadora || 'Sin título')}</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <span class="print-badge">${escapeHtml(s.client)}</span>
+                <span class="print-badge" style="background: #ede9fe; color: #6b21a8; border-color: #ddd6fe;">${escapeHtml(s.formato || 'Formato')}</span>
+                <span class="print-badge" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">${escapeHtml(s.status || 'Estado')}</span>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="print-section-box" style="border-left-color: #ef4444;">
+                <strong style="font-size: 8.5pt; text-transform: uppercase; color: #b91c1c; display: block; margin-bottom: 4px;">🎣 Gancho (0 a 3 seg)</strong>
+                <p style="font-size: 9.5pt; font-weight: 600; margin: 0; color: #0f172a; line-height: 1.4;">${escapeHtml(s.gancho || '-')}</p>
+              </div>
+              <div class="print-section-box" style="border-left-color: #3b82f6;">
+                <strong style="font-size: 8.5pt; text-transform: uppercase; color: #1d4ed8; display: block; margin-bottom: 4px;">📖 Historia / Desarrollo</strong>
+                <p style="font-size: 9.5pt; margin: 0; color: #334155; line-height: 1.4;">${escapeHtml(s.historia || '-')}</p>
+              </div>
+              <div class="print-section-box" style="border-left-color: #f59e0b;">
+                <strong style="font-size: 8.5pt; text-transform: uppercase; color: #b45309; display: block; margin-bottom: 4px;">💡 Moraleja / Enfoque</strong>
+                <p style="font-size: 9.5pt; margin: 0; color: #334155; line-height: 1.4;">${escapeHtml(s.moraleja || '-')}</p>
+              </div>
+              <div class="print-section-box" style="border-left-color: #10b981;">
+                <strong style="font-size: 8.5pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 4px;">🚀 Llamado a la Acción (CTA)</strong>
+                <p style="font-size: 9.5pt; font-weight: 600; margin: 0; color: #0f172a; line-height: 1.4;">${escapeHtml(s.cta || '-')}</p>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+              <span><strong>Actor / Vocero:</strong> ${escapeHtml(s.actor || 'Principal')}</span>
+              <span><strong>Contexto / Locación:</strong> ${escapeHtml(s.contextoAdicional || 'Estudio')}</span>
+              <span><strong>Objetivo:</strong> ${escapeHtml(s.objetivo || 'General')}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+  } else if (currentPrintModule === 'viral') {
+    if (printViralMode === 'current') {
+      const data = getCurrentViralFormData();
+
+      html = `
+        <div class="print-doc-header">
+          <div>
+            <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 600; color: #d97706; margin: 0;">Ficha de Evaluación de Potencial Viral</p>
+          </div>
+          <div style="text-align: right; font-size: 9pt; color: #64748b;">
+            <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(data.client)}</p>
+            <p style="margin: 2px 0 0 0;"><strong>Fecha de Evaluación:</strong> ${dateStr}</p>
+          </div>
+        </div>
+
+        <div class="print-card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+            <div>
+              <span style="font-size: 9pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada</span>
+              <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(data.title || '(Sin título ingresado)')}</h2>
+              ${data.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(data.link)}</p>` : ''}
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 24pt; font-weight: 900; font-family: monospace; color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'};">${data.totalScore} <span style="font-size: 12pt; color: #64748b;">/ 15</span></div>
+              <span class="print-badge" style="font-size: 9pt; background: ${data.totalScore >= 10 ? '#ecfdf5' : data.totalScore >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${data.totalScore >= 10 ? '#065f46' : data.totalScore >= 7 ? '#92400e' : '#991b1b'}; border-color: ${data.totalScore >= 10 ? '#a7f3d0' : data.totalScore >= 7 ? '#fde68a' : '#fecaca'};">
+                ${escapeHtml(data.potential)}
+              </span>
+            </div>
+          </div>
+
+          <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 10px 0;">Desglose de Criterios de Viralidad</h3>
+          <table class="print-table" style="margin-bottom: 16px;">
+            <thead>
+              <tr>
+                <th>Criterio Evaluado</th>
+                <th style="width: 100px; text-align: center;">Ponderación</th>
+                <th style="width: 140px; text-align: center;">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
+                <td style="text-align: center; font-weight: 600;">2.5 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.nino ? '#059669' : '#94a3b8'};">${data.criteria.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+              <tr>
+                <td><strong>Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
+                <td style="text-align: center; font-weight: 600;">2.5 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.cincuenta ? '#059669' : '#94a3b8'};">${data.criteria.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+              <tr>
+                <td><strong>Referencia Viral Comprobada:</strong> Inspirado en un video con más de 100k reproducciones.</td>
+                <td style="text-align: center; font-weight: 600;">2.0 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.refViral ? '#059669' : '#94a3b8'};">${data.criteria.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+              <tr>
+                <td><strong>Mercado Altamente Viral:</strong> Temáticas masivas como dinero, salud, relaciones, ahorro o éxito.</td>
+                <td style="text-align: center; font-weight: 600;">0.5 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.mercadoViral ? '#059669' : '#94a3b8'};">${data.criteria.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+              <tr>
+                <td><strong>Tendencia o Novedad:</strong> Utiliza un tema de conversación caliente o reciente.</td>
+                <td style="text-align: center; font-weight: 600;">1.5 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.tendencia ? '#059669' : '#94a3b8'};">${data.criteria.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+              <tr>
+                <td><strong>Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas.</td>
+                <td style="text-align: center; font-weight: 600;">1.0 pts</td>
+                <td style="text-align: center; font-weight: 700; color: ${data.criteria.controversia ? '#059669' : '#94a3b8'};">${data.criteria.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0)'}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="print-section-box" style="border-left-color: #8b5cf6;">
+              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
+              <p style="font-size: 10pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(data.format)}</p>
+              <p style="font-size: 8.5pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: +${data.formatScore} / 4.5 pts</p>
+            </div>
+            <div class="print-section-box" style="border-left-color: #10b981;">
+              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios</strong>
+              <p style="font-size: 10pt; font-weight: bold; margin: 0; color: #0f172a;">${data.criteriaScore} / 10.0 Puntos</p>
+              <p style="font-size: 8.5pt; color: #64748b; margin: 2px 0 0 0;">Total Final = ${data.totalScore} / 15.0 pts</p>
+            </div>
+          </div>
+
+          <div class="print-section-box" style="border-left-color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'}; background-color: #fafafa;">
+            <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Recomendación y Dictamen BLEX STUDIO:</strong>
+            <p style="font-size: 9.5pt; margin: 0; color: #1e293b; line-height: 1.4;">
+              ${data.totalScore >= 10 
+                ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Esta idea cuenta con una estructura óptima de retención, simplicidad y atractivo masivo. Se recomienda proceder a guionizado y grabación con máxima prioridad.' 
+                : data.totalScore >= 7 
+                ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable, pero se sugiere reforzar el gancho inicial de 0-3 segundos o simplificar aún más el mensaje para maximizar el ratio de compartidos.' 
+                : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
+            </p>
+          </div>
+        </div>
+      `;
+
+    } else {
+      // History Mode
+      const evals = (state.viralEvaluations || []).filter(e => printSelectedIds.has(e.id));
+      if (evals.length === 0) {
+        alert('Por favor selecciona al menos una evaluación del historial para imprimir.');
+        return;
       }
-    });
-  } else if (format === 'matrix') {
-    const rowElements = matrixTableBody.children;
-    const filtered = getFilteredScripts();
-    Array.from(rowElements).forEach((row, idx) => {
-      const script = filtered[idx];
-      if (script && !printSelectedIds.has(script.id)) {
-        row.classList.add('no-print');
-      } else {
-        row.classList.remove('no-print');
-      }
-    });
+
+      html = `
+        <div class="print-doc-header">
+          <div>
+            <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 600; color: #d97706; margin: 0;">Historial de Evaluaciones de Viralidad</p>
+          </div>
+          <div style="text-align: right; font-size: 9pt; color: #64748b;">
+            <p style="margin: 0;"><strong>Total Evaluaciones:</strong> ${evals.length}</p>
+            <p style="margin: 2px 0 0 0;"><strong>Fecha de Reporte:</strong> ${dateStr}</p>
+          </div>
+        </div>
+
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Fecha</th>
+              <th style="width: 80px;">Cliente</th>
+              <th>Idea Evaluada</th>
+              <th style="width: 110px;">Formato</th>
+              <th style="width: 80px; text-align: center;">Puntaje</th>
+              <th style="width: 100px; text-align: center;">Potencial</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${evals.map(e => `
+              <tr class="print-avoid-break">
+                <td style="font-size: 8.5pt; color: #64748b;">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-ES') : '-'}</td>
+                <td style="font-weight: bold;">${escapeHtml(e.client || 'General')}</td>
+                <td style="font-weight: 600; color: #0f172a;">
+                  ${escapeHtml(e.title || 'Sin título')}
+                  ${e.link ? `<div style="font-size: 7.5pt; color: #0284c7;">${escapeHtml(e.link)}</div>` : ''}
+                </td>
+                <td style="font-size: 8.5pt;">${escapeHtml(e.format || '-')}</td>
+                <td style="text-align: center; font-weight: bold; font-family: monospace; font-size: 10pt; color: ${e.totalScore >= 10 ? '#059669' : e.totalScore >= 7 ? '#d97706' : '#dc2626'};">
+                  ${e.totalScore || 0} / 15
+                </td>
+                <td style="text-align: center;">
+                  <span class="print-badge" style="font-size: 8pt;">${escapeHtml(e.potential || 'Evaluado')}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+  } else if (currentPrintModule === 'ideas') {
+    const allIdeas = getAllIdeasForPrint().filter(i => printSelectedIds.has(i.id));
+    if (allIdeas.length === 0) {
+      alert('Por favor selecciona al menos una idea o nota para imprimir.');
+      return;
+    }
+
+    html = `
+      <div class="print-doc-header">
+        <div>
+          <h1 style="font-size: 20pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 600; color: #ca8a04; margin: 0;">Banco de Ideas y Notas Estratégicas</p>
+        </div>
+        <div style="text-align: right; font-size: 9pt; color: #64748b;">
+          <p style="margin: 0;"><strong>Total Registros:</strong> ${allIdeas.length}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        ${allIdeas.map(item => `
+          <div class="print-card print-avoid-break">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="print-badge" style="background: #fef9c3; color: #854d0e; border-color: #fef08a;">${escapeHtml(item.type)}</span>
+                <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(item.title)}</span>
+              </div>
+              <span class="print-badge">${escapeHtml(item.client)}</span>
+            </div>
+            <div class="print-section-box" style="border-left-color: #eab308; white-space: pre-line; font-size: 9.5pt; color: #334155; line-height: 1.5;">
+              ${escapeHtml(item.content)}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 8pt; color: #64748b; margin-top: 8px;">
+              <span>Registrado: ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : '-'}</span>
+              <span>BLEX STUDIO — Banco de Ideas</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
   }
 
+  printArea.innerHTML = html;
   closePrintModal();
 
+  // Execute print with dedicated styling
+  document.body.classList.add('printing-dedicated');
   setTimeout(() => {
     window.print();
     setTimeout(() => {
-      renderAll();
+      document.body.classList.remove('printing-dedicated');
+      printArea.innerHTML = '';
     }, 500);
-  }, 150);
+  }, 100);
 }
 
 function printSingleScript(scriptId) {
+  currentPrintModule = 'cards';
   printSelectedIds = new Set([scriptId]);
-  switchView('cards');
-  
-  const filtered = getFilteredScripts();
-  const cardElements = cardsGrid.children;
-  Array.from(cardElements).forEach((card, idx) => {
-    const script = filtered[idx];
-    if (script && script.id !== scriptId) {
-      card.classList.add('no-print');
-    } else {
-      card.classList.remove('no-print');
-    }
-  });
-
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      renderAll();
-    }, 500);
-  }, 150);
+  executeEnhancedPrint();
 }
 
 // EXPORT / IMPORT JSON
