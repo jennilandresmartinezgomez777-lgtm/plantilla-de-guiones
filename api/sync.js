@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
       if (typeof body === 'string') {
         body = JSON.parse(body);
       }
-      if (body && body.scripts) {
+      if (body && Array.isArray(body.scripts)) {
         globalSyncState = {
           data: body,
           updatedAt: body.updatedAt || new Date().toISOString()

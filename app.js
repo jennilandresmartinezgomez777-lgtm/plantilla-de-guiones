@@ -332,24 +332,32 @@ const INITIAL_VIRAL_EVALUATIONS = [
 ];
 
 // STATE
-const savedClients = JSON.parse(localStorage.getItem('css_clients'));
-const savedScripts = JSON.parse(localStorage.getItem('css_scripts'));
-const savedNotes = JSON.parse(localStorage.getItem('css_notes'));
-const savedViralEvals = JSON.parse(localStorage.getItem('css_viral_evaluations'));
+const rawSavedClients = localStorage.getItem('css_clients');
+const savedClients = rawSavedClients !== null ? JSON.parse(rawSavedClients) : null;
+
+const rawSavedScripts = localStorage.getItem('css_scripts');
+const savedScripts = rawSavedScripts !== null ? JSON.parse(rawSavedScripts) : null;
+
+const rawSavedNotes = localStorage.getItem('css_notes');
+const savedNotes = rawSavedNotes !== null ? JSON.parse(rawSavedNotes) : null;
+
+const rawSavedViralEvals = localStorage.getItem('css_viral_evaluations');
+const savedViralEvals = rawSavedViralEvals !== null ? JSON.parse(rawSavedViralEvals) : null;
+
 const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
 
 let state = {
-  clients: (savedClients && savedClients.length > 0) ? savedClients : INITIAL_CLIENTS,
-  scripts: (savedScripts && savedScripts.length > 0) ? savedScripts : INITIAL_SCRIPTS,
+  clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
+  scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
-  viralEvaluations: (savedViralEvals && Array.isArray(savedViralEvals)) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
+  viralEvaluations: Array.isArray(savedViralEvals) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
   challengeStartDate: savedChallengeStartDate || new Date().toISOString().split('T')[0],
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
   currentView: 'matrix', // Default is MATRIX
   editingScriptId: null,
-  activeNotesClient: (savedClients && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
+  activeNotesClient: (Array.isArray(savedClients) && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
 
 // Auto-sanitize legacy saved data to purge any traces of USACREDITO
@@ -486,10 +494,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function saveState() {
+  const nowISO = new Date().toISOString();
+  state.updatedAt = nowISO;
   localStorage.setItem('css_clients', JSON.stringify(state.clients));
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
   localStorage.setItem('css_notes', JSON.stringify(state.notes));
   localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+  localStorage.setItem('css_updated_at', nowISO);
   if (state.challengeStartDate) {
     localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
   }
@@ -1757,21 +1768,19 @@ async function loadStateFromCloud(isSilent = false) {
 
     let res = await fetch(syncEndpoint);
     if (!res.ok) {
-      res = await fetch('/sync-data.json?v=' + Date.now());
-    }
-    if (!res.ok) {
       if (!isSilent) {
-        alert("No se encontró ninguna copia previa en la Nube. Haz clic en 'Guardar en Nube' primero en tu PC.");
+        alert("No se encontró ninguna copia previa en la Nube. Haz clic en 'Guardar Datos' primero.");
       }
       return;
     }
 
     const data = await res.json();
-    if (data && data.scripts && Array.isArray(data.scripts)) {
-      const cloudCount = data.scripts.length;
-      const localCount = (state.scripts && Array.isArray(state.scripts)) ? state.scripts.length : 0;
+    if (data && Array.isArray(data.scripts)) {
+      const localUpdatedAt = localStorage.getItem('css_updated_at') || '0';
+      const cloudUpdatedAt = data.updatedAt || '0';
 
-      if (!isSilent || cloudCount >= localCount) {
+      // Apply if manually requested (!isSilent) OR cloud is newer/equal to local
+      if (!isSilent || cloudUpdatedAt >= localUpdatedAt) {
         applyCloudData(data, null, isSilent);
       }
     } else if (!isSilent) {
@@ -1779,18 +1788,6 @@ async function loadStateFromCloud(isSilent = false) {
     }
   } catch (err) {
     console.warn("Cloud load network exception:", err);
-    try {
-      const staticRes = await fetch('/sync-data.json?v=' + Date.now());
-      if (staticRes.ok) {
-        const staticData = await staticRes.json();
-        if (staticData && staticData.scripts && Array.isArray(staticData.scripts)) {
-          applyCloudData(staticData, null, isSilent);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn("Static sync fallback failed:", e);
-    }
     if (!isSilent) {
       alert("Error al cargar de la Nube: " + err.message);
     }
@@ -1803,12 +1800,13 @@ async function loadStateFromCloud(isSilent = false) {
 }
 
 function applyCloudData(data, blobId, isSilent = false) {
-  if (data && data.scripts && Array.isArray(data.scripts)) {
+  if (data && Array.isArray(data.scripts)) {
     state.scripts = data.scripts;
-    if (data.clients) state.clients = data.clients;
-    if (data.notes) state.notes = data.notes;
-    if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
+    if (Array.isArray(data.clients)) state.clients = data.clients;
+    if (data.notes && typeof data.notes === 'object') state.notes = data.notes;
+    if (Array.isArray(data.viralEvaluations)) state.viralEvaluations = data.viralEvaluations;
     if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
+    if (data.updatedAt) state.updatedAt = data.updatedAt;
 
     if (data.tpStateScripts && typeof tpState !== 'undefined' && tpState) {
       tpState.scripts = data.tpStateScripts;
@@ -1823,6 +1821,9 @@ function applyCloudData(data, blobId, isSilent = false) {
     localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
     localStorage.setItem('css_notes', JSON.stringify(state.notes));
     localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+    if (state.updatedAt) {
+      localStorage.setItem('css_updated_at', state.updatedAt);
+    }
     if (state.challengeStartDate) {
       localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
     }
@@ -1832,7 +1833,7 @@ function applyCloudData(data, blobId, isSilent = false) {
 
     if (!isSilent) {
       closeSyncModal();
-      alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones desde la Nube.");
+      showToastNotification(`🎉 ¡Carga Exitosa! (${state.scripts.length} guiones cargados desde la Nube)`);
     }
   }
 }
