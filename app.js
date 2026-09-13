@@ -1408,6 +1408,116 @@ function getFullAppStateJSON() {
   });
 }
 
+const CLOUD_SYNC_ENDPOINT = "https://jsonblob.com/api/jsonBlob";
+
+async function saveStateToCloud() {
+  const btn = document.getElementById('btnSaveCloud');
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>☁️ Guardando...</span>';
+  }
+
+  try {
+    const jsonStr = getFullAppStateJSON();
+    let blobId = localStorage.getItem('blex_cloud_blob_id');
+    
+    let res;
+    if (blobId) {
+      res = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonStr
+      });
+    }
+    
+    if (!res || !res.ok) {
+      res = await fetch(CLOUD_SYNC_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonStr
+      });
+      const location = res.headers.get('Location');
+      if (location) {
+        blobId = location.split('/').pop();
+        localStorage.setItem('blex_cloud_blob_id', blobId);
+      }
+    }
+
+    if (blobId) {
+      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nID de Nube: ${blobId}\n\nAhora abre Blex Studio en tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Cargar de Nube'.`);
+    } else {
+      alert("☁️ ¡Guardado en la Nube con Éxito!");
+    }
+  } catch (err) {
+    alert("No se pudo conectar a la nube. Verifica tu conexión a internet.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+
+async function loadStateFromCloud() {
+  const btn = document.getElementById('btnLoadCloud');
+  const originalHTML = btn ? btn.innerHTML : '';
+
+  let blobId = localStorage.getItem('blex_cloud_blob_id');
+  if (!blobId) {
+    blobId = prompt("Ingresa el ID de Nube (obtenido al hacer clic en 'Guardar en Nube' en tu otro dispositivo):");
+    if (!blobId || !blobId.trim()) return;
+    blobId = blobId.trim();
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>☁️ Cargando...</span>';
+  }
+
+  try {
+    const res = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
+    if (!res.ok) {
+      const manualId = prompt("No se encontró esa copia de nube. Si guardaste desde otro dispositivo, ingresa su ID de Nube:");
+      if (manualId && manualId.trim()) {
+        blobId = manualId.trim();
+        const res2 = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
+        if (!res2.ok) throw new Error("ID de Nube no encontrado");
+        const data2 = await res2.json();
+        applyCloudData(data2, blobId);
+        return;
+      }
+      return;
+    }
+    const data = await res.json();
+    applyCloudData(data, blobId);
+  } catch (err) {
+    alert("Error al cargar de la nube: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+
+function applyCloudData(data, blobId) {
+  if (data && data.scripts && Array.isArray(data.scripts)) {
+    state.scripts = data.scripts;
+    if (data.clients) state.clients = data.clients;
+    if (data.notes) state.notes = data.notes;
+    if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
+    if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
+    localStorage.setItem('blex_cloud_blob_id', blobId);
+    saveState();
+    renderAll();
+    closeSyncModal();
+    alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones desde la Nube.");
+  } else {
+    alert("Los datos descargados no contienen una estructura válida de guiones.");
+  }
+}
+
 function copySyncUrlToClipboard() {
   try {
     const jsonStr = getFullAppStateJSON();
