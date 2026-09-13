@@ -382,9 +382,14 @@ function renderAll() {
   }
 
   if (filtered.length === 0) {
-    cardsGrid.classList.add('hidden');
-    viewMatrix.querySelector('table').classList.add('hidden');
-    emptyState.classList.remove('hidden');
+    if (cardsGrid) cardsGrid.classList.add('hidden');
+    if (viewMatrix && viewMatrix.querySelector('table')) viewMatrix.querySelector('table').classList.add('hidden');
+    
+    if (state.currentView === 'matrix' || state.currentView === 'cards') {
+      if (emptyState) emptyState.classList.remove('hidden');
+    } else {
+      if (emptyState) emptyState.classList.add('hidden');
+    }
 
     const emptyTitle = document.getElementById('emptyStateTitle');
     const emptyText = document.getElementById('emptyStateText');
@@ -397,9 +402,9 @@ function renderAll() {
       if (emptyText) emptyText.textContent = `No hay guiones registrados con los filtros seleccionados. Crea uno nuevo o limpia la búsqueda.`;
     }
   } else {
-    cardsGrid.classList.remove('hidden');
-    viewMatrix.querySelector('table').classList.remove('hidden');
-    emptyState.classList.add('hidden');
+    if (cardsGrid) cardsGrid.classList.remove('hidden');
+    if (viewMatrix && viewMatrix.querySelector('table')) viewMatrix.querySelector('table').classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
   }
 
   renderPublishedAnalyticsPanel();
@@ -1986,6 +1991,21 @@ function switchView(viewName) {
     if (statsContainer) statsContainer.classList.add('hidden');
     if (typeof initAiStudio === 'function') initAiStudio();
   }
+
+  // Handle emptyState visibility strictly per view
+  if (emptyState) {
+    if (viewName === 'matrix' || viewName === 'cards') {
+      const filtered = getFilteredScripts();
+      if (filtered && filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+    } else {
+      emptyState.classList.add('hidden');
+    }
+  }
+
   refreshLucideIcons();
 }
 
