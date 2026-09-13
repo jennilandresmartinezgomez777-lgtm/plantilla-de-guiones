@@ -442,6 +442,8 @@ const btnExportJSON = document.getElementById('btnExportJSON');
 const btnImportJSON = document.getElementById('btnImportJSON');
 const importFileInput = document.getElementById('importFileInput');
 
+let autoSyncTimer = null;
+
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   checkUrlForSyncData();
@@ -452,6 +454,13 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   initTeleprompterProEngine();
   refreshLucideIcons();
+
+  // Automatic background load from Cloud on startup (iPad receives PC changes instantly)
+  setTimeout(() => {
+    if (typeof loadStateFromCloud === 'function') {
+      loadStateFromCloud(true);
+    }
+  }, 600);
 });
 
 function saveState() {
@@ -462,6 +471,14 @@ function saveState() {
   if (state.challengeStartDate) {
     localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
   }
+
+  // Automatic background push to Cloud 1 sec after changes (PC uploads changes automatically)
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(() => {
+    if (typeof saveStateToCloud === 'function') {
+      saveStateToCloud(true);
+    }
+  }, 1000);
 }
 
 function renderChallengeCountdown() {
@@ -1570,118 +1587,121 @@ function getFullAppStateJSON() {
   });
 }
 
-const CLOUD_SYNC_ENDPOINT = "https://jsonblob.com/api/jsonBlob";
+function updateCloudStatusBadge(isSuccess) {
+  const badge = document.getElementById('cloudStatusDot');
+  if (!badge) return;
+  if (isSuccess) {
+    badge.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50";
+    badge.title = "Nube Sincronizada";
+  } else {
+    badge.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+    badge.title = "Sincronizando...";
+  }
+}
 
-async function saveStateToCloud() {
+async function saveStateToCloud(isSilent = false) {
   const btn = document.getElementById('btnSaveCloud');
   const originalHTML = btn ? btn.innerHTML : '';
-  if (btn) {
+  if (btn && !isSilent) {
     btn.disabled = true;
     btn.innerHTML = '<span>☁️ Guardando...</span>';
   }
+  updateCloudStatusBadge(false);
 
   try {
-    const jsonStr = getFullAppStateJSON();
+    const payloadObj = JSON.parse(getFullAppStateJSON());
     let syncCode = localStorage.getItem('blex_cloud_sync_code');
-    let blobId = syncCode ? getUuidFromSyncCode(syncCode) : localStorage.getItem('blex_cloud_blob_id');
     
-    let res;
-    if (blobId) {
-      res = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonStr
-      });
-    }
-    
-    if (!res || !res.ok) {
-      res = await fetch(CLOUD_SYNC_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonStr
-      });
-      const location = res.headers.get('Location');
-      if (location) {
-        blobId = location.split('/').pop();
-        localStorage.setItem('blex_cloud_blob_id', blobId);
-      }
+    let syncEndpoint = '/api/sync';
+    if (syncCode) {
+      syncEndpoint += `?channel=${encodeURIComponent(syncCode)}`;
     }
 
-    if (syncCode) {
-      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nClave de Sincronización: "${syncCode}"\n\nAbre Blex Studio en tu iPad, asegúrate de tener la clave "${syncCode}" en 'Sincronizar PC ↔ iPad' y presiona 'Cargar de Nube'.`);
-    } else if (blobId) {
-      alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nID de Nube: ${blobId}\n\nAbre Blex Studio en tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Cargar de Nube'.`);
-    } else {
-      alert("☁️ ¡Guardado en la Nube con Éxito!");
+    const res = await fetch(syncEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payloadObj)
+    });
+
+    if (res.ok) {
+      updateCloudStatusBadge(true);
+      if (!isSilent) {
+        alert(`☁️ ¡Guardado en la Nube con Éxito!\n\nTus ${state.scripts.length} guiones y ${state.notes.length} notas han sido respaldados en la Nube.\n\nAbre Blex Studio en tu iPad y presiona 'Cargar de Nube' (o se actualizará automáticamente).`);
+      }
+      return;
+    }
+
+    if (!isSilent) {
+      alert("☁️ No se pudo conectar a la Nube en este momento.");
     }
   } catch (err) {
-    alert("No se pudo conectar a la nube. Verifica tu conexión a internet.");
+    console.warn("Cloud save network exception:", err);
+    if (!isSilent) {
+      alert("No se pudo conectar a la nube. Verifica tu conexión a internet.");
+    }
   } finally {
-    if (btn) {
+    if (btn && !isSilent) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
     }
   }
 }
 
-async function loadStateFromCloud() {
+async function loadStateFromCloud(isSilent = false) {
   const btn = document.getElementById('btnLoadCloud');
   const originalHTML = btn ? btn.innerHTML : '';
 
-  let syncCode = localStorage.getItem('blex_cloud_sync_code');
-  let blobId = syncCode ? getUuidFromSyncCode(syncCode) : localStorage.getItem('blex_cloud_blob_id');
-
-  if (!blobId) {
-    blobId = prompt("Ingresa el ID de Nube o tu Clave Personal:");
-    if (!blobId || !blobId.trim()) return;
-    blobId = blobId.trim();
-    if (!blobId.includes('-')) {
-      blobId = getUuidFromSyncCode(blobId);
-    }
-  }
-
-  if (btn) {
+  if (btn && !isSilent) {
     btn.disabled = true;
     btn.innerHTML = '<span>☁️ Cargando...</span>';
   }
 
   try {
-    const res = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
+    let syncCode = localStorage.getItem('blex_cloud_sync_code');
+    let syncEndpoint = '/api/sync?t=' + Date.now();
+    if (syncCode) {
+      syncEndpoint += `&channel=${encodeURIComponent(syncCode)}`;
+    }
+
+    const res = await fetch(syncEndpoint);
     if (!res.ok) {
-      const manualId = prompt("No se encontró esa copia en la nube. Ingresa tu Clave Personal de Nube (ej: MI-ESTUDIO-1) o el ID manual:");
-      if (manualId && manualId.trim()) {
-        blobId = manualId.trim();
-        if (!blobId.includes('-') || blobId.length < 30) {
-          blobId = getUuidFromSyncCode(blobId);
-        }
-        const res2 = await fetch(`${CLOUD_SYNC_ENDPOINT}/${blobId}`);
-        if (!res2.ok) throw new Error("Copia de Nube no encontrada con esa clave.");
-        const data2 = await res2.json();
-        applyCloudData(data2, blobId);
-        return;
+      if (!isSilent) {
+        alert("No se encontró ninguna copia previa en la Nube. Haz clic en 'Guardar en Nube' primero en tu PC.");
       }
       return;
     }
+
     const data = await res.json();
-    applyCloudData(data, blobId);
+    if (data && data.scripts && Array.isArray(data.scripts)) {
+      const cloudCount = data.scripts.length;
+      const localCount = state.scripts.length;
+
+      if (!isSilent || cloudCount >= localCount) {
+        applyCloudData(data, null, isSilent);
+      }
+    } else if (!isSilent) {
+      alert("Los datos en la Nube no tienen un formato de guiones válido.");
+    }
   } catch (err) {
-    alert("Error al cargar de la nube: " + err.message);
+    console.warn("Cloud load network exception:", err);
+    if (!isSilent) {
+      alert("Error al cargar de la Nube: " + err.message);
+    }
   } finally {
-    if (btn) {
+    if (btn && !isSilent) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
     }
   }
 }
 
-function applyCloudData(data, blobId) {
+function applyCloudData(data, blobId, isSilent = false) {
   if (data && data.scripts && Array.isArray(data.scripts)) {
     state.scripts = data.scripts;
     if (data.clients) state.clients = data.clients;
     if (data.notes) state.notes = data.notes;
     if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
     if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
-    if (blobId) localStorage.setItem('blex_cloud_blob_id', blobId);
 
     if (data.tpStateScripts && typeof tpState !== 'undefined' && tpState) {
       tpState.scripts = data.tpStateScripts;
@@ -1692,12 +1712,21 @@ function applyCloudData(data, blobId) {
       syncStudioScriptsToTeleprompter();
     }
 
-    saveState();
+    localStorage.setItem('css_clients', JSON.stringify(state.clients));
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+    localStorage.setItem('css_notes', JSON.stringify(state.notes));
+    localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+    if (state.challengeStartDate) {
+      localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+    }
+
     renderAll();
-    closeSyncModal();
-    alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones y el Teleprónter desde la Nube.");
-  } else {
-    alert("Los datos descargados no contienen una estructura válida de guiones.");
+    updateCloudStatusBadge(true);
+
+    if (!isSilent) {
+      closeSyncModal();
+      alert("🎉 ¡Sincronización Exitosa!\n\nSe cargaron correctamente tus " + state.scripts.length + " guiones desde la Nube.");
+    }
   }
 }
 
