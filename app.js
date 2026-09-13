@@ -1621,41 +1621,21 @@ function updateCloudStatusBadge(isSuccess) {
   }
 }
 
-// AUTO SAVE TIMER LOGIC (Every 1 hour / 3600 seconds)
+// AUTO SAVE TIMER LOGIC (Silent background auto-save every 60 minutes after last save)
 let autoSaveIntervalTimer = null;
-let autoSaveCountdownSeconds = 3600;
-let autoSaveCountdownTimer = null;
 
 function initAutoSaveTimer() {
-  autoSaveCountdownSeconds = 3600;
-  if (autoSaveCountdownTimer) clearInterval(autoSaveCountdownTimer);
   if (autoSaveIntervalTimer) clearInterval(autoSaveIntervalTimer);
 
-  updateAutoSaveBadgeUI();
-
-  // Update badge UI countdown every 60s
-  autoSaveCountdownTimer = setInterval(() => {
-    autoSaveCountdownSeconds -= 60;
-    if (autoSaveCountdownSeconds <= 0) {
-      autoSaveCountdownSeconds = 3600;
-    }
-    updateAutoSaveBadgeUI();
-  }, 60000);
-
-  // Trigger auto-save every 1 hour (3600000 ms)
+  // Trigger silent auto-save every 60 minutes (3,600,000 ms) after last save
   autoSaveIntervalTimer = setInterval(() => {
-    console.log("⏰ Auto-guardado de 1 hora ejecutado automáticamente");
+    console.log("⏰ Guardado automático de 60 minutos ejecutado en segundo plano");
     savePlatformDataToCloud(true);
   }, 3600000);
 }
 
-function updateAutoSaveBadgeUI() {
-  const badge = document.getElementById('autoSaveBadge');
-  if (badge) {
-    const mins = Math.max(1, Math.ceil(autoSaveCountdownSeconds / 60));
-    badge.innerText = `⏰ Auto: ${mins}m`;
-    badge.title = `Guardado automático en nube cada 1 hora. Próximo guardado en ${mins} minutos.`;
-  }
+function resetAutoSaveTimer() {
+  initAutoSaveTimer();
 }
 
 function showToastNotification(message, iconName = 'check-circle') {
@@ -1728,8 +1708,7 @@ async function saveStateToCloud(isSilent = false) {
 
     if (res.ok) {
       updateCloudStatusBadge(true);
-      autoSaveCountdownSeconds = 3600; // Reset 1-hour timer on manual save
-      updateAutoSaveBadgeUI();
+      if (typeof resetAutoSaveTimer === 'function') resetAutoSaveTimer();
 
       if (!isSilent) {
         const scriptCount = state.scripts ? state.scripts.length : 0;
