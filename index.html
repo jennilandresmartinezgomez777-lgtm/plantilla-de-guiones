@@ -55,11 +55,11 @@
         
         <!-- Logo & Title -->
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-600 flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0">
-            <i data-lucide="video" class="w-5 h-5 text-white"></i>
+          <div class="w-10 h-10 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0 overflow-hidden border border-amber-500/40">
+            <img src="logo.png" alt="BLEX STUDIO Logo" class="w-full h-full object-cover">
           </div>
           <div>
-            <h1 class="font-black text-lg sm:text-xl md:text-2xl leading-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent whitespace-nowrap tracking-wider">BLEX STUDIO</h1>
+            <h1 class="font-black text-lg sm:text-xl md:text-2xl leading-tight bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text text-transparent whitespace-nowrap tracking-wider">BLEX STUDIO</h1>
             <p class="text-[11px] text-slate-400 font-medium">Gestión & Guiones</p>
           </div>
           <!-- 365-Day Challenge Countdown Widget -->
@@ -906,10 +906,17 @@
               </button>
             </div>
 
-            <!-- Cluster 2: Quick Slot Selector -->
+            <!-- Cluster 2: Quick Slot Selector & Section Filter -->
             <div class="tp-ctrl-group">
               <select id="tp-quick-slot-select" class="tp-quick-slot-select" title="Seleccionar Guión Activo">
                 <!-- Dynamically populated 1 to 10 -->
+              </select>
+              <select id="tp-section-select" class="tp-quick-slot-select" title="Filtrar Sección del Guión (Todo, Gancho, Contexto, Moraleja, CTA)" style="border-color: rgba(255, 238, 88, 0.4); color: #ffee58; font-weight: 700;">
+                <option value="all">📜 Todo el Guión</option>
+                <option value="gancho">🎣 1. Gancho</option>
+                <option value="historia">📖 2. Contexto / Historia</option>
+                <option value="moraleja">💡 3. Moraleja</option>
+                <option value="cta">📣 4. CTA (Llamado a Acción)</option>
               </select>
             </div>
 

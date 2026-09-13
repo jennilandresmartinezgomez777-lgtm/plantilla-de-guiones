@@ -3667,12 +3667,35 @@ if (!tpStoredScripts) {
 const tpActiveSlotNum = parseInt(localStorage.getItem('tp_active_slot')) || 1;
 const tpSavedOrientMode = localStorage.getItem('tp_orient_mode') || 'auto';
 const tpSavedGuidePos = parseInt(localStorage.getItem('tp_guide_pos')) || 40;
+const tpSavedActiveSection = localStorage.getItem('tp_active_section') || 'all';
+
+function tpGetSectionText(data, section) {
+  if (!data) return '';
+  const sec = section || 'all';
+  if (sec === 'all') {
+    return tpAssembleScriptText(data);
+  }
+  if (sec === 'gancho') {
+    return data.gancho && data.gancho.trim() ? "🎣 GANCHO:\n" + data.gancho.trim() : "🎣 GANCHO:\n(Sin gancho redactado)";
+  }
+  if (sec === 'historia') {
+    return data.historia && data.historia.trim() ? "📖 CONTEXTO / HISTORIA:\n" + data.historia.trim() : "📖 CONTEXTO / HISTORIA:\n(Sin contexto redactado)";
+  }
+  if (sec === 'moraleja') {
+    return data.moraleja && data.moraleja.trim() ? "💡 MORALEJA:\n" + data.moraleja.trim() : "💡 MORALEJA:\n(Sin moraleja redactada)";
+  }
+  if (sec === 'cta') {
+    return data.cta && data.cta.trim() ? "📣 LLAMADO A LA ACCIÓN (CTA):\n" + data.cta.trim() : "📣 CTA:\n(Sin CTA redactado)";
+  }
+  return tpAssembleScriptText(data);
+}
 
 const tpState = {
   scripts: tpStoredScripts,
   activeSlot: tpActiveSlotNum,
   editingSlot: tpActiveSlotNum,
-  scriptText: tpStoredScripts[tpActiveSlotNum]?.text || tpStoredScripts[1].text,
+  activeSection: tpSavedActiveSection,
+  scriptText: tpGetSectionText(tpStoredScripts[tpActiveSlotNum] || tpStoredScripts[1], tpSavedActiveSection),
   isPlaying: false,
   speed: parseInt(localStorage.getItem('tp_speed')) || 35,
   fontSize: parseInt(localStorage.getItem('tp_font_size')) || 64,
@@ -3693,7 +3716,7 @@ const tpState = {
 
 let tpPrompterView, tpPrompterTransform, tpPrompterContent, tpReadingGuide, tpGuidePosLabel, tpControlBar;
 let tpBtnPlay, tpIconPlay, tpIconPause, tpBtnReset, tpBtnMirror, tpBtnOrient, tpBtnEdit, tpBtnSettings, tpBtnFullscreen;
-let tpQuickSlotSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
+let tpQuickSlotSelect, tpSectionSelect, tpSpeedSlider, tpSpeedVal, tpFontSlider, tpFontVal, tpStatusDot, tpStatusText;
 let tpEditorModal, tpScriptTextarea, tpSlotChipsContainer, tpSlotTitleInput, tpBtnCloseEditor, tpBtnCancelEditor, tpBtnSaveEditor;
 let tpEditorGancho, tpEditorHistoria, tpEditorMoraleja, tpEditorCTA;
 let tpPresetSample1, tpPresetSample2, tpPresetClear, tpPresetSync;
@@ -3703,6 +3726,7 @@ let tpGuidePosSlider, tpGuidePosVal, tpMarginSlider, tpMarginVal, tpColorSwatche
 function tpSaveScriptsToStorage() {
   localStorage.setItem('tp_scripts_v2', JSON.stringify(tpState.scripts));
   localStorage.setItem('tp_active_slot', tpState.activeSlot);
+  localStorage.setItem('tp_active_section', tpState.activeSection);
   localStorage.setItem('tp_script', tpState.scriptText);
 }
 
@@ -3747,7 +3771,7 @@ function syncStudioScriptsToTeleprompter() {
     tpState.scripts[slotNum] = data;
   });
   
-  tpState.scriptText = tpState.scripts[tpState.activeSlot]?.text || '';
+  tpState.scriptText = tpGetSectionText(tpState.scripts[tpState.activeSlot], tpState.activeSection);
   tpSaveScriptsToStorage();
   tpUpdateQuickSlotDropdown();
   tpRenderScript();
@@ -3769,7 +3793,7 @@ function openScriptInTeleprompterPro(scriptId) {
 
   tpState.activeSlot = 1;
   tpState.scripts[1] = data;
-  tpState.scriptText = data.text;
+  tpState.scriptText = tpGetSectionText(data, tpState.activeSection);
   tpSaveScriptsToStorage();
   tpUpdateQuickSlotDropdown();
   tpRenderScript();
@@ -4167,6 +4191,7 @@ function initTeleprompterProEngine() {
   tpBtnSettings = document.getElementById('tp-btn-settings');
   tpBtnFullscreen = document.getElementById('tp-btn-fullscreen');
   tpQuickSlotSelect = document.getElementById('tp-quick-slot-select');
+  tpSectionSelect = document.getElementById('tp-section-select');
   
   tpSpeedSlider = document.getElementById('tp-speed-slider');
   tpSpeedVal = document.getElementById('tp-speed-val');
@@ -4218,8 +4243,21 @@ function setupTeleprompterProEventListeners() {
     tpQuickSlotSelect.addEventListener('change', (e) => {
       const chosenSlot = parseInt(e.target.value);
       tpState.activeSlot = chosenSlot;
-      tpState.scriptText = tpState.scripts[chosenSlot]?.text || '';
+      const activeData = tpState.scripts[chosenSlot];
+      tpState.scriptText = tpGetSectionText(activeData, tpState.activeSection);
       tpSaveScriptsToStorage();
+      tpRenderScript();
+      tpResetToTop();
+    });
+  }
+
+  if (tpSectionSelect) {
+    tpSectionSelect.value = tpState.activeSection || 'all';
+    tpSectionSelect.addEventListener('change', (e) => {
+      tpState.activeSection = e.target.value;
+      localStorage.setItem('tp_active_section', tpState.activeSection);
+      const activeData = tpState.scripts[tpState.activeSlot];
+      tpState.scriptText = tpGetSectionText(activeData, tpState.activeSection);
       tpRenderScript();
       tpResetToTop();
     });
@@ -4341,7 +4379,7 @@ function setupTeleprompterProEventListeners() {
       }
 
       tpState.activeSlot = tpState.editingSlot;
-      tpState.scriptText = tpState.scripts[tpState.activeSlot].text;
+      tpState.scriptText = tpGetSectionText(tpState.scripts[tpState.activeSlot], tpState.activeSection);
 
       tpSaveScriptsToStorage();
       tpUpdateQuickSlotDropdown();

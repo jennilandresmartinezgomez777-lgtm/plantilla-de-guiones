@@ -273,6 +273,31 @@
   gap: 8px;
 }
 
+.tp-quick-slot-select {
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  max-width: 210px;
+  transition: all 0.2s ease;
+}
+
+.tp-quick-slot-select:hover {
+  border-color: #ffee58;
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.tp-quick-slot-select option {
+  background: #121216;
+  color: #ffffff;
+  padding: 6px;
+}
+
 .tp-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
