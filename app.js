@@ -444,6 +444,7 @@ const importFileInput = document.getElementById('importFileInput');
 
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
+  checkUrlForSyncData();
   renderClientSelect();
   renderAll();
   calculateViralScore();
@@ -1382,6 +1383,122 @@ function setupEventListeners() {
   btnExportJSON.addEventListener('click', handleExportJSON);
   btnImportJSON.addEventListener('click', () => importFileInput.click());
   importFileInput.addEventListener('change', handleImportJSON);
+
+// ==========================================
+// DEVICE SYNC (PC ↔ IPAD) HELPERS
+// ==========================================
+function openSyncModal() {
+  const modal = document.getElementById('syncModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeSyncModal() {
+  const modal = document.getElementById('syncModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function getFullAppStateJSON() {
+  return JSON.stringify({
+    clients: state.clients,
+    scripts: state.scripts,
+    notes: state.notes,
+    viralEvaluations: state.viralEvaluations,
+    challengeStartDate: state.challengeStartDate,
+    exportedAt: new Date().toISOString()
+  });
+}
+
+function copySyncUrlToClipboard() {
+  try {
+    const jsonStr = getFullAppStateJSON();
+    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
+    const baseUrl = window.location.origin + window.location.pathname;
+    const fullUrl = `${baseUrl}?syncData=${encoded}`;
+    
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      alert("✅ ¡Enlace copiado al portapapeles!\n\nEnvía este enlace a tu iPad (por WhatsApp, AirDrop, iMessage, Mail o Telegram). Al abrirlo en el iPad, se cargarán y sincronizarán tus " + state.scripts.length + " guiones al instante.");
+    }).catch(() => {
+      prompt("Copia este enlace de sincronización y ábrelo en tu iPad:", fullUrl);
+    });
+  } catch (e) {
+    alert("Error al generar enlace de sincronización: " + e.message);
+  }
+}
+
+function copySyncCodeToClipboard() {
+  try {
+    const jsonStr = getFullAppStateJSON();
+    const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+    navigator.clipboard.writeText(encoded).then(() => {
+      alert("✅ Código de sincronización copiado al portapapeles.\n\nEn tu iPad, presiona 'Sincronizar PC ↔ iPad' y haz clic en 'Pegar e Importar'.");
+    }).catch(() => {
+      prompt("Copia este código de sincronización:", encoded);
+    });
+  } catch (e) {
+    alert("Error al generar código: " + e.message);
+  }
+}
+
+function pasteAndImportSyncCode() {
+  const code = prompt("Pega aquí el código de sincronización copiado desde tu otro dispositivo:");
+  if (code && code.trim()) {
+    try {
+      const decoded = decodeURIComponent(escape(atob(code.trim())));
+      const data = JSON.parse(decoded);
+      if (data.scripts && Array.isArray(data.scripts)) {
+        state.scripts = data.scripts;
+        if (data.clients) state.clients = data.clients;
+        if (data.notes) state.notes = data.notes;
+        if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
+        if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
+        saveState();
+        renderAll();
+        closeSyncModal();
+        alert("🎉 ¡Sincronización exitosa!\n\nSe han restaurado tus " + state.scripts.length + " guiones en este dispositivo.");
+      } else {
+        alert("El código ingresado no contiene una estructura válida de guiones.");
+      }
+    } catch (e) {
+      alert("Error al leer el código: Formato o caracteres inválidos.");
+    }
+  }
+}
+
+function triggerJSONExport() {
+  if (typeof handleExportJSON === 'function') {
+    handleExportJSON();
+  }
+}
+
+function triggerJSONImport() {
+  const input = document.getElementById('importFileInput');
+  if (input) input.click();
+}
+
+function checkUrlForSyncData() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('syncData')) {
+      const raw = urlParams.get('syncData');
+      const decoded = decodeURIComponent(escape(atob(raw)));
+      const data = JSON.parse(decoded);
+      if (data.scripts && Array.isArray(data.scripts)) {
+        state.scripts = data.scripts;
+        if (data.clients) state.clients = data.clients;
+        if (data.notes) state.notes = data.notes;
+        if (data.viralEvaluations) state.viralEvaluations = data.viralEvaluations;
+        if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
+        saveState();
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setTimeout(() => {
+          alert("🎉 ¡Sincronización Exitosa!\n\nSe han cargado y guardado tus " + state.scripts.length + " guiones perfectamente en este dispositivo.");
+        }, 300);
+      }
+    }
+  } catch (e) {
+    console.error("Error al sincronizar datos desde la URL:", e);
+  }
+}
 
   // Quick Idea Modal
   if (btnQuickIdea) btnQuickIdea.addEventListener('click', () => openQuickIdeaModal());

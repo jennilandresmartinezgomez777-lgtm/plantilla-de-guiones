@@ -157,6 +157,10 @@
 
           <!-- Export, Print & Fullscreen Actions -->
           <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
+            <button id="btnSyncDevices" onclick="openSyncModal()" title="Sincronizar PC ↔ iPad" class="px-2.5 py-1.5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 font-semibold text-xs rounded-lg border border-brand-500/30 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="smartphone" class="w-4 h-4 text-brand-400"></i>
+              <span class="hidden sm:inline">Sincronizar PC ↔ iPad</span>
+            </button>
             <button id="btnFullScreen" onclick="toggleFullScreen()" title="Pantalla Completa" class="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition">
               <i data-lucide="maximize" class="w-4 h-4"></i>
             </button>
@@ -1586,6 +1590,81 @@
         <!-- Rendered dynamically via JS -->
       </div>
 
+  <!-- MODAL: DEVICE SYNC (PC ↔ IPAD) -->
+  <div id="syncModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-5 h-5 text-brand-400"></i>
+          Sincronizar PC ↔ iPad
+        </h3>
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-white transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-5 text-sm text-slate-300">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Los navegadores guardan los datos localmente en cada dispositivo. Para pasar todos tus guiones de tu PC a tu iPad (o viceversa), utiliza cualquiera de las siguientes opciones simples:
+        </p>
+
+        <!-- Method 1: Copy Direct Link -->
+        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white text-xs flex items-center gap-1.5">
+              <i data-lucide="link" class="w-4 h-4 text-sky-400"></i>
+              Opción 1: Enlace Directo para iPad
+            </span>
+            <span class="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full font-bold">Más Fácil</span>
+          </div>
+          <p class="text-xs text-slate-400">Copia un enlace especial que contiene todos tus guiones. Ábrelo en tu iPad y se sincronizará automáticamente al 100%.</p>
+          <button onclick="copySyncUrlToClipboard()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            <span>Copiar Enlace Directo para iPad</span>
+          </button>
+        </div>
+
+        <!-- Method 2: Sync Code -->
+        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+          <span class="font-bold text-white text-xs block">Opción 2: Código de Texto (Copiar y Pegar)</span>
+          <div class="flex gap-2">
+            <button onclick="copySyncCodeToClipboard()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i data-lucide="code" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Copiar Código</span>
+            </button>
+            <button onclick="pasteAndImportSyncCode()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Pegar e Importar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Method 3: JSON File -->
+        <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+          <span class="font-bold text-white text-xs block">Opción 3: Archivo de Respaldo JSON</span>
+          <div class="flex gap-2">
+            <button onclick="triggerJSONExport()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>Descargar JSON</span>
+            </button>
+            <button onclick="triggerJSONImport()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Cargar JSON</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-slate-950/50 flex justify-end">
+        <button onclick="closeSyncModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg transition cursor-pointer">
+          Cerrar
+        </button>
+      </div>
     </div>
   </div>
 
