@@ -64,7 +64,7 @@ let state = {
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
-  currentView: 'matrix', // Default is MATRIX
+  currentView: 'ai_studio', // Default is MATRIX
   editingScriptId: null,
   activeNotesClient: (Array.isArray(savedClients) && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
