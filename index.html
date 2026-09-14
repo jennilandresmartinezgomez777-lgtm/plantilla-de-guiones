@@ -202,7 +202,7 @@
         </div>
 
         <!-- Filters & Tools -->
-        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full xl:w-auto justify-between sm:justify-end shrink-0">
+        <div id="matrixFilterBar" class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full xl:w-auto justify-between sm:justify-end shrink-0">
           
           <!-- Search input -->
           <div class="relative flex-1 min-w-[140px] sm:w-52 xl:w-64">
@@ -889,6 +889,7 @@
             </table>
           </div>
         </div>
+
         <!-- EMPTY STATE (INSIDE MATRIX) -->
         <div id="emptyState" class="hidden py-16 text-center space-y-4">
           <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
@@ -897,10 +898,10 @@
           <h3 id="emptyStateTitle" class="text-lg font-semibold text-slate-300">No se encontraron guiones</h3>
           <p id="emptyStateText" class="text-sm text-slate-500 max-w-md mx-auto">No hay guiones registrados con los filtros seleccionados. Crea uno nuevo o limpia la búsqueda.</p>
           <div class="flex items-center justify-center gap-3">
-            <button onclick="filterByStatusFromCard('ALL')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2 rounded-lg text-sm border border-slate-700 transition">
+            <button onclick="filterByStatusFromCard('ALL')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2 rounded-lg text-sm border border-slate-700 transition cursor-pointer">
               <i data-lucide="layers" class="w-4 h-4"></i> Mostrar Todos los Guiones
             </button>
-            <button onclick="openNewScriptModal()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
+            <button onclick="openNewScriptModal()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition cursor-pointer">
               <i data-lucide="plus" class="w-4 h-4"></i> Crear Guión
             </button>
           </div>
@@ -2694,6 +2695,6 @@
   <div id="dedicatedPrintArea"></div>
 
   <script src="ai-hooks-data.js?v=2.0"></script>
-  <script src="app.js?v=13.0&t=1789430000"></script>
+  <script src="app.js?v=14.0&t=1789440000"></script>
 </body>
 </html>

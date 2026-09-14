@@ -1951,6 +1951,15 @@ function switchView(viewName) {
     emptyState.classList.add('hidden');
   }
 
+  const matrixFilterBar = document.getElementById('matrixFilterBar');
+  if (matrixFilterBar) {
+    if (viewName === 'matrix' || viewName === 'cards') {
+      matrixFilterBar.classList.remove('hidden');
+    } else {
+      matrixFilterBar.classList.add('hidden');
+    }
+  }
+
   const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
   const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
