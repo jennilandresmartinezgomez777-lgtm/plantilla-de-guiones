@@ -47,7 +47,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=1789415272543&t=1789412033428">
+  <link rel="stylesheet" href="styles.css?v=1789416643052&t=1789412033428">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1294,9 +1294,13 @@
             <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
             <span>🔥 2. Auditor de Viralidad</span>
           </button>
-          <button type="button" onclick="switchAiTab('catalog')" id="aiTabBtnCatalog" class="flex-1 min-w-[170px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+          <button type="button" onclick="switchAiTab('catalog')" id="aiTabBtnCatalog" class="flex-1 min-w-[150px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
             <span>📚 3. Catálogo 64 Ganchos</span>
+          </button>
+          <button type="button" onclick="switchAiTab('brain')" id="aiTabBtnBrain" class="flex-1 min-w-[160px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="brain-circuit" class="w-4 h-4 text-purple-400"></i>
+            <span>🧠 4. Cerebro & Educación IA</span>
           </button>
         </div>
 
@@ -1829,6 +1833,132 @@
             <!-- Grid of Hook Cards -->
             <div id="aiCatalogGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
               <!-- Rendered via JS -->
+            </div>
+
+          </div>
+        </div>
+
+      
+        <!-- ============================================== -->
+        <!-- TAB 4: CEREBRO & BASE DE CONOCIMIENTO IA (BRAND DNA & TRAINING) -->
+        <!-- ============================================== -->
+        <div id="aiPanelBrain" class="hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+            
+            <!-- Header Banner -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600/30 to-indigo-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center shadow-lg shrink-0">
+                  <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <span>Cerebro & Base de Conocimiento de la Marca</span>
+                    <span class="text-xs font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2.5 py-0.5 rounded-full">ADN Activo</span>
+                  </h3>
+                  <p class="text-xs text-slate-400">Enseña a Qwen 2.5 la filosofía de tu negocio, tono de voz, reglas y cursos para que redacte como tu clon digital.</p>
+                </div>
+              </div>
+
+              <!-- Client Selector for Brain -->
+              <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 p-1.5 rounded-xl">
+                <span class="text-xs font-semibold text-slate-400 pl-2">Cliente:</span>
+                <select id="aiBrainClientSelect" onchange="loadBrainForClient(this.value)" class="bg-slate-900 border border-slate-700 text-xs font-bold rounded-lg px-3 py-1.5 text-white outline-none cursor-pointer focus:border-purple-500">
+                  <!-- Injected via JS -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Knowledge Sections Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              
+              <!-- 1. Identidad & Tono de Voz -->
+              <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="mic" class="w-4 h-4 text-purple-400"></i>
+                    <span>1. Tono de Voz & Personalidad</span>
+                  </label>
+                  <select id="aiBrainTonePreset" onchange="applyBrainTonePreset(this.value)" class="bg-slate-900 border border-slate-700 text-[11px] font-semibold rounded-lg px-2 py-1 text-slate-300 outline-none cursor-pointer">
+                    <option value="CUSTOM">⚡ Seleccionar Estilo Predefinido...</option>
+                    <option value="DIRECT">🥊 Directo, Contundente & Sin Rodeos</option>
+                    <option value="STORYTELLING">📖 Storytelling & Vulnerabilidad Estratégica</option>
+                    <option value="EDUCATIVO">🧠 Educativo, Simple & Práctico</option>
+                    <option value="DISRUPTIVO">🔥 Disruptivo, Polémico & Anti-Sistema</option>
+                  </select>
+                </div>
+                <textarea id="aiBrainToneText" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 outline-none focus:border-purple-500 placeholder:text-slate-600 leading-relaxed resize-y" placeholder="Describe cómo debe hablar la IA: Ej: Hablar con seguridad absoluta, usar frases cortas, energía alta, cero tecnicismos aburridos, hablarle a un amigo que necesita despertar financieramente..."></textarea>
+              </div>
+
+              <!-- 2. Público Objetivo & Dolor Principal -->
+              <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <label class="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="target" class="w-4 h-4 text-cyan-400"></i>
+                  <span>2. Audiencia Objetivo & Dolores Reales</span>
+                </label>
+                <textarea id="aiBrainAudienceText" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 outline-none focus:border-cyan-500 placeholder:text-slate-600 leading-relaxed resize-y" placeholder="Describe a quién le habla: Ej: Emprendedores y empleados de 20 a 40 años que están cansados de no llegar a fin de mes, quieren aprender a invertir y crear activos digitales sin falsas promesas..."></textarea>
+              </div>
+
+              <!-- 3. Reglas de Oro, Palabras Clave y Qué Evitar -->
+              <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <label class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-amber-400"></i>
+                  <span>3. Reglas de Oro, Palabras Clave y Filtros</span>
+                </label>
+                <div class="space-y-2">
+                  <input type="text" id="aiBrainKeywordsInput" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-amber-400 placeholder:text-slate-600" placeholder="Palabras Clave Favoritas: activos, rentabilidad, apalancamiento, sistema, disciplina...">
+                  <input type="text" id="aiBrainForbiddenInput" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-rose-400 placeholder:text-slate-600" placeholder="Palabras Prohibidas / Evitar: dinero fácil, secreto mágico, ganar sin esfuerzo, estafa...">
+                </div>
+              </div>
+
+              <!-- 4. Biblioteca de Cursos, Notas & Documentos Aprendidos -->
+              <div class="bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
+                    <span>4. Educación, Cursos & Documentos</span>
+                  </label>
+                  <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                    <span>Subir Archivo / PDF</span>
+                    <input type="file" id="aiBrainFileInput" multiple accept="text/plain,application/pdf,.doc,.docx" class="hidden" onchange="handleBrainFileSelect(event)">
+                  </label>
+                </div>
+                <textarea id="aiBrainKnowledgeNotes" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 outline-none focus:border-emerald-500 placeholder:text-slate-600 leading-relaxed resize-y" placeholder="Pega aquí resúmenes de libros, conceptos de cursos, argumentos de ventas u objeciones clave que la IA deba dominar..."></textarea>
+                <!-- Uploaded Docs List -->
+                <div id="aiBrainDocsList" class="flex flex-wrap gap-2 empty:hidden"></div>
+              </div>
+
+              <!-- 5. Banco de Guiones Exitosos de Referencia (Few-Shot) -->
+              <div class="lg:col-span-2 bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+                    <span>5. Ejemplos Maestros de Guiones Exitosos (Estilo de Referencia)</span>
+                  </label>
+                  <span class="text-[11px] text-slate-400">La IA imitará la estructura y cadencia de estos ejemplos</span>
+                </div>
+                <textarea id="aiBrainExamplesText" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 outline-none focus:border-indigo-500 placeholder:text-slate-600 leading-relaxed resize-y" placeholder="Ejemplo de tu mejor guión:&#10;[GANCHO] Si tienes menos de $1,000 en el banco, deja de hacer esto hoy mismo...&#10;[HISTORIA] El 90% de la gente piensa que ahorrar es suficiente...&#10;[MORALEJA] La inflación se come el ahorro; el dinero necesita velocidad...&#10;[CTA] Comenta 'ACTIVO' y te envío la guía..."></textarea>
+              </div>
+
+            </div>
+
+            <!-- Footer Action Toolbar -->
+            <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div class="flex items-center gap-2 text-xs text-slate-400">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                <span id="aiBrainStatusText">Toda la información se inyecta automáticamente en el Creador de Reels y Auditor de Viralidad.</span>
+              </div>
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button type="button" onclick="testBrainIntelligence()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold text-xs px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                  <span>⚡ Probar Cerebro IA</span>
+                </button>
+                <button type="button" onclick="saveActiveClientBrain()" class="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-black text-xs sm:text-sm px-6 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer">
+                  <i data-lucide="save" class="w-4 h-4"></i>
+                  <span>Guardar en Cerebro de la IA</span>
+                </button>
+              </div>
             </div>
 
           </div>
@@ -2607,7 +2737,7 @@
   <div id="dedicatedPrintArea"></div>
 
   <script src="ai-hooks-data.js?v=3.6&t=1789412033428"></script>
-  <script src="app.js?v=1789415272543&t=1789412033428"></script>
+  <script src="app.js?v=1789416643052&t=1789412033428"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)

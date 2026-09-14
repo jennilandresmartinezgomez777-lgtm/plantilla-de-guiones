@@ -1,5 +1,211 @@
 
 // =========================================================================
+// CEREBRO & BASE DE CONOCIMIENTO DE LA MARCA (AI TRAINING & BRAND DNA)
+// =========================================================================
+
+const DEFAULT_BRAIN_KNOWLEDGE = {
+  tone: 'Seguridad absoluta, directo, enérgico, sin rodeos ni tecnicismos aburridos. Hablarle a un amigo que necesita despertar financieramente.',
+  audience: 'Emprendedores, inversionistas y personas de 20 a 45 años que buscan libertad financiera, multiplicar ingresos y evitar las trampas del sistema tradicional.',
+  keywords: 'activos, libertad financiera, apalancamiento, mentalidad, retención, sistema, velocidad del dinero',
+  forbidden: 'dinero fácil, fórmula mágica, suerte, estafa, hacerse rico de la noche a la mañana',
+  notes: 'Enfoque en crear sistemas de negocio, salir de deudas malas, invertir en activos y construir fuentes de ingresos sostenibles.',
+  examples: '[GANCHO] Si tienes menos de $1,000 en el banco, no hagas esto...\n[HISTORIA] El 90% de la gente piensa que ahorrar es suficiente...\n[MORALEJA] El dinero que no se mueve, pierde valor cada día...\n[CTA] Comenta \'SISTEMA\' y te muestro el paso a paso.',
+  docs: []
+};
+
+function getActiveClientBrainData(clientName = null) {
+  const client = clientName || (document.getElementById('aiBrainClientSelect') ? document.getElementById('aiBrainClientSelect').value : (state.clients[0] || 'Jennil'));
+  if (!state.aiBrain) state.aiBrain = {};
+  if (!state.aiBrain[client]) {
+    state.aiBrain[client] = { ...DEFAULT_BRAIN_KNOWLEDGE, docs: [] };
+  }
+  return state.aiBrain[client];
+}
+
+function renderBrainStudio() {
+  populateBrainClientSelect();
+  const select = document.getElementById('aiBrainClientSelect');
+  const client = select ? select.value : (state.clients[0] || 'Jennil');
+  loadBrainForClient(client);
+}
+
+function populateBrainClientSelect() {
+  const select = document.getElementById('aiBrainClientSelect');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '';
+  (state.clients || ['Jennil']).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = `👤 ${c}`;
+    select.appendChild(opt);
+  });
+  if (currentVal && state.clients.includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function loadBrainForClient(clientName) {
+  const data = getActiveClientBrainData(clientName);
+  
+  const toneInput = document.getElementById('aiBrainToneText');
+  const audienceInput = document.getElementById('aiBrainAudienceText');
+  const keywordsInput = document.getElementById('aiBrainKeywordsInput');
+  const forbiddenInput = document.getElementById('aiBrainForbiddenInput');
+  const notesInput = document.getElementById('aiBrainKnowledgeNotes');
+  const examplesInput = document.getElementById('aiBrainExamplesText');
+
+  if (toneInput) toneInput.value = data.tone || '';
+  if (audienceInput) audienceInput.value = data.audience || '';
+  if (keywordsInput) keywordsInput.value = data.keywords || '';
+  if (forbiddenInput) forbiddenInput.value = data.forbidden || '';
+  if (notesInput) notesInput.value = data.notes || '';
+  if (examplesInput) examplesInput.value = data.examples || '';
+
+  renderBrainDocsList(data.docs || []);
+  refreshLucideIcons();
+}
+
+function applyBrainTonePreset(preset) {
+  const toneInput = document.getElementById('aiBrainToneText');
+  if (!toneInput) return;
+
+  if (preset === 'DIRECT') {
+    toneInput.value = '🥊 Directo, contundente y sin rodeos. Cero introducciones largas, afirmaciones de alto impacto y ritmo rápido.';
+  } else if (preset === 'STORYTELLING') {
+    toneInput.value = '📖 Storytelling cinematográfico, vulnerabilidad estratégica y anécdotas personales de superación que enganchan desde el segundo 0.';
+  } else if (preset === 'EDUCATIVO') {
+    toneInput.value = '🧠 Educativo, simple y visual. Explicar conceptos financieros complejos como si fuera para un niño de 5 años.';
+  } else if (preset === 'DISRUPTIVO') {
+    toneInput.value = '🔥 Disruptivo, polémico y anti-sistema. Desafiar lo que enseña la escuela y la televisión sobre el dinero y el trabajo tradicional.';
+  }
+}
+
+async function handleBrainFileSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  const select = document.getElementById('aiBrainClientSelect');
+  const client = select ? select.value : (state.clients[0] || 'Jennil');
+  const brainData = getActiveClientBrainData(client);
+  if (!brainData.docs) brainData.docs = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      const att = await readFileAsAttachment(file);
+      brainData.docs.push(att);
+    } catch (err) {
+      console.error('Error attaching doc to brain:', err);
+    }
+  }
+
+  event.target.value = '';
+  saveState();
+  renderBrainDocsList(brainData.docs);
+  showToast('Documento añadido a la base de conocimiento de la IA.', 'success');
+}
+
+function removeBrainDoc(idx) {
+  const select = document.getElementById('aiBrainClientSelect');
+  const client = select ? select.value : (state.clients[0] || 'Jennil');
+  const brainData = getActiveClientBrainData(client);
+  if (brainData.docs && idx >= 0 && idx < brainData.docs.length) {
+    brainData.docs.splice(idx, 1);
+    saveState();
+    renderBrainDocsList(brainData.docs);
+  }
+}
+
+function renderBrainDocsList(docs) {
+  const container = document.getElementById('aiBrainDocsList');
+  if (!container) return;
+
+  if (!docs || docs.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = docs.map((d, idx) => {
+    return `
+      <div class="bg-slate-900 border border-slate-800 rounded-lg pl-2.5 pr-1.5 py-1 flex items-center gap-2 text-xs">
+        <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span class="text-slate-200 truncate max-w-[140px] font-semibold">${d.name}</span>
+        <button type="button" onclick="removeBrainDoc(${idx})" class="text-slate-500 hover:text-rose-400 p-0.5 rounded transition">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+function saveActiveClientBrain() {
+  const select = document.getElementById('aiBrainClientSelect');
+  const client = select ? select.value : (state.clients[0] || 'Jennil');
+  
+  const brainData = getActiveClientBrainData(client);
+  brainData.tone = document.getElementById('aiBrainToneText')?.value || '';
+  brainData.audience = document.getElementById('aiBrainAudienceText')?.value || '';
+  brainData.keywords = document.getElementById('aiBrainKeywordsInput')?.value || '';
+  brainData.forbidden = document.getElementById('aiBrainForbiddenInput')?.value || '';
+  brainData.notes = document.getElementById('aiBrainKnowledgeNotes')?.value || '';
+  brainData.examples = document.getElementById('aiBrainExamplesText')?.value || '';
+  brainData.updatedAt = new Date().toISOString();
+
+  saveState();
+
+  const statusText = document.getElementById('aiBrainStatusText');
+  if (statusText) {
+    statusText.innerHTML = `<span class="text-emerald-400 font-bold">✓ ¡Cerebro de ${client} guardado y activo para todas las generaciones de IA!</span>`;
+    setTimeout(() => {
+      statusText.textContent = 'Toda la información se inyecta automáticamente en el Creador de Reels y Auditor de Viralidad.';
+    }, 3000);
+  }
+
+  showToast(`Cerebro de ${client} actualizado con éxito.`, 'success');
+}
+
+async function testBrainIntelligence() {
+  const select = document.getElementById('aiBrainClientSelect');
+  const client = select ? select.value : (state.clients[0] || 'Jennil');
+  const brain = getActiveClientBrainData(client);
+
+  const prompt = `Actúa como el creador de contenido "${client}".
+Información de tu personalidad aprendida:
+- Tono: ${brain.tone}
+- Audiencia: ${brain.audience}
+- Palabras clave: ${brain.keywords}
+- Conceptos y educación: ${brain.notes}
+
+Escribe un mensaje de saludo ultra profesional y 1 gancho viral de 1 frase demostrando que has aprendido este tono.`;
+
+  try {
+    showToast('Consultando a Qwen 2.5 en tu PC...', 'info');
+    const response = await callOllama(prompt, 0.7);
+    alert(`🧠 RESPUESTA DE QWEN 2.5 (Personalidad de ${client}):\n\n${response}`);
+  } catch (err) {
+    alert('No se pudo conectar con Qwen 2.5. Asegúrate de tener el servidor activo en el PC.');
+  }
+}
+
+function getBrandDnaPromptSnippet(clientName) {
+  const client = clientName || 'Jennil';
+  const brain = (state.aiBrain && state.aiBrain[client]) ? state.aiBrain[client] : DEFAULT_BRAIN_KNOWLEDGE;
+  return [
+    '=== ADN Y EDUCACIÓN APRENDIDA DE LA MARCA PARA "' + client + '" ===',
+    '- Tono de voz obligatorio: ' + (brain.tone || 'Directo y contundente'),
+    '- Audiencia objetivo: ' + (brain.audience || 'Emprendedores e interesados en finanzas'),
+    '- Palabras clave recomendadas: ' + (brain.keywords || 'activos, mentalidad, libertad financiera'),
+    (brain.forbidden ? '- Palabras prohibidas a evitar: ' + brain.forbidden : ''),
+    (brain.notes ? '- Conocimiento y directrices clave: ' + brain.notes : ''),
+    (brain.examples ? '- Estilo de referencia:\n' + brain.examples : '')
+  ].filter(Boolean).join('\n');
+}
+
+
+// =========================================================================
 // CATÁLOGO COMPLETO DE 64 GANCHOS VIRALES BLEX STUDIO
 // =========================================================================
 
@@ -7492,7 +7698,7 @@ function populateAiClientDropdowns() {
 
 function switchAiTab(tabName) {
   aiState.activeTab = tabName;
-  const tabs = ['wizard', 'audit', 'catalog'];
+  const tabs = ['wizard', 'audit', 'catalog', 'brain'];
   
   tabs.forEach(t => {
     const panel = document.getElementById('aiPanel' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -7514,6 +7720,8 @@ function switchAiTab(tabName) {
 
   if (tabName === 'catalog') {
     renderAiCatalog();
+  } else if (tabName === 'brain') {
+    renderBrainStudio();
   }
 }
 
@@ -8179,12 +8387,12 @@ function renderAiAuditResults(data, originalScript) {
   html += '<div id="aiAuditHeaderCard" class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">' +
     '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">' +
       '<div class="flex items-center gap-3.5">' +
-        '<div class="w-16 h-16 rounded-2xl bg-slate-950 border border-amber-500/30 flex flex-col items-center justify-center shadow-inner shrink-0">' +
-          '<div class="flex items-baseline gap-0.5">' +
-            '<span id="aiAuditTotalScoreDisplay" class="text-2xl font-black text-amber-400">11.5</span>' +
-            '<span class="text-xs text-slate-400 font-bold">/14.5</span>' +
+        '<div class="min-w-[84px] px-3 py-2 rounded-2xl bg-slate-950 border border-amber-500/40 flex flex-col items-center justify-center shadow-inner shrink-0">' +
+          '<div class="flex items-baseline justify-center gap-1 leading-none">' +
+            '<span id="aiAuditTotalScoreDisplay" class="text-xl sm:text-2xl font-black text-amber-400 tracking-tight">11.5</span>' +
+            '<span class="text-xs text-slate-400 font-extrabold">/14.5</span>' +
           '</div>' +
-          '<span class="text-[9px] text-amber-400/80 uppercase font-bold tracking-wider">PUNTOS</span>' +
+          '<span class="text-[9px] text-amber-400/90 uppercase font-black tracking-wider mt-0.5">PUNTOS</span>' +
         '</div>' +
         '<div>' +
           '<div class="flex items-center gap-2 mb-0.5">' +
@@ -8885,26 +9093,51 @@ async function polishTranscriptWithAi() {
 
 async function startWizardProcess() {
   const elTopic = document.getElementById('aiWizardInputTopic');
+  const btn = document.getElementById('btnStartWizard');
 
-  wizardState.topic = elTopic ? elTopic.value.trim() : '';
-  wizardState.niche = getEffectiveNiche();
+  const topicText = elTopic ? elTopic.value.trim() : '';
+  wizardState.topic = topicText;
+  wizardState.niche = typeof getEffectiveNiche === 'function' ? getEffectiveNiche() : '💰 Riqueza, Mentalidad & Psicología del Dinero';
   wizardState.link = '';
 
   if (!wizardState.topic) {
-    showToast('Por favor pulsa "🎙️ Escuchar Reel" para capturar el audio o escribe tu idea para comenzar.', 'warning');
+    showToast('Por favor escribe tu idea o pulsa "🎙️ Escuchar Reel" para capturar el audio del video.', 'warning');
     if (elTopic) elTopic.focus();
     return;
   }
 
   // Stop listening if active
-  if (isListeningAudio && speechRecognition) {
+  if (typeof isListeningAudio !== 'undefined' && isListeningAudio && speechRecognition) {
     try { speechRecognition.stop(); } catch (e) {}
     isListeningAudio = false;
-    updateAudioListeningUI(false);
+    if (typeof updateAudioListeningUI === 'function') updateAudioListeningUI(false);
   }
 
-  goToWizardStep(0);
-  await generateWizardStep0Strategy();
+  // Visual feedback on the yellow button
+  const originalBtnHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analizando Estrategia...</span>';
+    refreshLucideIcons();
+  }
+
+  try {
+    goToWizardStep(0);
+    const step0View = document.getElementById('wizStepView0');
+    if (step0View) {
+      step0View.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    await generateWizardStep0Strategy();
+  } catch (err) {
+    console.error('Error starting wizard:', err);
+    showToast('Error al analizar la estrategia con la IA. Se utilizó la estrategia recomendada.', 'warning');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnHTML || '<i data-lucide="sparkles" class="w-4 h-4"></i><span>Crear con IA</span>';
+      refreshLucideIcons();
+    }
+  }
 }
 
 // STEP 0: Generate Strategic Diagnosis & Adaptation Angles
@@ -8928,6 +9161,7 @@ async function generateWizardStep0Strategy() {
     '- Contenido real de referencia o idea: "' + videoContentDesc + '"',
     (link ? '- Enlace del video: ' + link : ''),
     '- Nicho al que debemos adaptarlo: ' + niche,
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
     '',
     'TU TAREA DE DIAGNÓSTICO (Paso 0):',
     '1. En "overview": Explica con precisión sobre qué trata el contenido de referencia ("' + videoContentDesc + '") y cuál es su mecánica de enganche o valor.',
