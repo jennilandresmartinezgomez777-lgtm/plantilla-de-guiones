@@ -187,15 +187,139 @@ function useCatalogHookInWizard(hookId) {
   const hook = allHooks.find(h => String(h.id) === String(hookId));
   if (!hook) return;
 
-  // Switch to wizard tab
-  switchAiTab('wizard');
+  // 1. Save selected hook to wizardState
+  wizardState.selectedCatalogHook = hook;
+  wizardState.topic = `Fórmula de Gancho #${hook.id}: "${hook.name}" - ${hook.formula} (Ejemplo: "${hook.example}")`;
 
-  // Pre-fill custom topic or hook template
-  const customTopicInput = document.getElementById('wizCustomTopicInput');
-  if (customTopicInput) {
-    customTopicInput.value = `Fórmula de Gancho: "${hook.formula}" aplicada a nuestro nicho`;
-    customTopicInput.focus();
+  // 2. Switch to wizard tab and go to Step 0 (Estrategia)
+  switchAiTab('wizard');
+  goToWizardStep(0);
+
+  // 3. Pre-fill input topic
+  const topicInput = document.getElementById('aiWizardInputTopic');
+  if (topicInput) {
+    topicInput.value = wizardState.topic;
   }
+
+  // 4. Render dedicated Step 0 Hook Strategy & 1-Click Generation UI
+  const container = document.getElementById('wizStrategyCardContainer');
+  if (container) {
+    const client = document.getElementById('wizClientSelect') ? document.getElementById('wizClientSelect').value : (state.clients[0] || 'Jennil');
+    const niche = wizardState.niche || (typeof getEffectiveNiche === 'function' ? getEffectiveNiche() : 'DINERO Y FINANZAS');
+
+    container.innerHTML = `
+      <div class="bg-gradient-to-r from-purple-950/60 via-slate-900 to-indigo-950/60 border border-purple-500/40 rounded-2xl p-5 shadow-xl space-y-4">
+        
+        <!-- Header Banner for Selected Hook -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-300 font-mono font-extrabold text-sm flex items-center justify-center shrink-0 shadow-sm">
+              #${hook.id}
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-base font-extrabold text-white">${hook.name}</h4>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">${hook.category}</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">${hook.summary}</p>
+            </div>
+          </div>
+          <button type="button" onclick="switchAiTab('catalog')" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1 shrink-0 cursor-pointer">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Cambiar gancho
+          </button>
+        </div>
+
+        <!-- Formula & Example Reference -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-slate-950/80 border border-purple-500/20 rounded-xl p-3 space-y-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-300 flex items-center gap-1">
+              <i data-lucide="code" class="w-3 h-3"></i> Fórmula Psicológica Activa:
+            </span>
+            <p class="text-xs font-mono font-semibold text-slate-200">${hook.formula}</p>
+          </div>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3 h-3"></i> Ejemplo de Referencia:
+            </span>
+            <p class="text-xs font-semibold text-cyan-200 italic">"${hook.example}"</p>
+          </div>
+        </div>
+
+        <!-- Interactive Question & Subject Input -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <label class="block text-xs font-bold text-amber-300 flex items-center justify-between">
+            <span>¿Sobre qué tema específico o producto quieres aplicar este gancho?</span>
+            <span class="text-[10px] text-slate-500 font-normal">Para ${client} en ${niche}</span>
+          </label>
+          <input 
+            type="text" 
+            id="wizCatalogHookTopicCustom" 
+            placeholder="Ej: tarjetas de crédito vs débito, cómo invertir los primeros $100, hábitos para multiplicar ahorros..." 
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-amber-400 outline-none"
+          >
+          <p class="text-[11px] text-slate-400 leading-snug">
+            💡 <em>Puedes escribir el tema exacto que deseas o dejarlo en blanco para que la IA proponga los mejores temas de ${niche}.</em>
+          </p>
+        </div>
+
+        <!-- Direct Action Buttons -->
+        <div class="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <button type="button" onclick="generateStrategicAnglesForCatalogHook(${hook.id})" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-purple-200 text-xs font-bold px-4 py-2.5 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+            <i data-lucide="compass" class="w-4 h-4 text-purple-400"></i>
+            <span>Analizar Estrategia Completa</span>
+          </button>
+          <button type="button" onclick="generateHooksDirectlyFromCatalogHook(${hook.id})" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm px-6 py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Generar 5 Ganchos con esta Fórmula 🚀</span>
+          </button>
+        </div>
+
+      </div>
+    `;
+
+    refreshLucideIcons();
+  }
+
+  const step0View = document.getElementById('wizStepView0');
+  if (step0View) step0View.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function generateHooksDirectlyFromCatalogHook(hookId) {
+  const allHooks = getHooksData();
+  const hook = allHooks.find(h => String(h.id) === String(hookId)) || wizardState.selectedCatalogHook;
+  if (!hook) return;
+
+  const customTopicInput = document.getElementById('wizCatalogHookTopicCustom');
+  const customTopic = customTopicInput ? customTopicInput.value.trim() : '';
+
+  wizardState.selectedCatalogHook = hook;
+  wizardState.selectedAngle = `Fórmula #${hook.id}: ${hook.name}`;
+  wizardState.topic = customTopic ? `Tema: ${customTopic} (Gancho: ${hook.name} - ${hook.formula})` : `Gancho #${hook.id} (${hook.name}) aplicado a ${wizardState.niche || 'Finanzas y Dinero'}`;
+
+  const badge = document.getElementById('wizBadgeChosenAngle');
+  if (badge) {
+    badge.innerText = `Gancho #${hook.id}: ${hook.name} · ${customTopic || 'Fórmula Activa'}`;
+  }
+
+  goToWizardStep(1);
+  await generateWizardStep1Hooks();
+}
+
+async function generateStrategicAnglesForCatalogHook(hookId) {
+  const allHooks = getHooksData();
+  const hook = allHooks.find(h => String(h.id) === String(hookId)) || wizardState.selectedCatalogHook;
+  if (!hook) return;
+
+  const customTopicInput = document.getElementById('wizCatalogHookTopicCustom');
+  const customTopic = customTopicInput ? customTopicInput.value.trim() : '';
+
+  wizardState.selectedCatalogHook = hook;
+  wizardState.topic = customTopic ? `${customTopic} (usando la fórmula de gancho: ${hook.name} - ${hook.formula})` : `Fórmula de gancho: ${hook.name} (${hook.formula})`;
+
+  const topicInput = document.getElementById('aiWizardInputTopic');
+  if (topicInput) topicInput.value = wizardState.topic;
+
+  await generateWizardStep0Strategy();
 }
 
 
@@ -8975,6 +9099,7 @@ async function generateWizardStep1Hooks() {
     '',
     'CONTEXTO DEL CONTENIDO:',
     '- Idea/Transcripción original: "' + topic + '"',
+    (selectedHook ? '- FÓRMULA DE GANCHO OBLIGATORIA DEL CATÁLOGO #' + selectedHook.id + ' (' + selectedHook.name + '): "' + selectedHook.formula + '" (Ejemplo: "' + selectedHook.example + '")' : ''),
     '- Nicho objetivo: ' + niche,
     '- Ángulo estratégico: "' + angle + '"',
     (intent ? '- Intención: "' + intent + '"' : ''),
@@ -8982,7 +9107,8 @@ async function generateWizardStep1Hooks() {
     'REGLAS CRÍTICAS PARA EL GANCHO (Paso 1):',
     '1. TIEMPO EXACTO: El gancho debe durar exactamente 0 a 3 segundos.',
     '2. LONGITUD ESTRICTA: MÁXIMO 8 A 12 PALABRAS (1 sola frase contundente).',
-    '3. PROHIBIDO pegar la transcripción larga. Extrae solo el concepto central e inventa 5 aperturas de shock, mito, alerta o curiosidad.',
+    '3. PROHIBIDO pegar la transcripción larga. Extrae solo el concepto central e inventa 5 aperturas.',
+    (selectedHook ? '4. REGLA ESTRICTA: Las 5 opciones deben ser variaciones de la fórmula #' + selectedHook.id + ' ("' + selectedHook.formula + '") aplicadas a ' + niche + '.' : ''),
     '',
     'Responde ÚNICAMENTE con un arreglo JSON válido con 5 ganchos cortos:',
     '[',
