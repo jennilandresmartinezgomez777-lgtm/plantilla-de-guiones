@@ -6478,6 +6478,12 @@ function getAiApiEndpoint(base, route) {
 // MODAL DE CONFIGURACIÓN DE SERVIDOR IA (OLLAMA / MODELO)
 // =============================================================================
 
+function setServerUrlPreset(url) {
+  const input = document.getElementById('aiConfigServerUrl');
+  if (input) input.value = url;
+  testAiServerConnection();
+}
+
 function openAiServerConfigModal() {
   const modal = document.getElementById('aiServerConfigModal');
   if (!modal) {
@@ -6533,6 +6539,7 @@ async function testAiServerConnection() {
 
   if (resultDiv) {
     resultDiv.classList.remove('hidden');
+    resultDiv.style.display = 'block';
     resultDiv.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300';
     resultDiv.innerHTML = 'Probando conexión con <code>' + testUrl + '</code>...';
   }

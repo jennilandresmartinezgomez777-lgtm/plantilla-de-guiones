@@ -47,7 +47,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=5.5&t=1789409352840">
+  <link rel="stylesheet" href="styles.css?v=5.6&t=1789409581157">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1848,14 +1848,14 @@
               <label class="block text-xs font-semibold text-slate-300 mb-1">Dirección URL de Ollama / IA</label>
               <input type="text" id="aiConfigServerUrl" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500 font-mono" placeholder="http://192.168.1.10:3000/api/ollama">
               <div class="flex flex-wrap gap-1.5 mt-2">
-                <button type="button" onclick="document.getElementById('aiConfigServerUrl').value='http://localhost:11434'" class="text-[11px] bg-purple-950/60 hover:bg-purple-900/80 border border-purple-800 text-purple-300 px-2.5 py-1 rounded-lg transition cursor-pointer">
+                <button type="button" onclick="setServerUrlPreset('http://192.168.1.10:3000/api/ollama')" class="text-[11px] bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 font-bold px-3 py-1.5 rounded-lg transition cursor-pointer shadow-sm">
+                  📱 En iPad / Celular (192.168.1.10:3000)
+                </button>
+                <button type="button" onclick="setServerUrlPreset('http://192.168.1.10:11434')" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                  ⚡ Puerto Directo (192.168.1.10:11434)
+                </button>
+                <button type="button" onclick="setServerUrlPreset('http://localhost:11434')" class="text-[11px] bg-purple-950/60 hover:bg-purple-900 border border-purple-800 text-purple-300 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
                   🏠 En PC (localhost:11434)
-                </button>
-                <button type="button" onclick="document.getElementById('aiConfigServerUrl').value='http://192.168.1.10:3000/api/ollama'" class="text-[11px] bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-800 text-cyan-300 px-2.5 py-1 rounded-lg transition cursor-pointer">
-                  📱 En iPad / iPhone (Recomendado)
-                </button>
-                <button type="button" onclick="document.getElementById('aiConfigServerUrl').value='http://192.168.1.10:11434'" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1 rounded-lg transition cursor-pointer">
-                  ⚡ Puerto Directo (11434)
                 </button>
               </div>
               <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
@@ -2561,11 +2561,17 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=3.0&t=1789409352840"></script>
-  <script src="app.js?v=27.0&t=1789409352840"></script>
+  <script src="ai-hooks-data.js?v=3.1&t=1789409581157"></script>
+  <script src="app.js?v=28.0&t=1789409581157"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)
+    window.setServerUrlPreset = function(url) {
+      var input = document.getElementById('aiConfigServerUrl');
+      if (input) input.value = url;
+      testAiServerConnection();
+    };
+
     window.openAiServerConfigModal = function() {
       try {
         var modal = document.getElementById('aiServerConfigModal');
@@ -2578,7 +2584,7 @@
         var resultDiv = document.getElementById('aiConfigTestResult');
 
         var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        var defaultUrl = isLocal ? 'http://localhost:11434' : 'http://192.168.1.10:11434';
+        var defaultUrl = isLocal ? 'http://localhost:11434' : 'http://192.168.1.10:3000/api/ollama';
         var savedUrl = localStorage.getItem('ai_server_url') || (typeof aiState !== 'undefined' && aiState.serverUrl) || defaultUrl;
         var savedModel = localStorage.getItem('ai_model') || (typeof aiState !== 'undefined' && aiState.model) || 'qwen2.5:7b';
 
@@ -2605,6 +2611,118 @@
       if (modal) {
         modal.classList.add('hidden');
         modal.style.display = 'none';
+      }
+    };
+
+    window.testAiServerConnection = async function() {
+      var urlInput = document.getElementById('aiConfigServerUrl');
+      var modelInput = document.getElementById('aiConfigModelName');
+      var resultDiv = document.getElementById('aiConfigTestResult');
+      var btn = document.getElementById('btnAiTestConn');
+
+      var testUrl = urlInput ? urlInput.value.trim() : 'http://localhost:11434';
+      var testModel = modelInput ? modelInput.value.trim() : 'qwen2.5:7b';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Conectando...';
+      }
+
+      if (resultDiv) {
+        resultDiv.classList.remove('hidden');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300';
+        resultDiv.innerHTML = 'Probando conexión con <code>' + testUrl + '</code>...';
+      }
+
+      // Check if trying localhost from mobile device
+      var isMobileHostname = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      if (isMobileHostname && testUrl.includes('localhost')) {
+        if (resultDiv) {
+          resultDiv.className = 'p-3 rounded-xl bg-amber-950/50 border border-amber-500/50 text-xs text-amber-200 space-y-1';
+          resultDiv.innerHTML = '<strong>⚠️ Estás en iPad/Celular</strong><br>En tu iPad no uses <code>localhost</code> (porque busca la IA dentro del iPad). Toca el botón <b>📱 En iPad / Celular</b> arriba para usar la IP de tu PC: <code>http://192.168.1.10:3000/api/ollama</code>.';
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Probar Conexión</span>';
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        return;
+      }
+
+      try {
+        var clean = testUrl.replace(/\/+$/, '');
+        var targetUrl = clean;
+        if (clean.endsWith('/api/ollama') || clean.endsWith('/ollama') || clean.endsWith('/api')) {
+          targetUrl = clean + '/tags';
+        } else {
+          targetUrl = clean + '/api/tags';
+        }
+
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
+        var res = await fetch(targetUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          var data = await res.json();
+          var models = data.models || [];
+          var modelNames = models.map(function(m) { return m.name; }).join(', ') || testModel;
+
+          if (typeof aiUpdateConnectionBadge === 'function') aiUpdateConnectionBadge(true);
+          if (resultDiv) {
+            resultDiv.className = 'p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-300 space-y-1';
+            resultDiv.innerHTML = '<strong>✅ ¡Conexión exitosa con tu PC!</strong><br><span class="text-[11px] text-slate-300">Servidor IA detectado. Modelos disponibles: <b>' + (modelNames || testModel) + '</b></span>';
+          }
+          if (typeof showToast === 'function') showToast('✅ ¡Conexión con servidor IA exitosa!', 'success');
+        } else {
+          throw new Error('Servidor respondió con código ' + res.status);
+        }
+      } catch (err) {
+        if (typeof aiUpdateConnectionBadge === 'function') aiUpdateConnectionBadge(false);
+        if (resultDiv) {
+          var isHttps = window.location.protocol === 'https:';
+          resultDiv.className = 'p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-xs text-rose-300 space-y-1.5';
+          if (isHttps) {
+            resultDiv.innerHTML = '<strong>❌ Safari bloqueó la conexión (Modo HTTPS)</strong><br>' +
+              '<span class="text-[11px] text-slate-300">Safari no permite conectar enlaces HTTPS con IPs locales HTTP directamente. <b>Solución:</b> En tu iPad entra en Safari a: <code class="text-cyan-300 font-bold">http://192.168.1.10:3000</code>.</span>';
+          } else {
+            resultDiv.innerHTML = '<strong>❌ No se pudo conectar al servidor IA</strong><br>' +
+              '<span class="text-[11px] text-slate-300">Verifica que tu PC esté encendido con Ollama o el servidor abierto. Prueba el botón <b>📱 En iPad / Celular (192.168.1.10:3000)</b>.</span>';
+          }
+        }
+        if (typeof showToast === 'function') showToast('No se pudo conectar al servidor IA', 'warning');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Probar Conexión</span>';
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      }
+    };
+
+    window.saveAiServerConfig = function() {
+      var urlInput = document.getElementById('aiConfigServerUrl');
+      var modelInput = document.getElementById('aiConfigModelName');
+
+      if (urlInput) {
+        var cleanUrl = urlInput.value.trim().replace(/\/+$/, '');
+        if (typeof aiState !== 'undefined') aiState.serverUrl = cleanUrl;
+        localStorage.setItem('ai_server_url', cleanUrl);
+      }
+
+      if (modelInput) {
+        var cleanModel = modelInput.value.trim();
+        if (typeof aiState !== 'undefined') aiState.model = cleanModel;
+        localStorage.setItem('ai_model', cleanModel);
+      }
+
+      if (typeof showToast === 'function') {
+        showToast('💾 Ajustes de servidor guardados con éxito', 'success');
+      }
+      closeAiServerConfigModal();
+      if (typeof checkAiServerHealth === 'function') {
+        checkAiServerHealth();
       }
     };
   </script>
