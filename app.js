@@ -7078,6 +7078,15 @@ async function handleWizardLinkInput(url) {
 }
 
 
+
+function getCleanCoreTheme(text) {
+  if (!text) return 'el éxito y las finanzas';
+  const clean = text.replace(/[\r\n]+/g, ' ').replace(/["']/g, '').trim();
+  const words = clean.split(/\s+/);
+  if (words.length <= 6) return clean;
+  return words.slice(0, 6).join(' ');
+}
+
 // =============================================================================
 // TRANSCRIPTOR DE AUDIO EN VIVO (SPEECH RECOGNITION API)
 // =============================================================================
@@ -7387,41 +7396,66 @@ function confirmStrategyAndAdvanceToStep1() {
 // STEP 1: Generate 5 Hooks
 async function generateWizardStep1Hooks() {
   const topic = wizardState.topic;
-  const link = wizardState.link;
   const niche = wizardState.niche;
   const angle = wizardState.selectedAngle || 'Contraintuitivo & Alto Impacto';
   const intent = wizardState.userIntent || '';
+  const shortTheme = getCleanCoreTheme(topic);
 
   const grid = document.getElementById('wizCardsGrid1');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales con IA...</p><p class="text-xs text-slate-400">Aplicando el ángulo: <b class="text-amber-300">' + angle + '</b> y las 64 fórmulas de retención.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales cortos (0-3s)...</p><p class="text-xs text-slate-400">Optimizando frases de impacto de máximo 8 a 12 palabras para detener el scroll de inmediato.</p></div>';
   }
 
-  const prompt = 'Actúa como el estratega viral #1 en Instagram Reels, TikTok y YouTube Shorts en el nicho de DINERO, FINANZAS Y DESARROLLO PERSONAL.\n\n' +
-    'ESTRATEGIA ALINEADA EN EL PASO 0:\n' +
-    '- Enfoque temático: ' + niche + '\n' +
-    '- Tema o Idea: "' + topic + '"\n' +
-    (link ? '- Video de referencia original: ' + link + '\n' : '') +
-    '- Ángulo estratégico elegido: "' + angle + '"\n' +
-    (intent ? '- Intención/Emoción a transmitir: "' + intent + '"\n' : '') +
-    '- Objetivo: Generar exactamente 5 opciones de GANCHOS VIRALES (0 a 3 segundos) ultra impactantes basados en este ángulo estratégico.\n' +
-    '- Utiliza las 64 fórmulas probadas de ganchos.\n\n' +
-    'Responde ÚNICAMENTE con un arreglo JSON válido sin bloques markdown adicionales, con este formato exacto:\n' +
-    '[\n  {\n    "formula": "Nombre de la Fórmula (ej: Mito Contraintuitivo)",\n    "hook": "Texto exacto del gancho listo para hablar (0-3 segundos)",\n    "reason": "Por qué atrapa la atención de inmediato"\n  }\n]';
+  const prompt = [
+    'Actúa como el estratega viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL.',
+    '',
+    'CONTEXTO DEL CONTENIDO:',
+    '- Idea/Transcripción original: "' + topic + '"',
+    '- Nicho objetivo: ' + niche,
+    '- Ángulo estratégico: "' + angle + '"',
+    (intent ? '- Intención: "' + intent + '"' : ''),
+    '',
+    'REGLAS CRÍTICAS PARA EL GANCHO (Paso 1):',
+    '1. TIEMPO EXACTO: El gancho debe durar exactamente 0 a 3 segundos.',
+    '2. LONGITUD ESTRICTA: MÁXIMO 8 A 12 PALABRAS (1 sola frase contundente).',
+    '3. PROHIBIDO pegar la transcripción larga. Extrae solo el concepto central e inventa 5 aperturas de shock, mito, alerta o curiosidad.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 ganchos cortos:',
+    '[',
+    '  {',
+    '    "formula": "Nombre de la Fórmula (ej: Alerta y Error / Mito Contraintuitivo)",',
+    '    "hook": "Frase exacta de máximo 8-12 palabras (ej: Si quieres tener éxito, jamás le cuentes esto a nadie.)",',
+    '    "reason": "Por qué detiene el scroll en 2 segundos"',
+    '  }',
+    ']'
+  ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
-    let parsed = extractJsonArray(raw);
+    let parsed = null;
+    try {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (e) {}
 
-    if (!parsed || parsed.length < 3) {
-      parsed = getFallbackHooks(topic, niche, angle);
+    if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
+      // Clean hooks so none exceed 15 words
+      wizardState.generatedHooks = parsed.slice(0, 5).map(h => {
+        let hookText = (h.hook || '').trim().replace(/^["']|["']$/g, '');
+        return {
+          formula: h.formula || 'Gancho Viral',
+          hook: hookText,
+          reason: h.reason || 'Alta retención en 3 segundos'
+        };
+      });
+      renderWizardStep1Cards(wizardState.generatedHooks);
+    } else {
+      console.warn('Using calibrated fallback hooks');
+      wizardState.generatedHooks = getFallbackHooks(topic, niche, angle);
+      renderWizardStep1Cards(wizardState.generatedHooks);
     }
-
-    wizardState.generatedHooks = parsed.slice(0, 5);
-    renderWizardStep1Cards(wizardState.generatedHooks);
-
   } catch (err) {
-    console.warn('Ollama hook error, using fallback:', err);
+    console.warn('Step 1 hook error, using fallback:', err);
     wizardState.generatedHooks = getFallbackHooks(topic, niche, angle);
     renderWizardStep1Cards(wizardState.generatedHooks);
   }
@@ -7509,35 +7543,51 @@ async function generateWizardStep2Stories() {
 
   const grid = document.getElementById('wizCardsGrid2');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 desarrollos de historia / contexto...</p><p class="text-xs text-slate-400">Optimizando el ritmo para mantener a la persona pegada entre los 3 y 30 segundos.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 desarrollos de historia / contexto (3-30s)...</p><p class="text-xs text-slate-400">Estructurando el cuerpo del Reel en 40 a 55 palabras ágiles y directas.</p></div>';
   }
 
-  const prompt = 'Actúa como el estratega viral #1 en guiones de redes sociales (Dinero y Desarrollo Personal).\n\n' +
-    'CONTEXTO ACTUAL:\n' +
-    '- Gancho seleccionado: "' + hook + '"\n' +
-    '- Tema: "' + topic + '"\n' +
-    '- Nicho: "' + niche + '"\n' +
-    '- Ángulo estratégico: "' + angle + '"\n' +
-    (intent ? '- Intención a transmitir: "' + intent + '"\n' : '') + '\n' +
-    'OBJETIVO:\n' +
-    'Genera exactamente 5 opciones DIFERENTES de HISTORIA / CONTEXTO (Cuerpo del Reel, de 3 a 30 segundos).\n' +
-    'Cada opción debe fluir naturalmente desde el gancho, ir al grano sin relleno, usar lenguaje visual y generar curiosidad progresiva.\n\n' +
-    'Responde ÚNICAMENTE con un arreglo JSON válido con este formato:\n' +
-    '[\n  {\n    "angle": "Estilo o Ángulo (ej: Historia en 3 actos / Comparación 99% vs 1% / Revelación)",\n    "story": "Texto completo del desarrollo (aproximadamente 40 a 65 palabras)",\n    "highlight": "Dato o giro clave"\n  }\n]';
+  const prompt = [
+    'Actúa como el guionista viral #1 en Reels y TikTok para DINERO Y DESARROLLO PERSONAL.',
+    '',
+    'CONTEXTO:',
+    '- Gancho elegido: "' + hook + '"',
+    '- Idea/Transcripción base: "' + topic + '"',
+    '- Nicho: ' + niche,
+    '- Ángulo: "' + angle + '"',
+    (intent ? '- Intención: "' + intent + '"' : ''),
+    '',
+    'REGLAS CRÍTICAS PARA LA HISTORIA / CONTEXTO (Paso 2):',
+    '1. TIEMPO EXACTO: Debe cubrir del segundo 3 al segundo 30.',
+    '2. LONGITUD ESTRICTA: Entre 40 y 55 PALABRAS (alrededor de 25 segundos de habla fluida).',
+    '3. Debe conectar inmediatamente con el gancho y desarrollar los puntos clave de forma dinámica, sin rodeos ni explicaciones académicas aburridas.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    '[',
+    '  {',
+    '    "angle": "Estilo (ej: Los 4 Puntos Directos / Comparación 1% vs 99% / Historia)",',
+    '    "story": "Texto completo del cuerpo del reel listo para hablar (40-55 palabras)",',
+    '    "highlight": "Giro o punto clave"',
+    '  }',
+    ']'
+  ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
-    let parsed = extractJsonArray(raw);
+    let parsed = null;
+    try {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (e) {}
 
-    if (!parsed || parsed.length < 3) {
-      parsed = getFallbackStories(hook, topic, niche);
+    if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
+      wizardState.generatedStories = parsed.slice(0, 5);
+      renderWizardStep2Cards(wizardState.generatedStories);
+    } else {
+      wizardState.generatedStories = getFallbackStories(hook, topic, niche);
+      renderWizardStep2Cards(wizardState.generatedStories);
     }
-
-    wizardState.generatedStories = parsed.slice(0, 5);
-    renderWizardStep2Cards(wizardState.generatedStories);
-
   } catch (err) {
-    console.warn('Ollama story error, using fallback:', err);
+    console.warn('Step 2 story error, using fallback:', err);
     wizardState.generatedStories = getFallbackStories(hook, topic, niche);
     renderWizardStep2Cards(wizardState.generatedStories);
   }
@@ -7615,37 +7665,54 @@ function advanceWizardToStep3() {
 async function generateWizardStep3Morals() {
   const hook = wizardState.selectedHook;
   const story = wizardState.selectedStory;
+  const topic = wizardState.topic;
   const niche = wizardState.niche;
 
   const grid = document.getElementById('wizCardsGrid3');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 opciones de Moraleja / Valor...</p><p class="text-xs text-slate-400">Creando el momento de revelación o aprendizaje clave (30 a 40 segundos).</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 moralejas y lecciones de valor (30-40s)...</p><p class="text-xs text-slate-400">Frases memorables de 18 a 26 palabras que la gente quiera guardar o compartir.</p></div>';
   }
 
-  const prompt = 'Actúa como guionista experto en videos virales de Dinero & Crecimiento Personal.\n\n' +
-    'GUION HASTA EL MOMENTO:\n' +
-    '- Gancho: "' + hook + '"\n' +
-    '- Historia / Contexto: "' + story + '"\n' +
-    '- Nicho: "' + niche + '"\n\n' +
-    'OBJETIVO:\n' +
-    'Genera exactamente 5 opciones de MORALEJA / VALOR / ENSEÑANZA PRÁCTICA (30 a 40 segundos).\n' +
-    'Debe ser una conclusión poderosa, directa, memorable y que aporte valor real e inspirador.\n\n' +
-    'Responde ÚNICAMENTE con un arreglo JSON:\n' +
-    '[\n  {\n    "type": "Tipo (ej: Regla de Oro / Cambio de Paradigma / Fórmula Práctica)",\n    "moral": "Texto conciso de la moraleja (20 a 35 palabras)",\n    "takeaway": "Beneficio principal"\n  }\n]';
+  const prompt = [
+    'Actúa como el estratega viral #1 en Reels y TikTok para DINERO Y DESARROLLO PERSONAL.',
+    '',
+    'CONTEXTO ACTUAL:',
+    '- Gancho: "' + hook + '"',
+    '- Historia: "' + story + '"',
+    '- Nicho: ' + niche,
+    '',
+    'REGLAS CRÍTICAS PARA LA MORALEJA / VALOR (Paso 3):',
+    '1. TIEMPO EXACTO: Debe cubrir del segundo 30 al segundo 40.',
+    '2. LONGITUD ESTRICTA: Entre 18 y 26 PALABRAS (unos 10 segundos de habla).',
+    '3. Debe ser una regla de oro o aprendizaje contundente que resuma el valor del Reel.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    '[',
+    '  {',
+    '    "type": "Tipo de Moraleja (ej: Regla del 1% / Principio de Crecimiento)",',
+    '    "moral": "Texto de la moraleja listo para hablar (18-26 palabras)",',
+    '    "takeaway": "Aprendizaje clave"',
+    '  }',
+    ']'
+  ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
-    let parsed = extractJsonArray(raw);
+    let parsed = null;
+    try {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (e) {}
 
-    if (!parsed || parsed.length < 3) {
-      parsed = getFallbackMorals(hook, story, niche);
+    if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
+      wizardState.generatedMorals = parsed.slice(0, 5);
+      renderWizardStep3Cards(wizardState.generatedMorals);
+    } else {
+      wizardState.generatedMorals = getFallbackMorals(hook, story, niche);
+      renderWizardStep3Cards(wizardState.generatedMorals);
     }
-
-    wizardState.generatedMorals = parsed.slice(0, 5);
-    renderWizardStep3Cards(wizardState.generatedMorals);
-
   } catch (err) {
-    console.warn('Ollama moral error, using fallback:', err);
+    console.warn('Step 3 moral error, using fallback:', err);
     wizardState.generatedMorals = getFallbackMorals(hook, story, niche);
     renderWizardStep3Cards(wizardState.generatedMorals);
   }
@@ -7722,43 +7789,52 @@ function advanceWizardToStep4() {
 // STEP 4: Generate 5 CTAs
 async function generateWizardStep4CTAs() {
   const hook = wizardState.selectedHook;
-  const story = wizardState.selectedStory;
-  const moral = wizardState.selectedMoral;
   const niche = wizardState.niche;
 
   const grid = document.getElementById('wizCardsGrid4');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 opciones de Llamado a la Acción (CTA)...</p><p class="text-xs text-slate-400">Optimizados para comentarios, guardados y mensajes directos.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 llamados a la acción de alta conversión (40-50s)...</p><p class="text-xs text-slate-400">Frases cortas de 10 a 16 palabras con palabra clave para disparar comentarios y guardados.</p></div>';
   }
 
-  const prompt = 'Actúa como experto en conversión y crecimiento en redes sociales.\n\n' +
-    'GUION COMPLETO HASTA AQUÍ:\n' +
-    '- Gancho: "' + hook + '"\n' +
-    '- Historia: "' + story + '"\n' +
-    '- Moraleja: "' + moral + '"\n\n' +
-    'OBJETIVO:\n' +
-    'Genera exactamente 5 opciones de LLAMADOS A LA ACCIÓN (CTA - 40 a 50 segundos) con diferentes intenciones de conversión:\n' +
-    '1. Comentario con palabra clave (ej: "Comenta PLAN")\n' +
-    '2. Guardar el video como recordatorio\n' +
-    '3. Compartir con alguien que lo necesite\n' +
-    '4. Seguir para la parte 2 o más contenido\n' +
-    '5. Mensaje directo / Enlace en biografía\n\n' +
-    'Responde ÚNICAMENTE con un arreglo JSON:\n' +
-    '[\n  {\n    "action": "Objetivo (ej: Comentarios con Palabra Clave)",\n    "cta": "Texto exacto del CTA con energía (15 a 25 palabras)",\n    "triggerWord": "PALABRA CLAVE"\n  }\n]';
+  const prompt = [
+    'Actúa como el estratega viral #1 en conversión de Instagram Reels y TikTok.',
+    '',
+    'CONTEXTO:',
+    '- Gancho: "' + hook + '"',
+    '- Nicho: ' + niche,
+    '',
+    'REGLAS CRÍTICAS PARA EL CTA (Paso 4):',
+    '1. TIEMPO EXACTO: Segundos 40 al 50.',
+    '2. LONGITUD ESTRICTA: Entre 10 y 16 PALABRAS.',
+    '3. Debe pedir una acción directa: comentar una palabra clave específica, guardar o seguir.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    '[',
+    '  {',
+    '    "action": "Tipo de Conversión (ej: Comentarios / Guardado / Seguir)",',
+    '    "cta": "Llamado a la acción exacto (10-16 palabras)",',
+    '    "triggerWord": "PALABRA_CLAVE"',
+    '  }',
+    ']'
+  ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
-    let parsed = extractJsonArray(raw);
+    let parsed = null;
+    try {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (e) {}
 
-    if (!parsed || parsed.length < 3) {
-      parsed = getFallbackCTAs(hook, niche);
+    if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
+      wizardState.generatedCTAs = parsed.slice(0, 5);
+      renderWizardStep4Cards(wizardState.generatedCTAs);
+    } else {
+      wizardState.generatedCTAs = getFallbackCTAs(hook, niche);
+      renderWizardStep4Cards(wizardState.generatedCTAs);
     }
-
-    wizardState.generatedCTAs = parsed.slice(0, 5);
-    renderWizardStep4Cards(wizardState.generatedCTAs);
-
   } catch (err) {
-    console.warn('Ollama CTA error, using fallback:', err);
+    console.warn('Step 4 CTA error, using fallback:', err);
     wizardState.generatedCTAs = getFallbackCTAs(hook, niche);
     renderWizardStep4Cards(wizardState.generatedCTAs);
   }
@@ -7876,30 +7952,46 @@ function saveWizardToMatrix() {
     clientName = (state.clients && state.clients.length > 0) ? state.clients[0] : 'Jennil';
   }
 
+  // Build winning idea title (clean 4-7 words)
+  let ideaTitle = 'Estrategia: ' + (wizardState.selectedAngle || 'Reel 4 Pasos');
+  if (wizardState.topic) {
+    const cleanT = wizardState.topic.replace(/\s+/g, ' ').trim();
+    const words = cleanT.split(' ');
+    if (words.length > 6) {
+      ideaTitle = words.slice(0, 6).join(' ') + '...';
+    } else if (words.length > 0 && cleanT) {
+      ideaTitle = cleanT;
+    }
+  }
+
+  const nextNumber = state.scripts.length + 1;
+
   const newScript = {
-    id: Date.now().toString(),
+    id: 'scr_' + Date.now().toString(),
+    number: nextNumber,
+    day: 'Día ' + nextNumber,
     client: clientName,
     actor: clientName,
-    day: 'Día ' + (state.scripts.length + 1),
-    topic: wizardState.topic || hook.slice(0, 30),
-    hookType: wizardState.selectedAngle || 'Asistente 4 Pasos',
+    ideaGanadora: ideaTitle,
+    formato: 'Reel / 4 Pasos',
+    objetivo: 'Viralidad & Retención',
+    tipoGancho: (wizardState.selectedAngle || 'Gancho 0-3s').slice(0, 30),
     gancho: hook,
     historia: story,
     moraleja: moral,
     cta: cta,
     date: getColombiaTodayDateString(),
-    status: 'Borrador',
-    createdVia: 'BLEX AI Wizard'
+    status: 'Idea',
+    completed: false,
+    createdVia: 'BLEX AI Studio'
   };
 
   state.scripts.unshift(newScript);
-  localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  saveState();
 
   // Re-render whole application (Matrix, Cards, Analytics, Counters)
   if (typeof renderAll === 'function') {
     renderAll();
-  } else if (typeof renderScriptsTable === 'function') {
-    renderScriptsTable();
   }
 
   showToast('📥 ¡Guión guardado exitosamente en tu Matriz!', 'success');
@@ -7907,7 +7999,7 @@ function saveWizardToMatrix() {
   // Switch to matrix view so the user can immediately see and verify it
   setTimeout(() => {
     switchView('matrix');
-  }, 600);
+  }, 400);
 }
 
 function copyWizardScript() {
@@ -7960,29 +8052,29 @@ function getFallbackStrategy(topic, link, niche) {
 function getFallbackHooks(topic, niche, angle) {
   return [
     {
-      formula: "Mito Contraintuitivo",
-      hook: "Si crees que para " + topic + " necesitas más dinero, estás cometiendo el error que arruina al 90%.",
-      reason: "Desafía una creencia popular y genera shock instantáneo."
+      formula: "Alerta & Silencio (0-3s)",
+      hook: "Si quieres tener éxito real, jamás le cuentes estas 4 cosas a nadie.",
+      reason: "Detiene el scroll en 2.5 segundos con misterio y aversión a la pérdida."
     },
     {
-      formula: "Alerta & Error Negativo",
-      hook: "Deja de cometer este error con " + topic + " si no quieres seguir atrapado en el mismo lugar.",
-      reason: "Aversión a la pérdida y miedo al estancamiento."
+      formula: "El Error del 99% (0-3s)",
+      hook: "El 99% arruina su futuro financiero por cometer este grave error al hablar.",
+      reason: "Contraste psicológico directo y deseo de pertenecer al 1%."
     },
     {
-      formula: "Prueba & Cifras del 1%",
-      hook: "El 99% de las personas hace " + topic + " así, mientras el 1% más libre aplica esta regla exacta.",
-      reason: "Deseo de pertenecer a la élite y curiosidad por el secreto."
+      formula: "Mito Contraintuitivo (0-3s)",
+      hook: "Guardar silencio sobre tus metas es el mejor secreto para alcanzarlas.",
+      reason: "Rompe el consejo popular y crea intriga instantánea."
     },
     {
-      formula: "Storytelling & Transformación",
-      hook: "Tardé años en entender esto sobre " + topic + ", pero cuando lo apliqué, todo cambió radicalmente.",
-      reason: "Empatía personal y promesa de resultado tangible."
+      formula: "Regla del 1% (0-3s)",
+      hook: "La gente con verdadera riqueza aplica esta regla estricta en silencio.",
+      reason: "Autoridad y promesa de conocimiento reservado."
     },
     {
-      formula: "Pregunta Provocadora",
-      hook: "¿Por qué nadie te enseña la verdad sobre " + topic + " antes de que cometas este error?",
-      reason: "Confrontación y sensación de acceder a conocimiento exclusivo."
+      formula: "Pregunta de Shock (0-3s)",
+      hook: "¿Por qué los que más dinero ganan son los que menos hablan de sus planes?",
+      reason: "Pregunta directa que engancha la mente en 2.5 segundos."
     }
   ];
 }
@@ -7990,29 +8082,29 @@ function getFallbackHooks(topic, niche, angle) {
 function getFallbackStories(hook, topic, niche) {
   return [
     {
-      angle: "La Trampa Oculta",
-      story: "La mayoría trabaja horas interminables para comprar cosas que no necesitan e impresionar a desconocidos. El dinero que ganas no te hace libre; lo que te hace libre es la cantidad de ese dinero que pones a trabajar para ti sin tu presencia física.",
-      highlight: "Contraste directo entre trabajo duro vs apalancamiento."
+      angle: "Los 4 Puntos de Poder",
+      story: "Primero: nunca hables mal de tu familia. Segundo: jamás reveles tus proyectos antes de ver resultados. Tercero: no digas cuánto ganas ni tus problemas de dinero. Y cuarto: no presumas tus logros ante desconocidos. Cuando expones tus planes antes de tiempo, invitas a la duda a sabotear tu enfoque.",
+      highlight: "Directo, estructurado y sin relleno."
     },
     {
-      angle: "Regla del 1%",
-      story: "Los mejores no tienen más suerte que tú, tienen sistemas distintos. Mientras la persona promedio gasta primero y ahorra lo que le sobra, quien construye riqueza se paga a sí mismo primero y automatiza sus inversiones antes de pagar cualquier factura.",
-      highlight: "Hábito accionable y mentalidad de activos."
+      angle: "Contraste 1% vs 99%",
+      story: "La persona promedio habla de lo que va a hacer para recibir validación barata. Quien construye riqueza real trabaja en silencio, protege su energía y solo habla cuando los resultados son inevitables. Tu privacidad es tu mayor ventaja estratégica.",
+      highlight: "Mentalidad de resultados silenciosos."
+    },
+    {
+      angle: "Lección Práctica",
+      story: "Decirle a otros que estás por recibir dinero o iniciar un negocio solo atrae expectativas ajenas y envidia innecesaria. Cuando aprendes a guardarte los números y las ideas, tu mente se enfoca 100% en la ejecución y no en aparentar.",
+      highlight: "Eliminación de distracciones externas."
+    },
+    {
+      angle: "Estrategia Financiera",
+      story: "El dinero ama el silencio. Cada vez que publicas tus metas antes de lograrlas, tu cerebro siente una falsa sensación de éxito y pierde la disciplina. Protege tus proyectos como protegerías tus activos más valiosos.",
+      highlight: "Psicología del logro y consistencia."
     },
     {
       angle: "Transformación Personal",
-      story: "Pensaba que necesitaba una gran cantidad de capital para empezar. Pero descubrí que el juego se gana con disciplina en los números pequeños: recortar las fugas invisibles y aprender una habilidad de alto valor que multiplique tus ingresos por hora.",
-      highlight: "Supera la objeción de 'no tengo recursos'."
-    },
-    {
-      angle: "Análisis Crítico",
-      story: "La inflación no te quita el dinero de la cuenta, te quita el poder de compra cada día que lo dejas quieto. Tener capital en el banco sin multiplicarlo es literalmente perder un porcentaje de tu libertad cada año.",
-      highlight: "Urgencia y llamada de atención."
-    },
-    {
-      angle: "Paso a Paso Rápido",
-      story: "Paso uno: audita exactamente a dónde se fue cada dólar el último mes. Paso dos: elimina tres gastos hormiga que no mejoran tu vida. Paso tres: destina esa diferencia exacta a educarte o a un fondo que genere rendimientos.",
-      highlight: "Claridad inmediata en 3 pasos ejecutables."
+      story: "Pensaba que necesitaba compartir mis ideas para que me apoyaran. Pero entendí que los verdaderos ganadores no buscan aplausos tempranos; construyen sistemas sólidos y dejan que el impacto hable por ellos.",
+      highlight: "Superación de la necesidad de aprobación."
     }
   ];
 }
@@ -8020,29 +8112,29 @@ function getFallbackStories(hook, topic, niche) {
 function getFallbackMorals(hook, story, niche) {
   return [
     {
-      type: "Ley de Riqueza",
-      moral: "No cambies tu tiempo por dinero para siempre. Usa tu tiempo para construir activos que te compren tu tiempo de regreso.",
-      takeaway: "Libertad de tiempo y autonomía."
+      type: "Regla de Oro",
+      moral: "El éxito verdadero se construye en silencio y se deja que los resultados hagan todo el ruido. Tu tranquilidad vale más que los aplausos.",
+      takeaway: "Paz mental y enfoque absoluto."
     },
     {
       type: "Mentalidad del 1%",
-      moral: "Tu cuenta bancaria es un reflejo directo de tus hábitos diarios y de las decisiones que tomas cuando nadie te está mirando.",
-      takeaway: "Responsabilidad radical y disciplina."
+      moral: "La riqueza no se mide por lo que presumes ante los demás, sino por la libertad de hacer lo que quieras sin pedir permiso a nadie.",
+      takeaway: "Autonomía y libertad real."
+    },
+    {
+      type: "Principio de Enfoque",
+      moral: "Quien mucho habla, poco construye. Guarda tus planes para ti y deja que tu cuenta bancaria y tu progreso hablen por ti.",
+      takeaway: "Disciplina de ejecución."
+    },
+    {
+      type: "Ley de Crecimiento",
+      moral: "Tus metas son demasiado valiosas para exponerlas a la opinión de personas que no han construido nada de lo que tú buscas.",
+      takeaway: "Protección de tus objetivos."
     },
     {
       type: "Regla Práctica",
-      moral: "La riqueza no se mide por lo que gastas para aparentar, sino por la tranquilidad mental de saber que tus ingresos no dependen de un solo empleo.",
-      takeaway: "Paz mental y seguridad real."
-    },
-    {
-      type: "Acción Inmediata",
-      moral: "El mejor momento para ordenar tus finanzas fue hace cinco años. El segundo mejor momento es hoy mismo.",
-      takeaway: "Eliminación de la procrastinación."
-    },
-    {
-      type: "Fórmula de Crecimiento",
-      moral: "Invierte más en tu mente de lo que gastas en entretenimiento, y tu mente se encargará de llenar tus bolsillos de por vida.",
-      takeaway: "Retorno sobre la autoeducación."
+      moral: "Trabaja tan duro en silencio que tu única señal de éxito sea la vida tranquila y libre que has logrado edificar.",
+      takeaway: "Resultados tangibles."
     }
   ];
 }
@@ -8051,28 +8143,28 @@ function getFallbackCTAs(hook, niche) {
   return [
     {
       action: "Comentarios con Palabra Clave",
-      cta: "Comenta la palabra 'PLAN' y te envío por privado la guía paso a paso para aplicar esto hoy mismo.",
-      triggerWord: "PLAN"
+      cta: "Comenta la palabra 'ENFOQUE' y te envío la guía paso a paso para blindar tus metas este año.",
+      triggerWord: "ENFOQUE"
     },
     {
       action: "Guardar Video",
-      cta: "Guarda este video para que no lo olvides cuando vayas a tomar tu próxima decisión con tu dinero.",
+      cta: "Guarda este video para que lo recuerdes antes de contar tu próximo proyecto a cualquiera.",
       triggerWord: "GUARDAR"
     },
     {
       action: "Seguir la Cuenta",
-      cta: "Sígueme si quieres dominar tus finanzas, multiplicar tus ingresos y construir una mentalidad imparable este año.",
+      cta: "Sígueme si quieres dominar tu mentalidad, multiplicar tus ingresos y construir verdadera libertad.",
       triggerWord: "SEGUIR"
     },
     {
       action: "Compartir",
-      cta: "Comparte este video con un amigo que necesite escuchar esto antes de que termine la semana.",
+      cta: "Comparte este reel con un amigo que necesite escuchar este consejo hoy mismo.",
       triggerWord: "COMPARTIR"
     },
     {
       action: "Mensaje Directo",
-      cta: "Escríbeme 'LIBERTAD' por mensaje directo y analicemos cómo puedes empezar a estructurar tus activos.",
-      triggerWord: "LIBERTAD"
+      cta: "Escríbeme 'SILENCIO' por privado y hablemos de cómo estructurar tu plan de crecimiento personal.",
+      triggerWord: "SILENCIO"
     }
   ];
 }
