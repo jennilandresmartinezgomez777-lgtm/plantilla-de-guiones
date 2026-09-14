@@ -1930,6 +1930,7 @@ function switchView(viewName) {
   const vTele = document.getElementById('viewTeleprompter');
   const vTelePro = document.getElementById('viewTeleprompterPro');
   const vAi = document.getElementById('viewAiStudio');
+  const emptyState = document.getElementById('emptyState');
 
   const tViral = document.getElementById('tabViralCalc');
   const tMatrix = document.getElementById('tabMatrix');
@@ -1946,6 +1947,9 @@ function switchView(viewName) {
   if (vTele) vTele.classList.add('hidden');
   if (vTelePro) vTelePro.classList.add('hidden');
   if (vAi) vAi.classList.add('hidden');
+  if (emptyState && viewName !== 'matrix' && viewName !== 'cards') {
+    emptyState.classList.add('hidden');
+  }
 
   const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
   const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
@@ -6867,14 +6871,18 @@ function copyCloneScript(index) {
 // -------------------------------------------------------
 
 // =============================================================================
-// BLEX AI STUDIO - CREADOR DE REEL INTERACTIVO EN 4 PASOS
+// BLEX AI STUDIO - CREADOR DE REEL INTERACTIVO EN 4 PASOS + DIAGNÓSTICO ESTRATÉGICO
 // =============================================================================
 
 let wizardState = {
-  currentStep: 1,
+  currentStep: 0,
   link: '',
   niche: '💰 Riqueza, Mentalidad & Psicología del Dinero',
+  customNiche: '',
   topic: '',
+  strategy: null,
+  selectedAngle: '',
+  userIntent: '',
   selectedHook: '',
   selectedStory: '',
   selectedMoral: '',
@@ -6885,12 +6893,37 @@ let wizardState = {
   generatedCTAs: []
 };
 
+function toggleWizardCustomNiche(val) {
+  const container = document.getElementById('aiWizardCustomNicheContainer');
+  const input = document.getElementById('aiWizardCustomNicheInput');
+  if (val === 'CUSTOM') {
+    if (container) container.classList.remove('hidden');
+    if (input) input.focus();
+  } else {
+    if (container) container.classList.add('hidden');
+  }
+}
+
+function getEffectiveNiche() {
+  const select = document.getElementById('aiWizardNicheArea');
+  const customInput = document.getElementById('aiWizardCustomNicheInput');
+  const val = select ? select.value : '💰 Riqueza, Mentalidad & Psicología del Dinero';
+  if (val === 'CUSTOM') {
+    return (customInput && customInput.value.trim()) ? customInput.value.trim() : 'Dinero, Estrategia & Crecimiento Personal';
+  }
+  return val;
+}
+
 function resetWizard() {
   wizardState = {
-    currentStep: 1,
+    currentStep: 0,
     link: '',
     niche: '💰 Riqueza, Mentalidad & Psicología del Dinero',
+    customNiche: '',
     topic: '',
+    strategy: null,
+    selectedAngle: '',
+    userIntent: '',
     selectedHook: '',
     selectedStory: '',
     selectedMoral: '',
@@ -6907,6 +6940,8 @@ function resetWizard() {
   const elStory = document.getElementById('wizSelectedHistoria');
   const elMoral = document.getElementById('wizSelectedMoraleja');
   const elCTA = document.getElementById('wizSelectedCTA');
+  const elIntent = document.getElementById('wizStrategyUserIntent');
+  const elStrat = document.getElementById('wizStrategyCardContainer');
   const elGrid1 = document.getElementById('wizCardsGrid1');
 
   if (elLink) elLink.value = '';
@@ -6915,34 +6950,38 @@ function resetWizard() {
   if (elStory) elStory.value = '';
   if (elMoral) elMoral.value = '';
   if (elCTA) elCTA.value = '';
+  if (elIntent) elIntent.value = '';
   
-  if (elGrid1) {
-    elGrid1.innerHTML = '<div class="col-span-full p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2"><i data-lucide="sparkles" class="w-8 h-8 mx-auto text-amber-400/50"></i><p class="text-xs text-slate-400">Escribe tu tema arriba y pulsa <b>Crear con IA</b> para generar 5 opciones de ganchos virales.</p></div>';
-    if (window.lucide) lucide.createIcons();
+  if (elStrat) {
+    elStrat.innerHTML = '<div class="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2"><i data-lucide="sparkles" class="w-8 h-8 mx-auto text-purple-400/50"></i><p class="text-xs text-slate-400">Ingresa tu idea o link arriba y pulsa <b>Crear con IA</b> para que la IA realice el diagnóstico estratégico previo.</p></div>';
   }
 
-  goToWizardStep(1);
+  if (elGrid1) {
+    elGrid1.innerHTML = '';
+  }
+
+  goToWizardStep(0);
 }
 
 function goToWizardStep(stepNum) {
   wizardState.currentStep = stepNum;
 
-  // Update stepper buttons
-  for (let i = 1; i <= 5; i++) {
+  // Update stepper buttons 0 through 5
+  for (let i = 0; i <= 5; i++) {
     const pill = document.getElementById('wizStepPill' + i);
     const view = document.getElementById('wizStepView' + i);
 
     if (pill) {
       if (i === stepNum) {
-        pill.className = 'flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer';
+        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer';
         const sp = pill.querySelector('span:first-child');
         if (sp) sp.className = 'w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]';
       } else if (i < stepNum) {
-        pill.className = 'flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 cursor-pointer';
+        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 cursor-pointer';
         const sp = pill.querySelector('span:first-child');
         if (sp) sp.className = 'w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]';
       } else {
-        pill.className = 'flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50 cursor-pointer';
+        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50 cursor-pointer';
         const sp = pill.querySelector('span:first-child');
         if (sp) sp.className = 'w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]';
       }
@@ -6972,11 +7011,10 @@ function goToWizardStep(stepNum) {
 
 async function startWizardProcess() {
   const elLink = document.getElementById('aiWizardInputLink');
-  const elNiche = document.getElementById('aiWizardNicheArea');
   const elTopic = document.getElementById('aiWizardInputTopic');
 
   wizardState.link = elLink ? elLink.value.trim() : '';
-  wizardState.niche = elNiche ? elNiche.value : '💰 Riqueza, Mentalidad & Psicología del Dinero';
+  wizardState.niche = getEffectiveNiche();
   wizardState.topic = elTopic ? elTopic.value.trim() : '';
 
   if (!wizardState.topic && !wizardState.link) {
@@ -6985,45 +7023,211 @@ async function startWizardProcess() {
     return;
   }
 
+  goToWizardStep(0);
+  await generateWizardStep0Strategy();
+}
+
+// STEP 0: Generate Strategic Diagnosis & Adaptation Angles
+async function generateWizardStep0Strategy() {
+  const topic = wizardState.topic;
+  const link = wizardState.link;
+  const niche = wizardState.niche || getEffectiveNiche();
+
+  const container = document.getElementById('wizStrategyCardContainer');
+  if (container) {
+    container.innerHTML = '<div class="p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Analizando estrategia y ángulo viral...</p><p class="text-xs text-slate-400">' + (link ? 'Desglosando el video de referencia y diseñando cómo darle la vuelta para tu nicho.' : 'Diagnosticando el dolor de la audiencia y alineando el mensaje clave.') + '</p></div>';
+  }
+
+  const prompt = 'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok para DINERO, FINANZAS Y DESARROLLO PERSONAL.\n\n' +
+    'INFORMACIÓN PROVISTA:\n' +
+    '- Enfoque/Nicho: ' + niche + '\n' +
+    '- Tema o Idea clave: "' + topic + '"\n' +
+    (link ? '- Link o video de referencia: ' + link + '\n' : '') + '\n' +
+    'OBJETIVO DEL PASO 0:\n' +
+    (link ? 
+      '1. Explicar brevemente sobre qué trata el video/concepto de referencia.\n' +
+      '2. Explicar exactamente CÓMO DARLE LA VUELTA a ese video para adaptarlo de forma original a tu nicho de dinero/desarrollo personal.\n' +
+      '3. Proponer 3 ángulos estratégicos de adaptación para que el creador elija.' :
+      '1. Analizar el valor psicológico de esta idea y qué es lo que la audiencia necesita escuchar con urgencia.\n' +
+      '2. Plantear la dirección estratégica recomendada para este guión.\n' +
+      '3. Proponer 3 ángulos estratégicos de enfoque.') + '\n\n' +
+    'Responde ÚNICAMENTE con un objeto JSON válido con este formato exacto:\n' +
+    '{\n' +
+    '  "overview": "Explicación clara de qué trata la idea o video y el valor central (2-3 líneas)",\n' +
+    '  "howToFlip": "Estrategia de cómo darle la vuelta y transformarlo en un contenido original de alto impacto para ' + niche + '",\n' +
+    '  "keyQuestion": "Pregunta de enfoque para alinear el propósito del video con el creador",\n' +
+    '  "angles": [\n' +
+    '    {\n' +
+    '      "title": "Nombre del Ángulo 1 (ej: Contraintuitivo / El Error que Nadie Ve)",\n' +
+    '      "desc": "Breve explicación de cómo se abordará el tema en el guión",\n' +
+    '      "hookIdea": "Idea de arranque"\n' +
+    '    },\n' +
+    '    {\n' +
+    '      "title": "Nombre del Ángulo 2 (ej: La Mentalidad del 1% vs 99%)",\n' +
+    '      "desc": "Breve explicación de la perspectiva",\n' +
+    '      "hookIdea": "Idea de arranque"\n' +
+    '    },\n' +
+    '    {\n' +
+    '      "title": "Nombre del Ángulo 3 (ej: Storytelling Personal & Revelación)",\n' +
+    '      "desc": "Breve explicación de la perspectiva",\n' +
+    '      "hookIdea": "Idea de arranque"\n' +
+    '    }\n' +
+    '  ]\n' +
+    '}';
+
+  try {
+    const raw = await callOllama(prompt, 0.7);
+    let parsed = extractJsonObject(raw);
+
+    if (!parsed || !parsed.angles || parsed.angles.length < 2) {
+      parsed = getFallbackStrategy(topic, link, niche);
+    }
+
+    wizardState.strategy = parsed;
+    renderWizardStep0Strategy(parsed);
+
+  } catch (err) {
+    console.warn('Ollama strategy error, using fallback:', err);
+    wizardState.strategy = getFallbackStrategy(topic, link, niche);
+    renderWizardStep0Strategy(wizardState.strategy);
+  }
+}
+
+function extractJsonObject(text) {
+  if (!text) return null;
+  try {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      return JSON.parse(text.substring(start, end + 1));
+    }
+  } catch (e) {}
+  return null;
+}
+
+function renderWizardStep0Strategy(strat) {
+  const container = document.getElementById('wizStrategyCardContainer');
+  if (!container) return;
+
+  const isLink = Boolean(wizardState.link);
+
+  let html = '<div class="space-y-4">';
+  
+  // Overview Card
+  html += '<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">' +
+    '<div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">' +
+      '<i data-lucide="' + (isLink ? 'video' : 'compass') + '" class="w-4 h-4"></i>' +
+      '<span>' + (isLink ? '1. Diagnóstico del Video de Referencia' : '1. Diagnóstico de la Idea & Audiencia') + '</span>' +
+    '</div>' +
+    '<p class="text-xs sm:text-sm text-slate-200 leading-relaxed">' + (strat.overview || 'Análisis del concepto y enfoque del contenido.') + '</p>' +
+  '</div>';
+
+  // How to Flip / Adaptation Card
+  html += '<div class="bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 border border-purple-500/40 p-4 rounded-xl space-y-2">' +
+    '<div class="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">' +
+      '<i data-lucide="refresh-cw" class="w-4 h-4"></i>' +
+      '<span>' + (isLink ? '2. Cómo darle la vuelta para tu nicho (' + wizardState.niche + ')' : '2. Estrategia de Impacto & Diferenciación') + '</span>' +
+    '</div>' +
+    '<p class="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium">' + (strat.howToFlip || 'Transformaremos el concepto desafiando la creencia tradicional y aportando valor práctico.') + '</p>' +
+  '</div>';
+
+  // 3 Strategic Angles Selector
+  html += '<div class="space-y-2">' +
+    '<label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">' +
+      '<i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i>' +
+      '<span>3. Selecciona el Ángulo que deseas para este Reel:</span>' +
+    '</label>' +
+    '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">';
+
+  strat.angles.forEach((ang, idx) => {
+    const letters = ['A', 'B', 'C'];
+    const letter = letters[idx] || (idx + 1);
+    const isSelected = wizardState.selectedAngle === ang.title || (!wizardState.selectedAngle && idx === 0);
+    if (isSelected && !wizardState.selectedAngle) wizardState.selectedAngle = ang.title;
+
+    html += '<div onclick="selectWizardStrategyAngle(' + idx + ')" id="wizStratAngleCard_' + idx + '" class="p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 ' + (isSelected ? 'bg-purple-950/50 border-purple-400 shadow-lg shadow-purple-950/60' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60') + '">' +
+      '<div class="space-y-1.5">' +
+        '<div class="flex items-center justify-between">' +
+          '<span class="w-5 h-5 rounded-md bg-purple-500/20 text-purple-300 font-black text-xs flex items-center justify-center border border-purple-500/30">' + letter + '</span>' +
+          '<span class="text-[10px] font-bold ' + (isSelected ? 'text-purple-300' : 'text-slate-400') + '">' + (isSelected ? '✓ Seleccionado' : 'Elegir') + '</span>' +
+        '</div>' +
+        '<h5 class="text-xs font-bold text-white">' + ang.title + '</h5>' +
+        '<p class="text-[11px] text-slate-300 leading-snug">' + ang.desc + '</p>' +
+      '</div>' +
+      (ang.hookIdea ? '<div class="pt-2 border-t border-slate-900 text-[10px] text-slate-400 italic">💡 ' + ang.hookIdea + '</div>' : '') +
+    '</div>';
+  });
+
+  html += '</div></div></div>';
+
+  container.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+function selectWizardStrategyAngle(idx) {
+  if (!wizardState.strategy || !wizardState.strategy.angles) return;
+  const ang = wizardState.strategy.angles[idx];
+  if (!ang) return;
+
+  wizardState.selectedAngle = ang.title;
+
+  wizardState.strategy.angles.forEach((_, i) => {
+    const card = document.getElementById('wizStratAngleCard_' + i);
+    if (card) {
+      if (i === idx) {
+        card.className = 'p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 bg-purple-950/50 border-purple-400 shadow-lg shadow-purple-950/60';
+      } else {
+        card.className = 'p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60';
+      }
+    }
+  });
+}
+
+function confirmStrategyAndAdvanceToStep1() {
+  const intentInput = document.getElementById('wizStrategyUserIntent');
+  if (intentInput) wizardState.userIntent = intentInput.value.trim();
+
+  const chosenAngle = wizardState.selectedAngle || 'Estrategia Viral Optimizada';
+  const badge = document.getElementById('wizBadgeChosenAngle');
+  if (badge) {
+    badge.innerText = chosenAngle + (wizardState.userIntent ? ' · (' + wizardState.userIntent.slice(0, 30) + '...)' : '');
+  }
+
   goToWizardStep(1);
-  await generateWizardStep1Hooks();
+  generateWizardStep1Hooks();
 }
 
 // STEP 1: Generate 5 Hooks
 async function generateWizardStep1Hooks() {
-  const elTopic = document.getElementById('aiWizardInputTopic');
-  const elLink = document.getElementById('aiWizardInputLink');
-  const elNiche = document.getElementById('aiWizardNicheArea');
-
-  const topic = (elTopic ? elTopic.value.trim() : '') || wizardState.topic || 'Mentalidad de Riqueza y Crecimiento';
-  const link = (elLink ? elLink.value.trim() : '') || wizardState.link;
-  const niche = (elNiche ? elNiche.value : '') || wizardState.niche;
-
-  wizardState.topic = topic;
-  wizardState.link = link;
-  wizardState.niche = niche;
+  const topic = wizardState.topic;
+  const link = wizardState.link;
+  const niche = wizardState.niche;
+  const angle = wizardState.selectedAngle || 'Contraintuitivo & Alto Impacto';
+  const intent = wizardState.userIntent || '';
 
   const grid = document.getElementById('wizCardsGrid1');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales con IA...</p><p class="text-xs text-slate-400">Aplicando las 64 fórmulas de retención y la enciclopedia de Dinero & Desarrollo Personal.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales con IA...</p><p class="text-xs text-slate-400">Aplicando el ángulo: <b class="text-amber-300">' + angle + '</b> y las 64 fórmulas de retención.</p></div>';
   }
 
   const prompt = 'Actúa como el estratega viral #1 en Instagram Reels, TikTok y YouTube Shorts en el nicho de DINERO, FINANZAS Y DESARROLLO PERSONAL.\n\n' +
-    'CONOCIMIENTO BASE A APLICAR:\n' +
+    'ESTRATEGIA ALINEADA EN EL PASO 0:\n' +
     '- Enfoque temático: ' + niche + '\n' +
     '- Tema o Idea: "' + topic + '"\n' +
-    (link ? '- Link o video de referencia: ' + link + '\n' : '') +
-    '- Objetivo: Generar exactamente 5 opciones de GANCHOS VIRALES (0 a 3 segundos) ultra impactantes.\n' +
-    '- Utiliza las fórmulas probadas de ganchos (Curiosidad, Contraintuitivo, Error Negativo, Storytelling, Cifras/Prueba).\n\n' +
+    (link ? '- Video de referencia original: ' + link + '\n' : '') +
+    '- Ángulo estratégico elegido: "' + angle + '"\n' +
+    (intent ? '- Intención/Emoción a transmitir: "' + intent + '"\n' : '') +
+    '- Objetivo: Generar exactamente 5 opciones de GANCHOS VIRALES (0 a 3 segundos) ultra impactantes basados en este ángulo estratégico.\n' +
+    '- Utiliza las 64 fórmulas probadas de ganchos.\n\n' +
     'Responde ÚNICAMENTE con un arreglo JSON válido sin bloques markdown adicionales, con este formato exacto:\n' +
-    '[\n  {\n    "formula": "Nombre de la Fórmula (ej: Error Oculto)",\n    "hook": "Texto exacto del gancho listo para hablar (0-3 segundos)",\n    "reason": "Por qué atrapa la atención de inmediato"\n  }\n]';
+    '[\n  {\n    "formula": "Nombre de la Fórmula (ej: Mito Contraintuitivo)",\n    "hook": "Texto exacto del gancho listo para hablar (0-3 segundos)",\n    "reason": "Por qué atrapa la atención de inmediato"\n  }\n]';
 
   try {
     const raw = await callOllama(prompt, 0.7);
     let parsed = extractJsonArray(raw);
 
     if (!parsed || parsed.length < 3) {
-      parsed = getFallbackHooks(topic, niche);
+      parsed = getFallbackHooks(topic, niche, angle);
     }
 
     wizardState.generatedHooks = parsed.slice(0, 5);
@@ -7031,7 +7235,7 @@ async function generateWizardStep1Hooks() {
 
   } catch (err) {
     console.warn('Ollama hook error, using fallback:', err);
-    wizardState.generatedHooks = getFallbackHooks(topic, niche);
+    wizardState.generatedHooks = getFallbackHooks(topic, niche, angle);
     renderWizardStep1Cards(wizardState.generatedHooks);
   }
 }
@@ -7113,6 +7317,8 @@ async function generateWizardStep2Stories() {
   const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '');
   const topic = wizardState.topic;
   const niche = wizardState.niche;
+  const angle = wizardState.selectedAngle;
+  const intent = wizardState.userIntent;
 
   const grid = document.getElementById('wizCardsGrid2');
   if (grid) {
@@ -7123,7 +7329,9 @@ async function generateWizardStep2Stories() {
     'CONTEXTO ACTUAL:\n' +
     '- Gancho seleccionado: "' + hook + '"\n' +
     '- Tema: "' + topic + '"\n' +
-    '- Nicho: "' + niche + '"\n\n' +
+    '- Nicho: "' + niche + '"\n' +
+    '- Ángulo estratégico: "' + angle + '"\n' +
+    (intent ? '- Intención a transmitir: "' + intent + '"\n' : '') + '\n' +
     'OBJETIVO:\n' +
     'Genera exactamente 5 opciones DIFERENTES de HISTORIA / CONTEXTO (Cuerpo del Reel, de 3 a 30 segundos).\n' +
     'Cada opción debe fluir naturalmente desde el gancho, ir al grano sin relleno, usar lenguaje visual y generar curiosidad progresiva.\n\n' +
@@ -7476,14 +7684,18 @@ function saveWizardToMatrix() {
     return;
   }
 
-  const clientName = state.clients && state.clients.length > 0 ? state.clients[0] : 'Jennil';
+  let clientName = state.activeClient;
+  if (!clientName || clientName === 'ALL') {
+    clientName = (state.clients && state.clients.length > 0) ? state.clients[0] : 'Jennil';
+  }
+
   const newScript = {
     id: Date.now().toString(),
     client: clientName,
     actor: clientName,
     day: 'Día ' + (state.scripts.length + 1),
     topic: wizardState.topic || hook.slice(0, 30),
-    hookType: 'Asistente 4 Pasos',
+    hookType: wizardState.selectedAngle || 'Asistente 4 Pasos',
     gancho: hook,
     historia: story,
     moraleja: moral,
@@ -7496,11 +7708,19 @@ function saveWizardToMatrix() {
   state.scripts.unshift(newScript);
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
 
-  showToast('📥 ¡Guión guardado exitosamente en tu Matriz!', 'success');
-
-  if (typeof renderScriptsTable === 'function') {
+  // Re-render whole application (Matrix, Cards, Analytics, Counters)
+  if (typeof renderAll === 'function') {
+    renderAll();
+  } else if (typeof renderScriptsTable === 'function') {
     renderScriptsTable();
   }
+
+  showToast('📥 ¡Guión guardado exitosamente en tu Matriz!', 'success');
+
+  // Switch to matrix view so the user can immediately see and verify it
+  setTimeout(() => {
+    switchView('matrix');
+  }, 600);
 }
 
 function copyWizardScript() {
@@ -7519,35 +7739,63 @@ function copyWizardScript() {
 }
 
 // -----------------------------------------------------------------------------
-// INTELLIGENT FALLBACKS (DINERO & CRECIMIENTO PERSONAL)
+// INTELLIGENT FALLBACKS (ESTRATEGIA, GANCHOS, HISTORIAS, MORALEJAS, CTAS)
 // -----------------------------------------------------------------------------
 
-function getFallbackHooks(topic, niche) {
+function getFallbackStrategy(topic, link, niche) {
+  const isLink = Boolean(link);
+  return {
+    overview: isLink 
+      ? 'El video de referencia utiliza una estructura de curiosidad para enganchar a la audiencia en los primeros 3 segundos y luego entrega una lista o reflexión sobre hábitos.'
+      : 'Tu idea aborda uno de los mayores puntos de dolor de la audiencia: la frustración de intentar avanzar financieramente y cometer errores evitables.',
+    howToFlip: 'Para adaptarlo a ' + niche + ', no nos limitaremos a dar consejos genéricos. Vamos a presentar un contraste fuerte entre lo que hace el 99% (perseguir ganancias rápidas / gastar en pasivos) versus el sistema del 1% (gestión de riesgo, mentalidad de largo plazo y activos).',
+    keyQuestion: '¿Quieres enfocar este video como una advertencia sobre el error que más dinero les cuesta, o como una guía paso a paso para aplicar hoy mismo?',
+    angles: [
+      {
+        title: 'Mito Contraintuitivo & Error Oculto',
+        desc: 'Desafía la creencia popular y demuestra por qué la mayoría pierde dinero al seguir consejos comunes.',
+        hookIdea: 'Si crees que para tener éxito en esto necesitas más capital, estás cayendo en la trampa del 90%.'
+      },
+      {
+        title: 'La Regla de Oro del 1%',
+        desc: 'Muestra la diferencia exacta entre cómo piensa la persona promedio versus quien domina sus números.',
+        hookIdea: 'El 99% persigue resultados rápidos, pero los verdaderos ganadores aplican esta regla estricta.'
+      },
+      {
+        title: 'Storytelling & Método Práctico',
+        desc: 'Comparte un aprendizaje de transformación personal y entrega 3 pasos directos sin relleno.',
+        hookIdea: 'Tardé años en entender esto, pero cuando lo apliqué, mis resultados dieron un giro de 180 grados.'
+      }
+    ]
+  };
+}
+
+function getFallbackHooks(topic, niche, angle) {
   return [
     {
       formula: "Mito Contraintuitivo",
-      hook: "Si crees que para " + topic + " necesitas más ingresos, estás cometiendo el error que arruina al 90%.",
+      hook: "Si crees que para " + topic + " necesitas más dinero, estás cometiendo el error que arruina al 90%.",
       reason: "Desafía una creencia popular y genera shock instantáneo."
     },
     {
       formula: "Alerta & Error Negativo",
-      hook: "Deja de cometer este error con tu dinero si no quieres seguir atrapado en el mismo lugar en 5 años.",
+      hook: "Deja de cometer este error con " + topic + " si no quieres seguir atrapado en el mismo lugar.",
       reason: "Aversión a la pérdida y miedo al estancamiento."
     },
     {
       formula: "Prueba & Cifras del 1%",
-      hook: "El 99% de las personas gasta su dinero así, mientras el 1% más libre aplica esta regla exacta.",
+      hook: "El 99% de las personas hace " + topic + " así, mientras el 1% más libre aplica esta regla exacta.",
       reason: "Deseo de pertenecer a la élite y curiosidad por el secreto."
     },
     {
       formula: "Storytelling & Transformación",
-      hook: "Tardé años en entender esto sobre " + topic + ", pero cuando lo apliqué, todo cambió en 6 meses.",
+      hook: "Tardé años en entender esto sobre " + topic + ", pero cuando lo apliqué, todo cambió radicalmente.",
       reason: "Empatía personal y promesa de resultado tangible."
     },
     {
       formula: "Pregunta Provocadora",
-      hook: "¿Por qué nadie te enseña en la escuela la verdad sobre " + topic + "?",
-      reason: "Confrontación y sensación de estar accediendo a información prohibida."
+      hook: "¿Por qué nadie te enseña la verdad sobre " + topic + " antes de que cometas este error?",
+      reason: "Confrontación y sensación de acceder a conocimiento exclusivo."
     }
   ];
 }
@@ -7556,22 +7804,22 @@ function getFallbackStories(hook, topic, niche) {
   return [
     {
       angle: "La Trampa Oculta",
-      story: "La mayoría trabaja 40 horas a la semana para comprar cosas que no necesitan e impresionar a personas que ni conocen. El dinero que ganas no te hace libre; lo que te hace libre es la cantidad de ese dinero que pones a trabajar para ti sin tu presencia física.",
+      story: "La mayoría trabaja horas interminables para comprar cosas que no necesitan e impresionar a desconocidos. El dinero que ganas no te hace libre; lo que te hace libre es la cantidad de ese dinero que pones a trabajar para ti sin tu presencia física.",
       highlight: "Contraste directo entre trabajo duro vs apalancamiento."
     },
     {
       angle: "Regla del 1%",
-      story: "Los ricos no tienen más tiempo que tú, tienen sistemas distintos. Mientras la persona promedio gasta primero y ahorra lo que le sobra, quien construye riqueza se paga a sí mismo primero y automatiza sus inversiones antes de pagar cualquier factura.",
+      story: "Los mejores no tienen más suerte que tú, tienen sistemas distintos. Mientras la persona promedio gasta primero y ahorra lo que le sobra, quien construye riqueza se paga a sí mismo primero y automatiza sus inversiones antes de pagar cualquier factura.",
       highlight: "Hábito accionable y mentalidad de activos."
     },
     {
       angle: "Transformación Personal",
-      story: "Pensaba que necesitaba una gran cantidad de capital para empezar. Pero descubrí que el juego financiero se gana con disciplina en los números pequeños: recortar las fugas invisibles y aprender una habilidad de alto valor que multiplique tus ingresos por hora.",
-      highlight: "Supera la objeción de 'no tengo dinero'."
+      story: "Pensaba que necesitaba una gran cantidad de capital para empezar. Pero descubrí que el juego se gana con disciplina en los números pequeños: recortar las fugas invisibles y aprender una habilidad de alto valor que multiplique tus ingresos por hora.",
+      highlight: "Supera la objeción de 'no tengo recursos'."
     },
     {
       angle: "Análisis Crítico",
-      story: "La inflación no te quita el dinero de la cuenta, te quita el poder de compra cada día que lo dejas quieto. Tener dinero en el banco sin multiplicarlo es literalmente perder un porcentaje de tu vida cada año.",
+      story: "La inflación no te quita el dinero de la cuenta, te quita el poder de compra cada día que lo dejas quieto. Tener capital en el banco sin multiplicarlo es literalmente perder un porcentaje de tu libertad cada año.",
       highlight: "Urgencia y llamada de atención."
     },
     {
@@ -7616,8 +7864,8 @@ function getFallbackCTAs(hook, niche) {
   return [
     {
       action: "Comentarios con Palabra Clave",
-      cta: "Comenta la palabra 'LIBERTAD' y te envío por privado la guía paso a paso para aplicar esto hoy mismo.",
-      triggerWord: "LIBERTAD"
+      cta: "Comenta la palabra 'PLAN' y te envío por privado la guía paso a paso para aplicar esto hoy mismo.",
+      triggerWord: "PLAN"
     },
     {
       action: "Guardar Video",
@@ -7636,8 +7884,8 @@ function getFallbackCTAs(hook, niche) {
     },
     {
       action: "Mensaje Directo",
-      cta: "Escríbeme 'PLAN' por mensaje directo y analicemos cómo puedes empezar a estructurar tus activos.",
-      triggerWord: "PLAN"
+      cta: "Escríbeme 'LIBERTAD' por mensaje directo y analicemos cómo puedes empezar a estructurar tus activos.",
+      triggerWord: "LIBERTAD"
     }
   ];
 }

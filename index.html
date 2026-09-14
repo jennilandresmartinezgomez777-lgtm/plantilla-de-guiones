@@ -889,6 +889,22 @@
             </table>
           </div>
         </div>
+        <!-- EMPTY STATE (INSIDE MATRIX) -->
+        <div id="emptyState" class="hidden py-16 text-center space-y-4">
+          <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
+            <i data-lucide="file-x-2" class="w-8 h-8"></i>
+          </div>
+          <h3 id="emptyStateTitle" class="text-lg font-semibold text-slate-300">No se encontraron guiones</h3>
+          <p id="emptyStateText" class="text-sm text-slate-500 max-w-md mx-auto">No hay guiones registrados con los filtros seleccionados. Crea uno nuevo o limpia la búsqueda.</p>
+          <div class="flex items-center justify-center gap-3">
+            <button onclick="filterByStatusFromCard('ALL')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2 rounded-lg text-sm border border-slate-700 transition">
+              <i data-lucide="layers" class="w-4 h-4"></i> Mostrar Todos los Guiones
+            </button>
+            <button onclick="openNewScriptModal()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
+              <i data-lucide="plus" class="w-4 h-4"></i> Crear Guión
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- VIEW 2: CARDS VIEW -->
@@ -1228,40 +1244,7 @@
         </div>
       </section>
 
-      <!-- EMPTY STATE -->
-      <div id="emptyState" class="hidden py-16 text-center space-y-4">
-        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
-          <i data-lucide="file-x-2" class="w-8 h-8"></i>
-        </div>
-        <h3 id="emptyStateTitle" class="text-lg font-semibold text-slate-300">No se encontraron guiones</h3>
-        <p id="emptyStateText" class="text-sm text-slate-500 max-w-md mx-auto">No hay guiones registrados con los filtros seleccionados. Crea uno nuevo o limpia la búsqueda.</p>
-        <div class="flex items-center justify-center gap-3">
-          <button onclick="filterByStatusFromCard('ALL')" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-4 py-2 rounded-lg text-sm border border-slate-700 transition">
-            <i data-lucide="layers" class="w-4 h-4"></i> Mostrar Todos los Guiones
-          </button>
-          <button onclick="openNewScriptModal()" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
-            <i data-lucide="plus" class="w-4 h-4"></i> Crear Guión
-          </button>
-        </div>
-      </div>
-
-    
-      <!-- VIEW 5: HERRAMIENTAS DE IA / BLEX AI STUDIO -->
-      <section id="viewAiStudio" class="hidden space-y-5">
-        
-        <!-- Header Hub Card -->
-        <div class="bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/30 rounded-2xl p-5 shadow-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 relative overflow-hidden">
-          <div class="space-y-1 relative z-10">
-            <div class="flex items-center gap-2.5">
-              <span class="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-950/50">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
-              </span>
-              <div>
-                <h2 class="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <span>BLEX AI STUDIO</span>
-                </h2>
-                <p class="text-xs text-slate-300">Generador de ganchos virales, estructurador de reels, auditor de retención y optimizador de teleprónter.</p>
-              </div>
+      
             </div>
           </div>
 
@@ -2711,6 +2694,6 @@
   <div id="dedicatedPrintArea"></div>
 
   <script src="ai-hooks-data.js?v=2.0"></script>
-  <script src="app.js?v=12.0&t=1789420000"></script>
+  <script src="app.js?v=13.0&t=1789430000"></script>
 </body>
 </html>
