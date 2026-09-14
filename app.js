@@ -7876,141 +7876,190 @@ function getFallbackAudit(scriptText) {
 
 
 // =============================================================================
-// TRANSCRIPTOR DE AUDIO EN VIVO (SPEECH RECOGNITION API)
 // =============================================================================
+// TRANSCRIPTOR DE AUDIO EN VIVO (PERFECCIONADO PARA IPAD / IPHONE / SAFARI / CHROME)
 // =============================================================================
-// TRANSCRIPTOR DE AUDIO EN VIVO (COMPATIBLE CON IPAD / IPHONE / SAFARI / CHROME)
-// =============================================================================
-let speechRecognition = null;
-let isListeningAudio = false;
-let shouldRestartAudio = false;
+let liveSpeechRecognition = null;
+let isListeningLiveAudio = false;
+let autoRestartLiveAudio = false;
+let liveAudioTimerInterval = null;
+let liveAudioSeconds = 0;
 
-async function toggleAudioTranscription() {
+function toggleAudioTranscription() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const topicTextarea = document.getElementById('aiWizardInputTopic');
 
+  // If already listening, stop it
+  if (isListeningLiveAudio) {
+    stopLiveAudioTranscription(true);
+    return;
+  }
+
+  // Check support
   if (!SpeechRecognition) {
-    showToast('💡 Tu navegador no tiene reconocimiento de voz automático activado. Puedes tocar el cajón de texto y usar el micrófono del teclado de tu iPad/celular.', 'warning');
-    if (topicTextarea) topicTextarea.focus();
-    return;
-  }
-
-  if (isListeningAudio) {
-    shouldRestartAudio = false;
-    isListeningAudio = false;
-    if (speechRecognition) {
-      try {
-        speechRecognition.stop();
-      } catch (e) {}
+    showToast('🎙️ Dictado: Toca el micrófono del teclado de tu iPad/celular para dictar directamente.', 'info');
+    if (topicTextarea) {
+      topicTextarea.focus();
+      topicTextarea.placeholder = '🎙️ Toca el micrófono de tu teclado para dictar el audio o la idea...';
     }
-    updateAudioListeningUI(false);
-    showToast('⏹️ Grabación finalizada. Revisa el texto transcrito.', 'success');
     return;
-  }
-
-  // Request microphone permission explicitly for iOS Safari
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (permErr) {
-      console.warn('Microphone permission prompt:', permErr);
-    }
   }
 
   try {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    
-    speechRecognition = new SpeechRecognition();
-    // iOS Safari works best with continuous = false and restarting on onend
-    speechRecognition.continuous = !isIOS;
-    speechRecognition.interimResults = true;
-    speechRecognition.lang = 'es-ES';
-    shouldRestartAudio = true;
-
-    speechRecognition.onstart = () => {
-      isListeningAudio = true;
-      updateAudioListeningUI(true);
-      showToast('🎙️ Escuchando audio... Habla o reproduce el video cerca del micrófono.', 'info');
-    };
-
-    speechRecognition.onresult = (event) => {
-      let fullText = '';
-      for (let i = 0; i < event.results.length; i++) {
-        fullText += event.results[i][0].transcript + ' ';
-      }
-
-      if (topicTextarea && fullText.trim()) {
-        const existing = topicTextarea.getAttribute('data-pre-speech') || '';
-        topicTextarea.value = (existing ? existing + ' ' : '') + fullText.trim();
-      }
-    };
-
-    speechRecognition.onerror = (event) => {
-      console.warn('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        showToast('Permiso de micrófono denegado. Permite el acceso al micrófono en los ajustes de Safari.', 'error');
-        shouldRestartAudio = false;
-        isListeningAudio = false;
-        updateAudioListeningUI(false);
-      } else if (event.error === 'no-speech') {
-        // Just silent, don't stop if we should keep listening
-      }
-    };
-
-    speechRecognition.onend = () => {
-      if (shouldRestartAudio && isListeningAudio) {
-        try {
-          speechRecognition.start();
-        } catch (e) {
-          isListeningAudio = false;
-          updateAudioListeningUI(false);
-        }
-      } else {
-        isListeningAudio = false;
-        updateAudioListeningUI(false);
-      }
-    };
-
-    if (topicTextarea) {
-      topicTextarea.setAttribute('data-pre-speech', topicTextarea.value.trim());
+    // Reset previous instance
+    if (liveSpeechRecognition) {
+      try { liveSpeechRecognition.abort(); } catch (e) {}
+      liveSpeechRecognition = null;
     }
 
-    speechRecognition.start();
-    isListeningAudio = true;
-    updateAudioListeningUI(true);
+    liveSpeechRecognition = new SpeechRecognition();
+    liveSpeechRecognition.continuous = true;
+    liveSpeechRecognition.interimResults = true;
+    liveSpeechRecognition.lang = 'es-ES';
+    liveSpeechRecognition.maxAlternatives = 1;
+
+    autoRestartLiveAudio = true;
+    isListeningLiveAudio = true;
+
+    if (topicTextarea) {
+      topicTextarea.setAttribute('data-initial-speech', topicTextarea.value.trim());
+    }
+
+    liveSpeechRecognition.onstart = function() {
+      isListeningLiveAudio = true;
+      updateLiveAudioUI(true);
+      startLiveAudioTimer();
+      showToast('🎙️ Escuchando... Reproduce el reel o habla cerca del micrófono.', 'info');
+    };
+
+    liveSpeechRecognition.onresult = function(event) {
+      var finalTranscript = '';
+      var interimTranscript = '';
+
+      for (var i = 0; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + ' ';
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      if (topicTextarea) {
+        var baseText = topicTextarea.getAttribute('data-initial-speech') || '';
+        var currentSpeech = (finalTranscript + interimTranscript).trim();
+        if (currentSpeech) {
+          topicTextarea.value = (baseText ? baseText + ' ' : '') + currentSpeech;
+        }
+      }
+    };
+
+    liveSpeechRecognition.onerror = function(event) {
+      console.warn('Live speech recognition event error:', event.error);
+      if (event.error === 'not-allowed') {
+        showToast('⚠️ Permiso de micrófono denegado. Permite el micrófono en los ajustes de Safari.', 'error');
+        stopLiveAudioTranscription(false);
+      } else if (event.error === 'network') {
+        showToast('⚠️ Error de red en el reconocimiento de voz de Apple.', 'warning');
+      }
+    };
+
+    liveSpeechRecognition.onend = function() {
+      if (autoRestartLiveAudio && isListeningLiveAudio) {
+        // Auto-restart for continuous audio capture on iOS Safari
+        try {
+          if (liveSpeechRecognition) liveSpeechRecognition.start();
+        } catch (e) {
+          setTimeout(function() {
+            if (autoRestartLiveAudio && isListeningLiveAudio) {
+              try { if (liveSpeechRecognition) liveSpeechRecognition.start(); } catch (err) {}
+            }
+          }, 300);
+        }
+      } else {
+        stopLiveAudioUI();
+      }
+    };
+
+    liveSpeechRecognition.start();
+    updateLiveAudioUI(true);
   } catch (err) {
-    console.error('Speech recognition start error:', err);
-    isListeningAudio = false;
-    updateAudioListeningUI(false);
-    showToast('Micrófono activado. También puedes usar el botón de dictado del teclado de tu iPad.', 'info');
-    if (topicTextarea) topicTextarea.focus();
+    console.warn('SpeechRecognition start error:', err);
+    // Fallback: trigger textarea focus for iOS native dictation
+    isListeningLiveAudio = false;
+    updateLiveAudioUI(false);
+    if (topicTextarea) {
+      topicTextarea.focus();
+      showToast('🎙️ Toca el micrófono en el teclado de tu iPad para dictar.', 'info');
+    }
   }
 }
 
-function updateAudioListeningUI(active) {
+function stopLiveAudioTranscription(notifyUser) {
+  autoRestartLiveAudio = false;
+  isListeningLiveAudio = false;
+  clearInterval(liveAudioTimerInterval);
+
+  if (liveSpeechRecognition) {
+    try {
+      liveSpeechRecognition.stop();
+    } catch (e) {}
+  }
+
+  stopLiveAudioUI();
+  if (notifyUser) {
+    showToast('⏹️ Grabación finalizada. Revisa el texto y pulsa "Crear con IA".', 'success');
+  }
+}
+
+function startLiveAudioTimer() {
+  clearInterval(liveAudioTimerInterval);
+  liveAudioSeconds = 0;
+  const timerElem = document.getElementById('aiAudioTimerDisplay');
+  if (timerElem) timerElem.textContent = '00:00';
+
+  liveAudioTimerInterval = setInterval(function() {
+    liveAudioSeconds++;
+    var mins = Math.floor(liveAudioSeconds / 60);
+    var secs = liveAudioSeconds % 60;
+    var str = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    if (timerElem) timerElem.textContent = str;
+  }, 1000);
+}
+
+function updateLiveAudioUI(active) {
   const btn = document.getElementById('btnToggleLiveAudio');
   const statusBox = document.getElementById('aiAudioStatusBox');
   const btnText = document.getElementById('btnToggleLiveAudioText');
-  const pulseDot = document.getElementById('aiAudioPulseDot');
 
   if (active) {
-    if (btn) btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer animate-pulse';
-    if (btnText) btnText.innerText = '⏹️ Detener Escucha';
+    if (btn) {
+      btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer animate-pulse';
+    }
+    if (btnText) btnText.innerHTML = '⏹️ Detener Escucha (<span id="aiAudioTimerDisplay">00:00</span>)';
     if (statusBox) statusBox.classList.remove('hidden');
-    if (pulseDot) pulseDot.className = 'w-3 h-3 rounded-full bg-rose-500 animate-ping';
   } else {
-    if (btn) btn.className = 'w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-600 hover:from-purple-500 hover:to-sky-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer';
-    if (btnText) btnText.innerText = '🎙️ Escuchar Reel / Audio en Vivo';
-    if (statusBox) statusBox.classList.add('hidden');
-    if (pulseDot) pulseDot.className = 'w-3 h-3 rounded-full bg-purple-400';
+    stopLiveAudioUI();
   }
+}
+
+function stopLiveAudioUI() {
+  clearInterval(liveAudioTimerInterval);
+  const btn = document.getElementById('btnToggleLiveAudio');
+  const statusBox = document.getElementById('aiAudioStatusBox');
+  const btnText = document.getElementById('btnToggleLiveAudioText');
+
+  if (btn) {
+    btn.className = 'w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-600 hover:from-purple-500 hover:to-sky-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer';
+  }
+  if (btnText) btnText.innerHTML = '🎙️ Escuchar Reel / Audio en Vivo';
+  if (statusBox) statusBox.classList.add('hidden');
 }
 
 function clearTranscribedAudio() {
   const topicTextarea = document.getElementById('aiWizardInputTopic');
   if (topicTextarea) {
     topicTextarea.value = '';
-    topicTextarea.removeAttribute('data-pre-speech');
+    topicTextarea.removeAttribute('data-initial-speech');
     topicTextarea.focus();
   }
   showToast('Cajón de transcripción vaciado.', 'info');

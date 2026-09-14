@@ -47,7 +47,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=5.7&t=1789410119567">
+  <link rel="stylesheet" href="styles.css?v=5.8&t=1789410473782">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2561,8 +2561,8 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=3.2&t=1789410119567"></script>
-  <script src="app.js?v=29.0&t=1789410119567"></script>
+  <script src="ai-hooks-data.js?v=3.3&t=1789410473782"></script>
+  <script src="app.js?v=30.0&t=1789410473782"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)
@@ -2699,6 +2699,34 @@
           if (typeof lucide !== 'undefined') lucide.createIcons();
         }
       }
+    };
+
+    
+    window.toggleAudioTranscription = function() {
+      if (typeof toggleAudioTranscription === 'function' && toggleAudioTranscription !== window.toggleAudioTranscription) {
+        return toggleAudioTranscription();
+      }
+      var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      var topicTextarea = document.getElementById('aiWizardInputTopic');
+      if (!SpeechRec) {
+        if (typeof showToast === 'function') {
+          showToast('🎙️ Toca el micrófono del teclado de tu iPad/celular para dictar.', 'info');
+        } else {
+          alert('Toca el micrófono en el teclado de tu dispositivo para dictar.');
+        }
+        if (topicTextarea) topicTextarea.focus();
+        return;
+      }
+      // If full app.js is loaded, it will handle it via its enriched engine
+    };
+
+    window.clearTranscribedAudio = function() {
+      var topicTextarea = document.getElementById('aiWizardInputTopic');
+      if (topicTextarea) {
+        topicTextarea.value = '';
+        topicTextarea.focus();
+      }
+      if (typeof showToast === 'function') showToast('Cajón de transcripción vaciado.', 'info');
     };
 
     window.saveAiServerConfig = function() {
