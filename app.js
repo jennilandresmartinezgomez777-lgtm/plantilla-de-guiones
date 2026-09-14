@@ -7152,37 +7152,59 @@ async function runAiAuditViral() {
   }
 
   if (container) {
-    container.innerHTML = '<div class="p-10 text-center text-slate-400 space-y-4 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-base font-bold text-white">Auditando retención y potencial viral con IA...</p><p class="text-xs text-slate-400">Analizando el gancho de 0-3s, claridad (Test del Niño de 5 Años), ritmo y fuerza del llamado a la acción.</p></div>';
+    container.innerHTML = '<div class="p-10 text-center text-slate-400 space-y-4 bg-slate-950/60 rounded-2xl border border-slate-800">' +
+      '<div class="inline-block animate-spin w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full"></div>' +
+      '<p class="text-base font-bold text-white">Auditando potencial viral con IA...</p>' +
+      '<p class="text-xs text-slate-400">Evaluando los 6 Criterios de Viralidad (10.0 pts máx), formato de retención (+4.5 pts) y tiempos de retención (0-3s, 3-30s, 30-40s, 40-50s).</p>' +
+    '</div>';
   }
 
   const prompt = [
     'Actúa como el auditor de viralidad y director de retención #1 en Instagram Reels y TikTok.',
     '',
-    'GUIÓN A AUDITAR:',
+    'GUIÓN O IDEA A AUDITAR:',
     scriptText,
     '',
-    'OBJETIVO DE LA AUDITORÍA:',
-    'Evalúa este guión de forma estricta y profesional según los estándares de retención de 2026.',
+    'OBJETIVO:',
+    'Audita este guión evaluando minuciosamente los 6 CRITERIOS DE VIRALIDAD y recomendando el FORMATO DE PRODUCCIÓN más efectivo.',
     '',
-    'Debes evaluar:',
-    '1. "score": Un número entero del 1 al 100 con la puntuación viral global.',
-    '2. "fiveYearOldTest": Evaluación del "Test del Niño de 5 Años" (¿El lenguaje es simple, visual, directo y fácil de entender por cualquiera sin tecnicismos aburridos?).',
-    '3. "hookAnalysis": Diagnóstico del Gancho (0-3s) - ¿Detiene el scroll o genera fricción?',
-    '4. "storyAnalysis": Diagnóstico de la Historia (3-30s) - ¿Mantiene el ritmo o hay caídas de atención?',
-    '5. "moralAnalysis": Diagnóstico de la Moraleja (30-40s) - ¿El valor es memorable y dan ganas de guardar el video?',
-    '6. "ctaAnalysis": Diagnóstico del CTA (40-50s) - ¿Es claro y fácil de responder?',
-    '7. "verdict": Veredicto (ej: "🟢 APROBADO: Listo para Grabación" o "🟡 AJUSTES SUGERIDOS")',
-    '8. "optimizedVersion": El guión completo pulido y optimizado con cualquier mejora aplicada.',
+    'CRITERIOS DE VIRALIDAD (Evalúa cada uno como true o false con criterio profesional):',
+    '1. "nino": (¿Entiende niño de 5 años? +2.5 pts) - Lenguaje ultra claro, directo, sin tecnicismos que confundan.',
+    '2. "cincuenta": (¿Interesa a 50 de 100 personas? +2.5 pts) - Tema masivo, amplio y de interés universal.',
+    '3. "refViral": (¿Tiene referencia viral previa o patrón validado? +2.0 pts) - Concepto/gancho probado.',
+    '4. "tendencia": (¿Conecta con tendencia actual, coyuntura o fecha? +1.5 pts) - Relevancia temporal.',
+    '5. "controversia": (¿Genera debate o posturas divididas sanas? +1.0 pts) - Incita a comentar.',
+    '6. "mercadoViral": (¿Mercado viral/consumo masivo en Reels/Shorts? +0.5 pts) - Alto volumen de consumo.',
     '',
-    'Responde ÚNICAMENTE con un objeto JSON válido con este formato exacto:',
+    'FORMATO DE PRODUCCIÓN RECOMENDADO:',
+    'Elige exactamente uno de estos valores:',
+    '"Formato POV" (+4.5 pts), "Formato Vlog" (+4.0 pts), "Formato Dinámico" (+3.5 pts), "Formato prima pregunta" (+3.5 pts), "Formato entrevista" (+3.0 pts), "Formato mirando a la nada" (+2.5 pts), "Formato pantalla dividida" (+2.5 pts), "Formato pantalla verde" (+2.0 pts), "Formato selfie" (+1.5 pts), "Hablando a cámara" (+1.0 pts).',
+    '',
+    'DIAGNÓSTICO DETALLADO:',
+    '- "fiveYearOldTest": Análisis de simplicidad y claridad (Test del Niño de 5 Años).',
+    '- "hookAnalysis": Diagnóstico del Gancho (0-3s) - ¿Detiene el scroll o genera fricción?',
+    '- "storyAnalysis": Diagnóstico de la Historia (3-30s) - ¿Mantiene el ritmo o hay caídas de atención?',
+    '- "moralAnalysis": Diagnóstico de la Moraleja (30-40s) - ¿El valor es memorable y dan ganas de guardarlo?',
+    '- "ctaAnalysis": Diagnóstico del CTA (40-50s) - ¿Es claro y fácil de responder?',
+    '- "suggestions": Lista de 2-3 sugerencias concretas de optimización.',
+    '- "optimizedVersion": El guión completo pulido y estructurado en los 4 pasos.',
+    '',
+    'Responde ÚNICAMENTE con un objeto JSON válido con esta estructura exacta:',
     '{',
-    '  "score": 92,',
-    '  "verdict": "🟢 APROBADO PARA GRABACIÓN",',
-    '  "fiveYearOldTest": "Excelente. Lenguaje ultra claro, directo y con metáforas cotidianas que cualquier persona comprende al instante.",',
-    '  "hookAnalysis": "El gancho crea una brecha de curiosidad instantánea y se habla en menos de 3 segundos.",',
-    '  "storyAnalysis": "Estructura ágil en 4 puntos sin relleno que mantiene la retención alta.",',
-    '  "moralAnalysis": "Frase memorable con alto potencial de guardados y compartidos.",',
-    '  "ctaAnalysis": "Llamada a la acción con palabra clave directa y baja fricción.",',
+    '  "criteria": {',
+    '    "nino": true,',
+    '    "cincuenta": true,',
+    '    "refViral": true,',
+    '    "tendencia": true,',
+    '    "controversia": false,',
+    '    "mercadoViral": true',
+    '  },',
+    '  "recommendedFormat": "Formato POV",',
+    '  "fiveYearOldTest": "Lenguaje ultra claro, directo y con conceptos cotidianos que cualquier persona comprende al instante.",',
+    '  "hookAnalysis": "El gancho crea una brecha de curiosidad instantánea en los primeros 3 segundos.",',
+    '  "storyAnalysis": "Estructura ágil en 4 puntos sin relleno que mantiene la retención alta del segundo 3 al 30.",',
+    '  "moralAnalysis": "Aporta un insight valioso y memorable que motiva al espectador a guardar el video.",',
+    '  "ctaAnalysis": "Llamada a la acción con palabra clave directa y baja fricción para disparar comentarios.",',
     '  "suggestions": ["Mantener tono seguro y pausado al inicio.", "Hacer un corte visual en cada punto de la historia."],',
     '  "optimizedVersion": "' + scriptText.replace(/\n/g, '\\n').replace(/"/g, '\\"') + '"',
     '}'
@@ -7196,7 +7218,7 @@ async function runAiAuditViral() {
       if (match) parsed = JSON.parse(match[0]);
     } catch (e) {}
 
-    if (parsed && typeof parsed.score !== 'undefined') {
+    if (parsed && (parsed.criteria || parsed.score)) {
       renderAiAuditResults(parsed, scriptText);
     } else {
       renderAiAuditResults(getFallbackAudit(scriptText), scriptText);
@@ -7211,24 +7233,37 @@ function renderAiAuditResults(data, originalScript) {
   const container = document.getElementById('aiAuditResultsContainer');
   if (!container) return;
 
-  const score = data.score || 88;
-  const isApproved = score >= 80;
-  const scoreColor = score >= 85 ? 'text-emerald-400' : (score >= 70 ? 'text-amber-400' : 'text-rose-400');
-  const barColor = score >= 85 ? 'bg-emerald-500' : (score >= 70 ? 'bg-amber-500' : 'bg-rose-500');
+  // Criteria defaults from AI
+  const crit = data.criteria || {
+    nino: true,
+    cincuenta: true,
+    refViral: true,
+    tendencia: true,
+    controversia: false,
+    mercadoViral: true
+  };
+
+  const recommendedFmt = data.recommendedFormat || 'Formato POV';
 
   let html = '<div class="space-y-4">';
 
-  // 1. Score & Verdict Header Banner
-  html += '<div class="bg-gradient-to-r from-slate-950 to-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">' +
+  // 1. Live Score & Verdict Header Banner
+  html += '<div id="aiAuditHeaderCard" class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">' +
     '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">' +
-      '<div class="flex items-center gap-3">' +
-        '<div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center shadow-inner">' +
-          '<span class="text-2xl font-black ' + scoreColor + '">' + score + '</span>' +
-          '<span class="text-[9px] text-slate-500 uppercase font-bold">PUNTOS</span>' +
+      '<div class="flex items-center gap-3.5">' +
+        '<div class="w-16 h-16 rounded-2xl bg-slate-950 border border-amber-500/30 flex flex-col items-center justify-center shadow-inner shrink-0">' +
+          '<div class="flex items-baseline gap-0.5">' +
+            '<span id="aiAuditTotalScoreDisplay" class="text-2xl font-black text-amber-400">11.5</span>' +
+            '<span class="text-xs text-slate-400 font-bold">/14.5</span>' +
+          '</div>' +
+          '<span class="text-[9px] text-amber-400/80 uppercase font-bold tracking-wider">PUNTOS</span>' +
         '</div>' +
         '<div>' +
-          '<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Veredicto de Producción</span>' +
-          '<h4 class="text-base font-black text-white flex items-center gap-2">' + (data.verdict || (isApproved ? '🟢 APROBADO: Listo para Grabar' : '🟡 AJUSTES SUGERIDOS')) + '</h4>' +
+          '<div class="flex items-center gap-2 mb-0.5">' +
+            '<span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Modelo 14.5 Puntos</span>' +
+            '<span id="aiAuditPercentBadge" class="text-xs font-black text-white bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">79%</span>' +
+          '</div>' +
+          '<h4 id="aiAuditVerdictTitle" class="text-base font-black text-white flex items-center gap-2">🟢 Potencial Muy Alto / Viral</h4>' +
         '</div>' +
       '</div>' +
       '<div class="flex items-center gap-2 flex-wrap">' +
@@ -7240,26 +7275,161 @@ function renderAiAuditResults(data, originalScript) {
           '<i data-lucide="tv" class="w-3.5 h-3.5"></i>' +
           '<span>📺 Teleprónter</span>' +
         '</button>' +
-        '<button type="button" onclick="switchAiTab(\'wizard\')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">' +
-          '<i data-lucide="edit-3" class="w-3.5 h-3.5"></i>' +
-          '<span>Volver al Creador</span>' +
+        '<button type="button" onclick="sendAuditToViralCalc()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-amber-950/40 cursor-pointer" title="Cargar esta evaluación en la Calculadora de Viralidad completa">' +
+          '<i data-lucide="calculator" class="w-3.5 h-3.5"></i>' +
+          '<span>Calculadora</span>' +
         '</button>' +
       '</div>' +
     '</div>' +
 
-    '<!-- Progress Bar -->' +
-    '<div class="space-y-1">' +
-      '<div class="flex justify-between text-[11px] text-slate-400 font-bold">' +
-        '<span>Potencial Viral Estimado</span>' +
-        '<span class="' + scoreColor + '">' + score + '%</span>' +
+    '<!-- Breakdown Pills & Progress Bar -->' +
+    '<div class="space-y-2 pt-1 border-t border-slate-800/80">' +
+      '<div class="flex flex-wrap items-center justify-between text-xs font-semibold gap-2">' +
+        '<div class="flex items-center gap-3">' +
+          '<span class="text-slate-400">🎯 Criterios: <strong id="aiAuditCriteriaScore" class="text-amber-300 font-bold">7.0 / 10.0 pts</strong></span>' +
+          '<span class="text-slate-400">📹 Formato: <strong id="aiAuditFormatScore" class="text-emerald-300 font-bold">4.5 / 4.5 pts</strong></span>' +
+        '</div>' +
+        '<span id="aiAuditVerdictDesc" class="text-[11px] text-slate-400">Modifica las casillas abajo para recalcular en tiempo real.</span>' +
       '</div>' +
       '<div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">' +
-        '<div class="' + barColor + ' h-2.5 rounded-full transition-all duration-700" style="width: ' + score + '%"></div>' +
+        '<div id="aiAuditProgressBar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-500" style="width: 79%"></div>' +
       '</div>' +
     '</div>' +
   '</div>';
 
-  // 2. Test del Niño de 5 Años (Claridad)
+  // 2. Interactive Viral Criteria Checklist (Auto-filled by AI & User-editable)
+  html += '<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3">' +
+    '<div class="flex items-center justify-between border-b border-slate-800 pb-2">' +
+      '<div>' +
+        '<h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">' +
+          '<span>🎯</span> 1. Criterios de Viralidad Evaluados por la IA' +
+        '</h4>' +
+        '<p class="text-[11px] text-slate-400 mt-0.5">La IA los autorrellenó según el guión. Puedes marcar o desmarcar cualquier casilla y la puntuación se recalcula automáticamente.</p>' +
+      '</div>' +
+      '<span class="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">Máx 10.0 pts</span>' +
+    '</div>' +
+
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">' +
+
+      '<!-- 1. Niño de 5 años (+2.5 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCritNino" onchange="recalculateAiAuditScore()" ' + (crit.nino ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Entiende niño de 5 años?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+2.5 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Claridad extrema, mensaje intuitivo, cero tecnicismos confusos.</p>' +
+        '</div>' +
+      '</label>' +
+
+      '<!-- 2. 50 de 100 (+2.5 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCrit50de100" onchange="recalculateAiAuditScore()" ' + (crit.cincuenta ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Interesa a 50 de 100?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+2.5 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Mercado amplio, masivo y de interés universal.</p>' +
+        '</div>' +
+      '</label>' +
+
+      '<!-- 3. Referencia viral previa (+2.0 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCritRefViral" onchange="recalculateAiAuditScore()" ' + (crit.refViral ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Referencia viral previa?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+2.0 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Gancho/concepto validado previamente con millones de views.</p>' +
+        '</div>' +
+      '</label>' +
+
+      '<!-- 4. Tendencia o coyuntura (+1.5 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCritTendencia" onchange="recalculateAiAuditScore()" ' + (crit.tendencia ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Tendencia o coyuntura?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+1.5 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Fechas específicas, noticias o audios y formatos en auge.</p>' +
+        '</div>' +
+      '</label>' +
+
+      '<!-- 5. Controversia o debate (+1.0 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCritControversia" onchange="recalculateAiAuditScore()" ' + (crit.controversia ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Controversia o debate?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+1.0 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Polariza posturas sanas e incita a comentar y debatir.</p>' +
+        '</div>' +
+      '</label>' +
+
+      '<!-- 6. Mercado viral / consumo (+0.5 pts) -->' +
+      '<label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition select-none group">' +
+        '<input type="checkbox" id="auditCritMercadoViral" onchange="recalculateAiAuditScore()" ' + (crit.mercadoViral ? 'checked' : '') + ' class="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 cursor-pointer">' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="flex items-center justify-between gap-1">' +
+            '<span class="text-xs font-bold text-white group-hover:text-amber-300 transition">¿Mercado viral/consumo?</span>' +
+            '<span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full shrink-0">+0.5 pts</span>' +
+          '</div>' +
+          '<p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Alto volumen de consumo habitual en Reels/TikTok/Shorts.</p>' +
+        '</div>' +
+      '</label>' +
+
+    '</div>' +
+  '</div>';
+
+  // 3. Recommended Production Format (Interactive dropdown/selector)
+  html += '<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-3">' +
+    '<div class="flex items-center justify-between border-b border-slate-800 pb-2">' +
+      '<div>' +
+        '<h4 class="text-xs font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">' +
+          '<span>📹</span> 2. Formato de Producción Recomendado' +
+        '</h4>' +
+        '<p class="text-[11px] text-slate-400 mt-0.5">El formato determina el multiplicador de retención y la inmersión del video.</p>' +
+      '</div>' +
+      '<span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">Hasta +4.5 pts</span>' +
+    '</div>' +
+
+    '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">' +
+      '<div>' +
+        '<label class="block text-xs font-semibold text-slate-300 mb-1">Formato de Grabación Elegido:</label>' +
+        '<select id="aiAuditFormatSelect" onchange="recalculateAiAuditScore()" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white font-semibold outline-none cursor-pointer">' +
+          '<optgroup label="🎬 Grupo 1: Alta Retención e Inmersión Total (3.5 – 4.5 pts)">' +
+            '<option value="Formato POV"' + (recommendedFmt === 'Formato POV' ? ' selected' : '') + '>Formato POV (+4.5 pts) — Inmersión 1ª persona</option>' +
+            '<option value="Formato Vlog"' + (recommendedFmt === 'Formato Vlog' ? ' selected' : '') + '>Formato Vlog (+4.0 pts) — Cambios de plano constantes</option>' +
+            '<option value="Formato Dinámico"' + (recommendedFmt === 'Formato Dinámico' ? ' selected' : '') + '>Formato Dinámico (+3.5 pts) — Movimiento y b-rolls ágiles</option>' +
+          '</optgroup>' +
+          '<optgroup label="👥 Grupo 2: Curiosidad Social y Efecto Testigo (2.5 – 3.5 pts)">' +
+            '<option value="Formato prima pregunta"' + (recommendedFmt === 'Formato prima pregunta' ? ' selected' : '') + '>Formato Prima Pregunta (+3.5 pts) — Intriga segundo 0</option>' +
+            '<option value="Formato entrevista"' + (recommendedFmt === 'Formato entrevista' ? ' selected' : '') + '>Formato Entrevista (+3.0 pts) — Dinámica 2 personas</option>' +
+            '<option value="Formato mirando a la nada"' + (recommendedFmt === 'Formato mirando a la nada' ? ' selected' : '') + '>Formato Mirando a la Nada (+2.5 pts) — Voz en off reflexiva</option>' +
+          '</optgroup>' +
+          '<optgroup label="📺 Grupo 3: Demostración Visual (2.0 – 2.5 pts)">' +
+            '<option value="Formato pantalla dividida"' + (recommendedFmt === 'Formato pantalla dividida' ? ' selected' : '') + '>Pantalla Dividida (+2.5 pts) — Reacción o antes/después</option>' +
+            '<option value="Formato pantalla verde"' + (recommendedFmt === 'Formato pantalla verde' ? ' selected' : '') + '>Pantalla Verde (+2.0 pts) — Comentario sobre captura</option>' +
+          '</optgroup>' +
+          '<optgroup label="🗣️ Grupo 4: Exposición Frontal (1.0 – 1.5 pts)">' +
+            '<option value="Formato selfie"' + (recommendedFmt === 'Formato selfie' ? ' selected' : '') + '>Formato Selfie (+1.5 pts) — Casual y directo</option>' +
+            '<option value="Hablando a cámara"' + (recommendedFmt === 'Hablando a cámara' ? ' selected' : '') + '>Hablando a Cámara (+1.0 pts) — Talking head estático</option>' +
+          '</optgroup>' +
+        '</select>' +
+      '</div>' +
+      '<div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">' +
+        '<span class="text-[11px] font-bold text-slate-300">💡 Tip de Producción:</span>' +
+        '<p class="text-[11px] text-slate-400 leading-tight">Los formatos POV y Vlog suben la tasa de retención un +40% frente al plano fijo hablando a cámara.</p>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // 4. Test del Niño de 5 Años (Claridad)
   html += '<div class="bg-gradient-to-r from-amber-950/30 via-slate-950 to-slate-900 border border-amber-500/30 rounded-2xl p-4.5 space-y-2">' +
     '<div class="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">' +
       '<span class="text-sm">👶</span>' +
@@ -7268,7 +7438,7 @@ function renderAiAuditResults(data, originalScript) {
     '<p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">' + (data.fiveYearOldTest || 'El guión utiliza lenguaje directo y comprensible sin tecnicismos que confundan al espectador.') + '</p>' +
   '</div>';
 
-  // 3. Auditoría por Etapas de Tiempo (4 Cajas)
+  // 5. Auditoría por Etapas de Tiempo (4 Cajas)
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">' +
     '<!-- Gancho -->' +
     '<div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">' +
@@ -7303,7 +7473,7 @@ function renderAiAuditResults(data, originalScript) {
     '</div>' +
   '</div>';
 
-  // 4. Guión Pulido / Optimizado
+  // 6. Guión Pulido / Optimizado
   const optScript = data.optimizedVersion || originalScript;
   html += '<div class="bg-slate-950 border border-emerald-500/30 rounded-2xl p-4.5 space-y-2">' +
     '<div class="flex items-center justify-between">' +
@@ -7322,6 +7492,103 @@ function renderAiAuditResults(data, originalScript) {
 
   container.innerHTML = html;
   if (window.lucide) lucide.createIcons();
+
+  // Run initial calculation to update live score badges and verdict
+  recalculateAiAuditScore();
+}
+
+function recalculateAiAuditScore() {
+  const nino = document.getElementById('auditCritNino')?.checked || false;
+  const cincuenta = document.getElementById('auditCrit50de100')?.checked || false;
+  const refViral = document.getElementById('auditCritRefViral')?.checked || false;
+  const tendencia = document.getElementById('auditCritTendencia')?.checked || false;
+  const controversia = document.getElementById('auditCritControversia')?.checked || false;
+  const mercadoViral = document.getElementById('auditCritMercadoViral')?.checked || false;
+
+  let criteriaScore = 0;
+  if (nino) criteriaScore += 2.5;
+  if (cincuenta) criteriaScore += 2.5;
+  if (refViral) criteriaScore += 2.0;
+  if (tendencia) criteriaScore += 1.5;
+  if (controversia) criteriaScore += 1.0;
+  if (mercadoViral) criteriaScore += 0.5;
+
+  const formatSelect = document.getElementById('aiAuditFormatSelect');
+  const formatVal = formatSelect ? formatSelect.value : 'Formato POV';
+  const formatScore = typeof getPointsForFormat === 'function' ? getPointsForFormat(formatVal) : 4.5;
+
+  const totalScore = parseFloat((criteriaScore + formatScore).toFixed(1));
+  const percent = Math.min(100, Math.round((totalScore / 14.5) * 100));
+
+  const totalScoreDisplay = document.getElementById('aiAuditTotalScoreDisplay');
+  const percentBadge = document.getElementById('aiAuditPercentBadge');
+  const criteriaScoreDisplay = document.getElementById('aiAuditCriteriaScore');
+  const formatScoreDisplay = document.getElementById('aiAuditFormatScore');
+  const progressBar = document.getElementById('aiAuditProgressBar');
+  const verdictTitle = document.getElementById('aiAuditVerdictTitle');
+  const verdictDesc = document.getElementById('aiAuditVerdictDesc');
+
+  if (totalScoreDisplay) totalScoreDisplay.textContent = totalScore.toFixed(1);
+  if (percentBadge) percentBadge.textContent = percent + '%';
+  if (criteriaScoreDisplay) criteriaScoreDisplay.textContent = criteriaScore.toFixed(1) + ' / 10.0 pts';
+  if (formatScoreDisplay) formatScoreDisplay.textContent = formatScore.toFixed(1) + ' / 4.5 pts';
+  if (progressBar) progressBar.style.width = percent + '%';
+
+  if (verdictTitle) {
+    if (totalScore >= 10.0) {
+      verdictTitle.innerHTML = '<span class="text-emerald-400">🟢 Potencial Muy Alto / Viral</span>';
+      if (progressBar) progressBar.className = 'bg-emerald-500 h-2.5 rounded-full transition-all duration-500';
+      if (verdictDesc) verdictDesc.textContent = '¡Candidato óptimo a escalar y volverse viral! Alta inmersión y retención masiva.';
+    } else if (totalScore >= 7.0) {
+      verdictTitle.innerHTML = '<span class="text-amber-400">🟡 Potencial Medio (Nicho / Comunidad)</span>';
+      if (progressBar) progressBar.className = 'bg-amber-500 h-2.5 rounded-full transition-all duration-500';
+      if (verdictDesc) verdictDesc.textContent = 'Buen contenido para comunidad existente. Para viralidad fría, prueba formatos POV o más claridad.';
+    } else {
+      verdictTitle.innerHTML = '<span class="text-rose-400">🔴 Potencial Bajo (Ajustes Requeridos)</span>';
+      if (progressBar) progressBar.className = 'bg-rose-500 h-2.5 rounded-full transition-all duration-500';
+      if (verdictDesc) verdictDesc.textContent = 'Poco alcance orgánico predecible. Simplifica la idea al nivel de 5 años y aumenta el gancho.';
+    }
+  }
+}
+
+function sendAuditToViralCalc() {
+  const nino = document.getElementById('auditCritNino')?.checked || false;
+  const cincuenta = document.getElementById('auditCrit50de100')?.checked || false;
+  const refViral = document.getElementById('auditCritRefViral')?.checked || false;
+  const tendencia = document.getElementById('auditCritTendencia')?.checked || false;
+  const controversia = document.getElementById('auditCritControversia')?.checked || false;
+  const mercadoViral = document.getElementById('auditCritMercadoViral')?.checked || false;
+
+  const formatSelect = document.getElementById('aiAuditFormatSelect');
+  const formatVal = formatSelect ? formatSelect.value : 'Formato POV';
+
+  const optTextarea = document.getElementById('aiAuditedOptimizedText');
+  const rawText = optTextarea ? optTextarea.value.trim() : (document.getElementById('aiAuditInputText')?.value?.trim() || '');
+
+  // Fill in the main Viral Calculator elements
+  if (document.getElementById('viralCritNino')) document.getElementById('viralCritNino').checked = nino;
+  if (document.getElementById('viralCrit50de100')) document.getElementById('viralCrit50de100').checked = cincuenta;
+  if (document.getElementById('viralCritRefViral')) document.getElementById('viralCritRefViral').checked = refViral;
+  if (document.getElementById('viralCritTendencia')) document.getElementById('viralCritTendencia').checked = tendencia;
+  if (document.getElementById('viralCritControversia')) document.getElementById('viralCritControversia').checked = controversia;
+  if (document.getElementById('viralCritMercadoViral')) document.getElementById('viralCritMercadoViral').checked = mercadoViral;
+
+  const titleInput = document.getElementById('viralIdeaTitle');
+  if (titleInput && rawText) {
+    titleInput.value = rawText.slice(0, 80);
+  }
+
+  const targetRadio = document.querySelector(`input[name="viralFormatoRadio"][value="${formatVal}"]`);
+  if (targetRadio) {
+    targetRadio.checked = true;
+  }
+
+  if (typeof calculateViralScore === 'function') {
+    calculateViralScore();
+  }
+
+  switchView('viral_calc');
+  showToast('🏆 ¡Evaluación cargada en la Calculadora de Viralidad!', 'success');
 }
 
 function saveAuditedScriptToMatrix() {
@@ -7361,6 +7628,11 @@ function saveAuditedScriptToMatrix() {
     story = rawText;
   }
 
+  const formatSelect = document.getElementById('aiAuditFormatSelect');
+  const chosenFormat = formatSelect ? formatSelect.value : 'Reel / 4 Pasos';
+
+  const totalScore = document.getElementById('aiAuditTotalScoreDisplay')?.textContent || '11.5';
+
   const newScript = {
     id: 'scr_' + Date.now().toString(),
     number: nextNumber,
@@ -7368,8 +7640,8 @@ function saveAuditedScriptToMatrix() {
     client: clientName,
     actor: clientName,
     ideaGanadora: hook.slice(0, 40) + '...',
-    formato: 'Reel / 4 Pasos',
-    objetivo: 'Viralidad & Retención',
+    formato: chosenFormat,
+    objetivo: 'Viralidad (' + totalScore + ' / 14.5 pts)',
     tipoGancho: 'Auditado con IA',
     gancho: hook,
     historia: story,
@@ -7417,9 +7689,16 @@ function sendAuditedScriptToTeleprompter() {
 
 function getFallbackAudit(scriptText) {
   return {
-    score: 93,
-    verdict: "🟢 APROBADO: Listo para Grabación",
-    fiveYearOldTest: "Excelente. Lenguaje ultra claro, directo y con metáforas cotidianas que cualquier persona comprende al instante.",
+    criteria: {
+      nino: true,
+      cincuenta: true,
+      refViral: true,
+      tendencia: true,
+      controversia: false,
+      mercadoViral: true
+    },
+    recommendedFormat: "Formato POV",
+    fiveYearOldTest: "Excelente. Lenguaje ultra claro, directo y con conceptos cotidianos que cualquier persona comprende al instante sin tecnicismos.",
     hookAnalysis: "El gancho crea una brecha de curiosidad instantánea y se habla en menos de 3 segundos sin rodeos.",
     storyAnalysis: "Estructura ágil en 4 puntos sin relleno que mantiene la retención alta del segundo 3 al 30.",
     moralAnalysis: "Aporta un insight valioso y memorable que motiva al espectador a guardar el video.",
@@ -7431,6 +7710,8 @@ function getFallbackAudit(scriptText) {
     optimizedVersion: scriptText
   };
 }
+
+
 
 // =============================================================================
 // TRANSCRIPTOR DE AUDIO EN VIVO (SPEECH RECOGNITION API)
