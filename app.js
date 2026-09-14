@@ -1,5 +1,205 @@
 
 // =========================================================================
+// CATÁLOGO COMPLETO DE 64 GANCHOS VIRALES BLEX STUDIO
+// =========================================================================
+
+function getHooksData() {
+  if (typeof BLEX_VIRAL_HOOKS_64 !== 'undefined' && Array.isArray(BLEX_VIRAL_HOOKS_64)) {
+    return BLEX_VIRAL_HOOKS_64;
+  }
+  return [];
+}
+
+function filterAiCatalog() {
+  const searchInput = document.getElementById('aiCatalogSearchInput');
+  const catFilter = document.getElementById('aiCatalogCategoryFilter');
+  
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const category = catFilter ? catFilter.value : 'ALL';
+
+  const allHooks = getHooksData();
+  
+  const filtered = allHooks.filter(hook => {
+    // Category match
+    let matchesCategory = true;
+    if (category !== 'ALL') {
+      const hookCat = (hook.category || '').toLowerCase();
+      const targetCat = category.toLowerCase();
+      matchesCategory = hookCat.includes(targetCat);
+    }
+
+    if (!matchesCategory) return false;
+
+    // Search query match
+    if (!query) return true;
+    const nameMatch = (hook.name || '').toLowerCase().includes(query);
+    const summaryMatch = (hook.summary || '').toLowerCase().includes(query);
+    const formulaMatch = (hook.formula || '').toLowerCase().includes(query);
+    const exampleMatch = (hook.example || '').toLowerCase().includes(query);
+    const catMatch = (hook.category || '').toLowerCase().includes(query);
+
+    return nameMatch || summaryMatch || formulaMatch || exampleMatch || catMatch;
+  });
+
+  renderAiCatalogGrid(filtered);
+}
+
+function renderAiCatalog() {
+  filterAiCatalog();
+}
+
+function renderAiCatalogGrid(hooks) {
+  const grid = document.getElementById('aiCatalogGrid');
+  if (!grid) return;
+
+  if (!hooks || hooks.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full py-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/40 p-6 space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mx-auto">
+          <i data-lucide="search-x" class="w-6 h-6"></i>
+        </div>
+        <h4 class="text-base font-bold text-white">No se encontraron ganchos</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">Intenta con otra palabra clave o selecciona 'Todas las Categorías'.</p>
+        <button onclick="resetAiCatalogFilters()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer">
+          Restablecer Filtros
+        </button>
+      </div>
+    `;
+    refreshLucideIcons();
+    return;
+  }
+
+  grid.innerHTML = hooks.map(hook => {
+    return `
+      <div class="bg-slate-950 border border-slate-800/90 hover:border-cyan-500/50 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 group shadow-lg hover:shadow-cyan-950/20 space-y-4">
+        
+        <!-- Top Meta: ID + Category + Copy -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-600/30 to-cyan-500/30 border border-cyan-400/40 text-cyan-300 font-mono font-extrabold text-xs flex items-center justify-center shadow-sm">
+                #${hook.id}
+              </span>
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800/90 text-purple-300 border border-purple-500/30">
+                ${hook.category}
+              </span>
+            </div>
+            <button onclick="copyHookComplete('${hook.id}', this)" title="Copiar gancho y fórmula" class="text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 p-1.5 rounded-lg border border-slate-800 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Name & Purpose -->
+          <div>
+            <h4 class="text-sm sm:text-base font-extrabold text-white group-hover:text-cyan-300 transition leading-snug">
+              ${hook.name}
+            </h4>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              ${hook.summary}
+            </p>
+          </div>
+        </div>
+
+        <!-- Formula & Example Boxes -->
+        <div class="space-y-2.5">
+          <!-- Formula -->
+          <div class="bg-purple-950/20 border border-purple-500/20 rounded-xl p-3">
+            <div class="flex items-center gap-1.5 mb-1 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+              <i data-lucide="code" class="w-3 h-3 text-purple-400"></i>
+              <span>Fórmula Psicológica:</span>
+            </div>
+            <p class="text-xs font-mono font-medium text-slate-200 leading-relaxed break-words select-all">
+              ${hook.formula}
+            </p>
+          </div>
+
+          <!-- Real Example -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+            <div class="flex items-center gap-1.5 mb-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+              <i data-lucide="sparkles" class="w-3 h-3 text-cyan-400"></i>
+              <span>Ejemplo Práctico:</span>
+            </div>
+            <p class="text-xs font-semibold text-cyan-200 italic leading-relaxed select-all">
+              "${hook.example}"
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+          <button onclick="createQuickIdeaFromHook('${hook.id}')" title="Crear nueva idea en tu tablero con este gancho" class="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-bold py-2 px-2.5 rounded-xl border border-amber-500/30 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+            <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Nueva Idea</span>
+          </button>
+
+          <button onclick="useCatalogHookInWizard('${hook.id}')" title="Cargar esta fórmula en el Creador de Reels IA" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-purple-950/50">
+            <i data-lucide="wand-2" class="w-3.5 h-3.5 text-cyan-200"></i>
+            <span>Usar con IA</span>
+          </button>
+        </div>
+
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+function resetAiCatalogFilters() {
+  const searchInput = document.getElementById('aiCatalogSearchInput');
+  const catFilter = document.getElementById('aiCatalogCategoryFilter');
+  if (searchInput) searchInput.value = '';
+  if (catFilter) catFilter.value = 'ALL';
+  filterAiCatalog();
+}
+
+function copyHookComplete(hookId, btnElement) {
+  const allHooks = getHooksData();
+  const hook = allHooks.find(h => String(h.id) === String(hookId));
+  if (!hook) return;
+
+  const textToCopy = `Gancho #${hook.id}: ${hook.name}\nCategoría: ${hook.category}\n\nFórmula:\n${hook.formula}\n\nEjemplo Real:\n"${hook.example}"\n\nExplicación:\n${hook.summary}`;
+  copyTextToClipboard(textToCopy, btnElement);
+}
+
+function createQuickIdeaFromHook(hookId) {
+  const allHooks = getHooksData();
+  const hook = allHooks.find(h => String(h.id) === String(hookId));
+  if (!hook) return;
+
+  openQuickIdeaModal();
+
+  const titleInput = document.getElementById('quickIdeaTitle');
+  const notesInput = document.getElementById('quickIdeaNotes');
+
+  if (titleInput) {
+    titleInput.value = `[${hook.name}] ${hook.example}`;
+  }
+  if (notesInput) {
+    notesInput.value = `Fórmula: ${hook.formula}\nCategoría: ${hook.category}\nObjetivo: ${hook.summary}`;
+  }
+
+  if (titleInput) titleInput.focus();
+}
+
+function useCatalogHookInWizard(hookId) {
+  const allHooks = getHooksData();
+  const hook = allHooks.find(h => String(h.id) === String(hookId));
+  if (!hook) return;
+
+  // Switch to wizard tab
+  switchAiTab('wizard');
+
+  // Pre-fill custom topic or hook template
+  const customTopicInput = document.getElementById('wizCustomTopicInput');
+  if (customTopicInput) {
+    customTopicInput.value = `Fórmula de Gancho: "${hook.formula}" aplicada a nuestro nicho`;
+    customTopicInput.focus();
+  }
+}
+
+
+// =========================================================================
 // UNIVERSAL ATTACHMENTS SUBSYSTEM (PDF, PHOTOS, DOCUMENTS)
 // =========================================================================
 
