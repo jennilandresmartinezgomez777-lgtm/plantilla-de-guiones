@@ -119,6 +119,66 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Sync Data endpoint (PC <-> iPad <-> iPhone)
+  if (req.url.startsWith('/api/sync')) {
+    const syncFilePath = path.join(__dirname, 'sync-data.json');
+
+    if (req.method === 'POST' || req.method === 'PUT') {
+      try {
+        let body = '';
+        body = await new Promise((resolve) => {
+          let chunks = [];
+          req.on('data', chunk => chunks.push(chunk));
+          req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        });
+
+        const parsed = JSON.parse(body || '{}');
+        if (parsed) {
+          parsed.updatedAt = new Date().toISOString();
+          fs.writeFileSync(syncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ 
+            success: true, 
+            message: 'Datos sincronizados y guardados en el PC', 
+            count: Array.isArray(parsed.scripts) ? parsed.scripts.length : 0,
+            updatedAt: parsed.updatedAt 
+          }));
+          return;
+        }
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Payload inválido' }));
+        return;
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+        return;
+      }
+    }
+
+    if (req.method === 'GET') {
+      try {
+        if (fs.existsSync(syncFilePath)) {
+          const raw = fs.readFileSync(syncFilePath, 'utf8');
+          res.writeHead(200, { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          });
+          res.end(raw);
+          return;
+        } else {
+          const empty = { clients: ['Jennil'], scripts: [], notes: { Jennil: [] }, viralEvaluations: [], updatedAt: new Date().toISOString() };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(empty));
+          return;
+        }
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+        return;
+      }
+    }
+  }
+
   // Link Metadata Extractor endpoint
   if (req.url.startsWith('/api/extract-link')) {
     let body = '';

@@ -2,11 +2,20 @@
   "clients": [
     "Jennil"
   ],
-  "scripts": [],
+  "scripts": [
+    {
+      "id": "test_1",
+      "number": 1,
+      "day": "Día 1",
+      "ideaGanadora": "Test Script",
+      "status": "Idea"
+    }
+  ],
   "notes": {
-    "Jennil": []
+    "Jennil": [
+      "Nota de prueba"
+    ]
   },
   "viralEvaluations": [],
-  "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-13T15:06:27.745Z"
+  "updatedAt": "2026-09-14T18:39:41.909Z"
 }
