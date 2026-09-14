@@ -6441,7 +6441,7 @@ function aiUpdateConnectionBadge(connected) {
   });
 
   if (textElem) {
-    textElem.textContent = connected ? `Qwen 2.5 Conectado (${aiState.model})` : 'IA Desconectada (Verificar Servidor)';
+    textElem.textContent = connected ? 'IA Conectada' : 'IA Desconectada (Verificar Servidor)';
     textElem.className = connected ? 'font-bold text-emerald-300' : 'font-bold text-rose-400';
   }
 }
@@ -6528,7 +6528,7 @@ function initAiStudio() {
 
 function populateAiClientDropdowns() {
   const clients = state.clients || ['Jennil'];
-  const selects = ['aiHookClientSelect', 'aiReelClientSelect', 'aiToneClientSelect', 'aiCloneClientSelect'];
+  const selects = ['wizClientSelect', 'aiToneClientSelect', 'aiCloneClientSelect'];
   
   selects.forEach(selId => {
     const sel = document.getElementById(selId);
@@ -6551,7 +6551,7 @@ function populateAiClientDropdowns() {
 
 function switchAiTab(tabName) {
   aiState.activeTab = tabName;
-  const tabs = ['hooks', 'reel', 'audit', 'tone', 'teleprompter', 'clone', 'catalog'];
+  const tabs = ['wizard', 'audit', 'tone', 'teleprompter', 'clone', 'catalog'];
   
   tabs.forEach(t => {
     const panel = document.getElementById('aiPanel' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -6865,271 +6865,459 @@ function copyCloneScript(index) {
 }
 
 // -------------------------------------------------------
-// 1. GENERADOR DE GANCHOS VIRALES (64 FÓRMULAS)
-// -------------------------------------------------------
-async function runAiGenerateHooks() {
-  const idea = document.getElementById('aiHookInputIdea')?.value?.trim();
-  const client = document.getElementById('aiHookClientSelect')?.value || 'Jennil';
-  const category = document.getElementById('aiHookCategorySelect')?.value || 'ALL';
-  const container = document.getElementById('aiGeneratedHooksContainer');
-  const btn = document.getElementById('btnAiGenerateHooks');
-  const timerBadge = document.getElementById('aiHooksTimerBadge');
 
-  if (!idea) {
-    alert('Por favor escribe una idea, tema o producto para generar los ganchos.');
-    return;
+// =========================================================================
+// CREADOR DE REEL EN 4 PASOS GUIADOS (WIZARD DE VIRALIDAD & NICHO)
+// =========================================================================
+
+let wizardState = {
+  step: 1,
+  idea: '',
+  refLink: '',
+  niche: 'MINDSET',
+  client: 'Jennil',
+  hookOptions: [],
+  selectedHook: '',
+  selectedHookFormula: '',
+  storyOptions: [],
+  selectedStory: '',
+  moralOptions: [],
+  selectedMoral: '',
+  ctaOptions: [],
+  selectedCTA: ''
+};
+
+function goToWizardStep(stepNum) {
+  wizardState.step = stepNum;
+
+  // Toggle containers
+  for (let i = 1; i <= 5; i++) {
+    const cont = document.getElementById(`wizStepContainer${i}`);
+    const btn = document.getElementById(`wizStepBtn${i}`);
+    
+    if (cont) {
+      if (i === stepNum) cont.classList.remove('hidden');
+      else cont.classList.add('hidden');
+    }
+
+    if (btn) {
+      if (i === stepNum) {
+        btn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition bg-purple-600 text-white shadow-md cursor-pointer whitespace-nowrap';
+      } else if (i < stepNum) {
+        btn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 cursor-pointer whitespace-nowrap';
+      } else {
+        btn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition text-slate-400 hover:text-white cursor-pointer whitespace-nowrap';
+      }
+    }
   }
 
-  // Filter 4 relevant hooks from the 64 database
-  let availableHooks = (typeof BLEX_VIRAL_HOOKS_64 !== 'undefined') ? BLEX_VIRAL_HOOKS_64 : [];
-  if (category !== 'ALL') {
-    const filtered = availableHooks.filter(h => h.category.toLowerCase().includes(category.toLowerCase()));
-    if (filtered.length >= 4) availableHooks = filtered;
-  }
+  // Update tracker box
+  updateWizardTracker();
+  if (window.lucide) window.lucide.createIcons();
+}
 
-  // Shuffle and pick 4
-  const shuffled = [...availableHooks].sort(() => 0.5 - Math.random());
-  const selectedHooks = shuffled.slice(0, 4);
-  const hooksContext = selectedHooks.map((h, i) => `GANCHO ${i+1} [Fórmula: ${h.name}]: "${h.formula}" (Ejemplo: ${h.example})`).join('\n');
+function updateWizardTracker() {
+  const tHook = document.getElementById('wizTrackerHook');
+  const tStory = document.getElementById('wizTrackerStory');
+  const tMoral = document.getElementById('wizTrackerMoral');
+  const tCTA = document.getElementById('wizTrackerCTA');
 
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen 2.5 creando ganchos psicológicos...</span>';
-  }
-  if (timerBadge) timerBadge.textContent = '⏳ Generando con GPU...';
-
-  const startTime = Date.now();
-
-  const systemPrompt = `Eres el Director Creativo de BLEX STUDIO experto en ganchos psicológicos de alta retención para Instagram Reels, TikTok y YouTube Shorts.
-Tu objetivo es crear exactamente 4 ganchos diferentes para el cliente "${client}".
-Debes aplicar estrictamente estas 4 fórmulas de nuestro catálogo:
-${hooksContext}
-
-FORMATO DE RESPUESTA OBLIGATORIO:
-Responde ÚNICAMENTE con los 4 ganchos en este formato exacto, sin introducciones ni textos extra:
-[GANCHO 1: Nombre de la fórmula 1]
-Texto del gancho 1 redactado en 1 o 2 frases ultra directas y atractivas.
-
-[GANCHO 2: Nombre de la fórmula 2]
-Texto del gancho 2 redactado en 1 o 2 frases ultra directas y atractivas.
-
-[GANCHO 3: Nombre de la fórmula 3]
-Texto del gancho 3 redactado en 1 o 2 frases ultra directas y atractivas.
-
-[GANCHO 4: Nombre de la fórmula 4]
-Texto del gancho 4 redactado en 1 o 2 frases ultra directas y atractivas.`;
-
-  const userPrompt = `Tema/Idea: ${idea}`;
-
-  try {
-    const response = await aiCallOllama(userPrompt, systemPrompt, 0.75);
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-    if (timerBadge) timerBadge.textContent = `⚡ Generado en ${duration}s`;
-
-    // Parse the 4 hooks
-    const blocks = response.split(/\[GANCHO/i).filter(b => b.trim());
-    if (container) container.innerHTML = '';
-
-    if (blocks.length === 0) {
-      // Fallback display raw response
-      const card = createHookCardElement('Gancho Viral', response.trim(), 1);
-      if (container) container.appendChild(card);
+  if (tHook) {
+    if (wizardState.selectedHook) {
+      tHook.innerHTML = `<b class="text-amber-400">1. Gancho:</b> <span class="text-slate-200">${escapeHtml(wizardState.selectedHook)}</span>`;
+      tHook.className = 'p-2 rounded-lg bg-amber-950/20 border border-amber-500/30 text-slate-300 truncate';
     } else {
-      blocks.forEach((block, idx) => {
-        const closeBracketIdx = block.indexOf(']');
-        let formulaName = `Fórmula ${idx + 1}`;
-        let hookText = block.trim();
-        
-        if (closeBracketIdx !== -1) {
-          formulaName = block.substring(0, closeBracketIdx).replace(/^[0-9:\s]+/, '').trim();
-          hookText = block.substring(closeBracketIdx + 1).trim();
-        }
-
-        const card = createHookCardElement(formulaName, hookText, idx + 1);
-        if (container) container.appendChild(card);
-      });
+      tHook.innerHTML = '<b class="text-amber-400">1. Gancho:</b> <span class="text-slate-500">Pendiente...</span>';
+      tHook.className = 'p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 truncate';
     }
+  }
 
-    if (window.lucide) window.lucide.createIcons();
-  } catch (err) {
-    if (container) {
-      container.innerHTML = `
-        <div class="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-xs text-rose-300 space-y-2">
-          <p class="font-bold flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4"></i> No se pudo conectar con Ollama en ${aiState.serverUrl}</p>
-          <p class="text-slate-300">Asegúrate de que Ollama esté ejecutándose en tu PC (puerto 11434).</p>
-          <button type="button" onclick="openAiServerConfigModal()" class="bg-rose-900/60 hover:bg-rose-800 text-white font-semibold px-3 py-1.5 rounded-lg">Verificar Configuración</button>
-        </div>
-      `;
+  if (tStory) {
+    if (wizardState.selectedStory) {
+      tStory.innerHTML = `<b class="text-sky-400">2. Contexto:</b> <span class="text-slate-200">${escapeHtml(wizardState.selectedStory)}</span>`;
+      tStory.className = 'p-2 rounded-lg bg-sky-950/20 border border-sky-500/30 text-slate-300 truncate';
+    } else {
+      tStory.innerHTML = '<b class="text-sky-400">2. Contexto:</b> <span class="text-slate-500">Pendiente...</span>';
+      tStory.className = 'p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 truncate';
     }
-    if (window.lucide) window.lucide.createIcons();
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i><span>Generar 4 Ganchos Virales con Qwen</span>';
+  }
+
+  if (tMoral) {
+    if (wizardState.selectedMoral) {
+      tMoral.innerHTML = `<b class="text-emerald-400">3. Moraleja:</b> <span class="text-slate-200">${escapeHtml(wizardState.selectedMoral)}</span>`;
+      tMoral.className = 'p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-slate-300 truncate';
+    } else {
+      tMoral.innerHTML = '<b class="text-emerald-400">3. Moraleja:</b> <span class="text-slate-500">Pendiente...</span>';
+      tMoral.className = 'p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 truncate';
+    }
+  }
+
+  if (tCTA) {
+    if (wizardState.selectedCTA) {
+      tCTA.innerHTML = `<b class="text-purple-400">4. CTA:</b> <span class="text-slate-200">${escapeHtml(wizardState.selectedCTA)}</span>`;
+      tCTA.className = 'p-2 rounded-lg bg-purple-950/20 border border-purple-500/30 text-slate-300 truncate';
+    } else {
+      tCTA.innerHTML = '<b class="text-purple-400">4. CTA:</b> <span class="text-slate-500">Pendiente...</span>';
+      tCTA.className = 'p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 truncate';
     }
   }
 }
 
-function createHookCardElement(formulaName, hookText, index) {
-  const div = document.createElement('div');
-  div.className = 'bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 rounded-xl p-4 transition space-y-2.5 shadow-md group';
-  
-  const cleanHookText = hookText.replace(/^[\n\r"']+|[\n\r"']+$/g, '');
+async function generateWizardStepOptions(stepNum) {
+  wizardState.idea = document.getElementById('wizInputIdea')?.value?.trim() || '';
+  wizardState.refLink = document.getElementById('wizInputRefLink')?.value?.trim() || '';
+  wizardState.niche = document.getElementById('wizNicheSelect')?.value || 'MINDSET';
+  wizardState.client = document.getElementById('wizClientSelect')?.value || 'Jennil';
 
-  div.innerHTML = `
-    <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
-        <span>🎣</span> ${formulaName || 'Gancho ' + index}
-      </span>
-      <div class="flex items-center gap-1.5">
-        <button type="button" class="btn-copy-hook text-xs text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-800 transition flex items-center gap-1 cursor-pointer">
-          <i data-lucide="copy" class="w-3 h-3"></i> Copiar
-        </button>
-        <button type="button" class="btn-use-hook text-xs font-bold text-sky-400 hover:text-sky-300 bg-sky-950/40 hover:bg-sky-900/60 px-2.5 py-1 rounded-lg border border-sky-800/60 transition flex items-center gap-1 cursor-pointer">
-          <i data-lucide="arrow-right" class="w-3 h-3"></i> Crear Reel
-        </button>
-      </div>
-    </div>
-    <p class="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed">${cleanHookText}</p>
-  `;
-
-  div.querySelector('.btn-copy-hook').addEventListener('click', () => {
-    navigator.clipboard.writeText(cleanHookText);
-    alert('✅ Gancho copiado al portapapeles.');
-  });
-
-  div.querySelector('.btn-use-hook').addEventListener('click', () => {
-    switchAiTab('reel');
-    const reelIdeaInput = document.getElementById('aiReelInputIdea');
-    if (reelIdeaInput) reelIdeaInput.value = cleanHookText;
-    const ganchoBox = document.getElementById('aiReelOutputGancho');
-    if (ganchoBox) ganchoBox.value = cleanHookText;
-  });
-
-  return div;
-}
-
-// -------------------------------------------------------
-// 2. CREADOR DE REEL ESTRUCTURADO (4 CAJAS)
-// -------------------------------------------------------
-async function runAiGenerateFullReel() {
-  const idea = document.getElementById('aiReelInputIdea')?.value?.trim();
-  const client = document.getElementById('aiReelClientSelect')?.value || 'Jennil';
-  const duration = document.getElementById('aiReelDurationSelect')?.value || '45s';
-  const btn = document.getElementById('btnAiGenerateFullReel');
-
-  if (!idea) {
-    alert('Por favor escribe la idea central o el tema para estructurar el Reel.');
+  if (!wizardState.idea && !wizardState.refLink) {
+    alert('Por favor ingresa al menos un tema/idea central o un link de referencia en el panel izquierdo.');
     return;
   }
+
+  const btn = document.getElementById(`btnWizGen${stepNum}`);
+  const grid = document.getElementById(`wizCardsGrid${stepNum}`);
+  const selectedArea = document.getElementById(`wizSelectedArea${stepNum}`);
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen 2.5 estructurando el Reel...</span>';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>IA generando 5 opciones...</span>';
   }
 
-  const systemPrompt = `Eres el Guionista Principal de BLEX STUDIO. Vas a redactar un guión para Instagram Reel de alto impacto para el cliente "${client}".
-Duración objetivo: ${duration}.
-El guión debe tener exactamente 4 partes estructuradas para máxima retención y comentarios:
-
-1. GANCHO (0-3 segundos): Una frase impactante que detiene el scroll (usando fórmulas psicológicas).
-2. HISTORIA / CONTEXTO (3-35 segundos): Desarrollo fluido, sin rodeos, con puntos clave y dinamismo.
-3. MORALEJA (35-40 segundos): El valor principal, aprendizaje o lección sintetizada en 1 o 2 frases.
-4. CTA (Llamado a la Acción): Una orden clara y fácil para comentar una palabra clave (ej: "Comenta SCORE...", "Escribe GUIA...").
-
-FORMATO OBLIGATORIO DE RESPUESTA:
-Debes responder ÚNICAMENTE en este formato con estas etiquetas exactas:
-[GANCHO]
-Texto del gancho aquí.
-
-[HISTORIA]
-Texto del contexto y cuerpo del reel aquí.
-
-[MORALEJA]
-Texto de la moraleja aquí.
-
-[CTA]
-Texto del llamado a la acción aquí.`;
-
-  const userPrompt = `Idea del reel: ${idea}`;
-
-  try {
-    const response = await aiCallOllama(userPrompt, systemPrompt, 0.7);
-
-    // Parse sections
-    const ganchoMatch = response.match(/\[GANCHO\]([\s\S]*?)(?=\[HISTORIA\]|$)/i);
-    const historiaMatch = response.match(/\[HISTORIA\]([\s\S]*?)(?=\[MORALEJA\]|$)/i);
-    const moralejaMatch = response.match(/\[MORALEJA\]([\s\S]*?)(?=\[CTA\]|$)/i);
-    const ctaMatch = response.match(/\[CTA\]([\s\S]*?)$/i);
-
-    const outGancho = document.getElementById('aiReelOutputGancho');
-    const outHistoria = document.getElementById('aiReelOutputHistoria');
-    const outMoraleja = document.getElementById('aiReelOutputMoraleja');
-    const outCTA = document.getElementById('aiReelOutputCTA');
-
-    if (outGancho) outGancho.value = ganchoMatch ? ganchoMatch[1].trim() : '';
-    if (outHistoria) outHistoria.value = historiaMatch ? historiaMatch[1].trim() : '';
-    if (outMoraleja) outMoraleja.value = moralejaMatch ? moralejaMatch[1].trim() : '';
-    if (outCTA) outCTA.value = ctaMatch ? ctaMatch[1].trim() : '';
-
-    if (!ganchoMatch && !historiaMatch) {
-      if (outHistoria) outHistoria.value = response.trim();
-    }
-  } catch(err) {
-    alert('Error al conectar con la IA local: ' + err.message);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i><span>Crear Reel Completo con Qwen</span>';
-    }
+  if (selectedArea) selectedArea.classList.add('hidden');
+  if (grid) {
+    grid.innerHTML = `
+      <div class="p-8 text-center text-slate-400 space-y-2">
+        <i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-purple-400"></i>
+        <p class="text-xs">La IA está procesando los 64 ganchos y la enciclopedia de dinero...</p>
+      </div>
+    `;
   }
-}
+  if (window.lucide) window.lucide.createIcons();
 
-function saveAiReelToMatrix() {
-  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
-  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
-  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
-  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
-  const client = document.getElementById('aiReelClientSelect')?.value || 'Jennil';
-  const idea = document.getElementById('aiReelInputIdea')?.value?.trim() || 'Reel IA';
+  let systemPrompt = '';
+  let userPrompt = '';
 
-  if (!gancho && !historia) {
-    alert('No hay contenido para guardar. Genera un Reel primero.');
-    return;
-  }
-
-  const nextNumber = state.scripts.length > 0 ? Math.max(...state.scripts.map(s => s.number || 0)) + 1 : 1;
-  const newScript = {
-    id: generateId(),
-    number: nextNumber,
-    client: client,
-    ideaGanadora: idea.substring(0, 80),
-    gancho: gancho,
-    historia: historia,
-    moraleja: moraleja,
-    cta: cta,
-    actor: client,
-    status: 'Idea',
-    createdAt: new Date().toISOString()
+  const nicheLabels = {
+    'MINDSET': 'Mentalidad & Psicología del Dinero',
+    'ERRORS': 'Errores Financieros & Fugas de Capital',
+    'HABITS': 'Disciplina, Hábitos & Alto Rendimiento (1%)',
+    'WEALTH': 'Creación de Riqueza & Habilidades de Alto Valor',
+    'MYTHS': 'Desmitificando el Dinero (Contraintuitivo)',
+    'GENERAL': 'Dinero & Desarrollo Personal'
   };
 
-  state.scripts.unshift(newScript);
-  saveScripts();
-  renderMatrix();
-  renderCards();
-  alert(`✅ ¡Guión #${nextNumber} guardado exitosamente en la Matriz de Guiones!`);
-  switchView('matrix');
+  const selectedNicheLabel = nicheLabels[wizardState.niche] || 'Dinero & Desarrollo Personal';
+
+  if (stepNum === 1) {
+    // Pick 5 random hooks from catalog
+    const hooks = (typeof BLEX_VIRAL_HOOKS_64 !== 'undefined') ? BLEX_VIRAL_HOOKS_64 : [];
+    const shuffled = [...hooks].sort(() => 0.5 - Math.random()).slice(0, 5);
+    const hooksRef = shuffled.map((h, i) => `Fórmula ${i+1} [#${h.id} - ${h.name}]: "${h.formula}"`).join('\n');
+
+    systemPrompt = `Eres el Director Creativo de BLEX STUDIO para el nicho de DINERO Y DESARROLLO PERSONAL.
+BASE DE CONOCIMIENTO DE DINERO & DESARROLLO PERSONAL:
+${BLEX_MONEY_PERSONAL_DEV_KNOWLEDGE}
+
+MATRIZ DE VIRALIDAD (14.5 PTS):
+${BLEX_VIRAL_CALCULATOR_KNOWLEDGE}
+
+Crea exactamente 5 OPCIONES DE GANCHOS (0-3 segundos) para el creador "${wizardState.client}".
+Enfoque de nicho: ${selectedNicheLabel}.
+Aplica estas fórmulas del catálogo:
+${hooksRef}
+
+Reglas: Cada gancho debe ser ultra magnético, 1 o 2 frases directas, simple para un niño de 5 años y que interese a 50 de 100 personas.
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+[OPCION 1: Nombre de la Fórmula 1]
+Texto del gancho 1
+
+[OPCION 2: Nombre de la Fórmula 2]
+Texto del gancho 2
+
+[OPCION 3: Nombre de la Fórmula 3]
+Texto del gancho 3
+
+[OPCION 4: Nombre de la Fórmula 4]
+Texto del gancho 4
+
+[OPCION 5: Nombre de la Fórmula 5]
+Texto del gancho 5`;
+
+    userPrompt = `Tema/Idea: ${wizardState.idea}` + (wizardState.refLink ? `\nVideo de referencia: ${wizardState.refLink}` : '');
+
+  } else if (stepNum === 2) {
+    systemPrompt = `Eres el Guionista de BLEX STUDIO para DINERO Y DESARROLLO PERSONAL.
+El orador ya tiene este GANCHO seleccionado:
+"${wizardState.selectedHook}"
+
+Tu tarea es crear exactamente 5 OPCIONES DIFERENTES DE CONTEXTO / HISTORIA (3 a 30 segundos) que continúen fluidamente desde ese gancho.
+Enfoque de nicho: ${selectedNicheLabel}.
+Reglas:
+- Cero tecnicismos (entendible por un niño de 5 años).
+- Ritmo dinámico, sin rodeos, aportando datos o contrastes de impacto.
+- Longitud de cada opción: 40 a 65 palabras.
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+[OPCION 1: Enfoque 1]
+Texto de la historia 1
+
+[OPCION 2: Enfoque 2]
+Texto de la historia 2
+
+[OPCION 3: Enfoque 3]
+Texto de la historia 3
+
+[OPCION 4: Enfoque 4]
+Texto de la historia 4
+
+[OPCION 5: Enfoque 5]
+Texto de la historia 5`;
+
+    userPrompt = `Idea original: ${wizardState.idea}\nGancho confirmado: ${wizardState.selectedHook}`;
+
+  } else if (stepNum === 3) {
+    systemPrompt = `Eres el Guionista de BLEX STUDIO para DINERO Y DESARROLLO PERSONAL.
+El guión lleva:
+• GANCHO: "${wizardState.selectedHook}"
+• HISTORIA / CONTEXTO: "${wizardState.selectedStory}"
+
+Genera exactamente 5 OPCIONES DE MORALEJA / VALOR CENTRAL (30 a 40 segundos).
+Es la "pepita de oro", el aprendizaje o la conclusión contundente en 1 o 2 frases memorables.
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+[OPCION 1: Moraleja Directa]
+Texto de la moraleja 1
+
+[OPCION 2: Moraleja de Contraste]
+Texto de la moraleja 2
+
+[OPCION 3: Moraleja de Hábito]
+Texto de la moraleja 3
+
+[OPCION 4: Moraleja de Realidad]
+Texto de la moraleja 4
+
+[OPCION 5: Moraleja Inspiradora]
+Texto de la moraleja 5`;
+
+    userPrompt = `Generar 5 moralejas contundentes para este guión.`;
+
+  } else if (stepNum === 4) {
+    systemPrompt = `Eres el Guionista de BLEX STUDIO.
+El guión completo está casi listo:
+• GANCHO: "${wizardState.selectedHook}"
+• HISTORIA: "${wizardState.selectedStory}"
+• MORALEJA: "${wizardState.selectedMoral}"
+
+Genera exactamente 5 OPCIONES DE LLAMADO A LA ACCIÓN (CTA) (40 a 50 segundos).
+El objetivo es detonar comentarios masivos pidiendo una palabra clave específica (ej: "Comenta RIQUEZA...", "Escribe METODO...", "Guarda este video...").
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+[OPCION 1: Palabra Clave]
+Texto del CTA 1
+
+[OPCION 2: Palabra Clave 2]
+Texto del CTA 2
+
+[OPCION 3: Guardar / Compartir]
+Texto del CTA 3
+
+[OPCION 4: Pregunta de Debate]
+Texto del CTA 4
+
+[OPCION 5: Llamado a la Acción Directo]
+Texto del CTA 5`;
+
+    userPrompt = `Generar 5 CTAs irresistibles para este reel.`;
+  }
+
+  try {
+    const response = await aiCallOllama(userPrompt, systemPrompt, 0.72);
+    
+    // Parse the 5 options
+    const parsed = parseWizardOptions(response);
+    
+    if (stepNum === 1) wizardState.hookOptions = parsed;
+    else if (stepNum === 2) wizardState.storyOptions = parsed;
+    else if (stepNum === 3) wizardState.moralOptions = parsed;
+    else if (stepNum === 4) wizardState.ctaOptions = parsed;
+
+    renderWizardCards(stepNum, parsed);
+  } catch(err) {
+    alert('Error al generar opciones con IA: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      const stepNames = ['', 'Ganchos', 'Opciones de Historia', 'Moralejas', 'Opciones de CTA'];
+      btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Generar 5 ${stepNames[stepNum]}</span>`;
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
-function sendAiReelToTeleprompter() {
-  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
-  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
-  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
-  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
-  const idea = document.getElementById('aiReelInputIdea')?.value?.trim() || 'Reel IA';
+function parseWizardOptions(rawResponse) {
+  const blocks = rawResponse.split(/\[OPCION\s*\d+:?\s*([^\]]*)\]/i);
+  const options = [];
 
-  if (!gancho && !historia) {
-    alert('No hay contenido para enviar. Genera un Reel primero.');
+  for (let i = 1; i < blocks.length; i += 2) {
+    const title = blocks[i] ? blocks[i].trim() : `Opción ${options.length + 1}`;
+    const text = blocks[i + 1] ? blocks[i + 1].trim().replace(/^[\n\r"']+|[\n\r"']+$/g, '') : '';
+    if (text) {
+      options.push({ title, text });
+    }
+  }
+
+  if (options.length === 0) {
+    // Fallback split by double lines
+    const paragraphs = rawResponse.split(/\n\n+/).filter(p => p.trim());
+    paragraphs.forEach((p, idx) => {
+      options.push({ title: `Opción ${idx + 1}`, text: p.trim() });
+    });
+  }
+
+  return options.slice(0, 5);
+}
+
+function renderWizardCards(stepNum, options) {
+  const grid = document.getElementById(`wizCardsGrid${stepNum}`);
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const colors = {
+    1: { border: 'hover:border-amber-500/60', badge: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+    2: { border: 'hover:border-sky-500/60', badge: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
+    3: { border: 'hover:border-emerald-500/60', badge: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+    4: { border: 'hover:border-purple-500/60', badge: 'text-purple-400 bg-purple-500/10 border-purple-500/20' }
+  };
+
+  const theme = colors[stepNum] || colors[1];
+
+  options.forEach((opt, idx) => {
+    const card = document.createElement('div');
+    card.id = `wizCard_${stepNum}_${idx}`;
+    card.className = `p-4 rounded-xl bg-slate-950 border border-slate-800 ${theme.border} transition space-y-2 cursor-pointer group hover:bg-slate-900/60`;
+    
+    card.innerHTML = `
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${theme.badge}">
+          Opción ${idx + 1}: ${escapeHtml(opt.title)}
+        </span>
+        <button type="button" class="text-xs font-bold text-slate-400 group-hover:text-white bg-slate-900 group-hover:bg-purple-600 px-2.5 py-1 rounded-lg border border-slate-800 transition flex items-center gap-1">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i> Elegir
+        </button>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed">${escapeHtml(opt.text)}</p>
+    `;
+
+    card.addEventListener('click', () => {
+      selectWizardOption(stepNum, idx);
+    });
+
+    grid.appendChild(card);
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function selectWizardOption(stepNum, optionIdx) {
+  let list = [];
+  if (stepNum === 1) list = wizardState.hookOptions;
+  else if (stepNum === 2) list = wizardState.storyOptions;
+  else if (stepNum === 3) list = wizardState.moralOptions;
+  else if (stepNum === 4) list = wizardState.ctaOptions;
+
+  const opt = list[optionIdx];
+  if (!opt) return;
+
+  // Highlight selected card
+  for (let i = 0; i < list.length; i++) {
+    const c = document.getElementById(`wizCard_${stepNum}_${i}`);
+    if (c) {
+      if (i === optionIdx) {
+        c.className = 'p-4 rounded-xl bg-purple-950/40 border-2 border-purple-500 shadow-lg shadow-purple-950/50 space-y-2 cursor-pointer transition';
+      } else {
+        c.className = 'p-4 rounded-xl bg-slate-950 border border-slate-800 transition space-y-2 cursor-pointer opacity-70 hover:opacity-100';
+      }
+    }
+  }
+
+  // Populate editable textarea
+  const txtArea = document.getElementById(`wizSelectedText${stepNum}`);
+  const areaDiv = document.getElementById(`wizSelectedArea${stepNum}`);
+
+  if (txtArea) txtArea.value = opt.text;
+  if (areaDiv) areaDiv.classList.remove('hidden');
+
+  if (stepNum === 1) {
+    wizardState.selectedHook = opt.text;
+    wizardState.selectedHookFormula = opt.title;
+  } else if (stepNum === 2) {
+    wizardState.selectedStory = opt.text;
+  } else if (stepNum === 3) {
+    wizardState.selectedMoral = opt.text;
+  } else if (stepNum === 4) {
+    wizardState.selectedCTA = opt.text;
+  }
+
+  updateWizardTracker();
+}
+
+function confirmWizardStep(stepNum) {
+  // Read value from textarea in case user edited it
+  const txtArea = document.getElementById(`wizSelectedText${stepNum}`);
+  const text = txtArea ? txtArea.value.trim() : '';
+
+  if (!text) {
+    alert('Por favor selecciona o escribe una opción antes de avanzar.');
+    return;
+  }
+
+  if (stepNum === 1) {
+    wizardState.selectedHook = text;
+    goToWizardStep(2);
+    // Auto generate step 2 if not generated
+    if (wizardState.storyOptions.length === 0) {
+      generateWizardStepOptions(2);
+    }
+  } else if (stepNum === 2) {
+    wizardState.selectedStory = text;
+    goToWizardStep(3);
+    if (wizardState.moralOptions.length === 0) {
+      generateWizardStepOptions(3);
+    }
+  } else if (stepNum === 3) {
+    wizardState.selectedMoral = text;
+    goToWizardStep(4);
+    if (wizardState.ctaOptions.length === 0) {
+      generateWizardStepOptions(4);
+    }
+  } else if (stepNum === 4) {
+    wizardState.selectedCTA = text;
+    // Assemble final reel into step 5
+    const fHook = document.getElementById('wizFinalHook');
+    const fStory = document.getElementById('wizFinalStory');
+    const fMoral = document.getElementById('wizFinalMoral');
+    const fCTA = document.getElementById('wizFinalCTA');
+
+    if (fHook) fHook.value = wizardState.selectedHook;
+    if (fStory) fStory.value = wizardState.selectedStory;
+    if (fMoral) fMoral.value = wizardState.selectedMoral;
+    if (fCTA) fCTA.value = wizardState.selectedCTA;
+
+    goToWizardStep(5);
+  }
+}
+
+function sendWizardReelToTeleprompter() {
+  const hook = document.getElementById('wizFinalHook')?.value?.trim() || wizardState.selectedHook;
+  const story = document.getElementById('wizFinalStory')?.value?.trim() || wizardState.selectedStory;
+  const moral = document.getElementById('wizFinalMoral')?.value?.trim() || wizardState.selectedMoral;
+  const cta = document.getElementById('wizFinalCTA')?.value?.trim() || wizardState.selectedCTA;
+  const idea = wizardState.idea || 'Reel IA';
+
+  if (!hook && !story) {
+    alert('No hay guión completo para enviar al teleprónter.');
     return;
   }
 
@@ -7139,9 +7327,9 @@ function sendAiReelToTeleprompter() {
     tpState.activeReelSection = 'all';
     tpState.reelScripts[1] = {
       title: idea.substring(0, 25),
-      gancho: gancho,
-      historia: historia,
-      moraleja: moraleja,
+      gancho: hook,
+      historia: story,
+      moraleja: moral,
       cta: cta
     };
     if (typeof tpSaveScriptsToStorage === 'function') tpSaveScriptsToStorage();
@@ -7152,26 +7340,101 @@ function sendAiReelToTeleprompter() {
   }
 
   switchView('teleprompter_pro');
+  alert('✅ ¡Reel estructurado cargado en el Teleprónter Pro para iPad!');
 }
 
-function copyAiReelAll() {
-  const gancho = document.getElementById('aiReelOutputGancho')?.value?.trim() || '';
-  const historia = document.getElementById('aiReelOutputHistoria')?.value?.trim() || '';
-  const moraleja = document.getElementById('aiReelOutputMoraleja')?.value?.trim() || '';
-  const cta = document.getElementById('aiReelOutputCTA')?.value?.trim() || '';
+function saveWizardReelToMatrix() {
+  const hook = document.getElementById('wizFinalHook')?.value?.trim() || wizardState.selectedHook;
+  const story = document.getElementById('wizFinalStory')?.value?.trim() || wizardState.selectedStory;
+  const moral = document.getElementById('wizFinalMoral')?.value?.trim() || wizardState.selectedMoral;
+  const cta = document.getElementById('wizFinalCTA')?.value?.trim() || wizardState.selectedCTA;
+  const client = wizardState.client || 'Jennil';
+  const idea = wizardState.idea || 'Reel IA';
 
-  let full = [];
-  if (gancho) full.push('🎣 GANCHO:\n' + gancho);
-  if (historia) full.push('📖 CONTEXTO / HISTORIA:\n' + historia);
-  if (moraleja) full.push('💡 MORALEJA:\n' + moraleja);
-  if (cta) full.push('📣 CTA:\n' + cta);
+  if (!hook && !story) {
+    alert('No hay guión completo para guardar.');
+    return;
+  }
 
-  navigator.clipboard.writeText(full.join('\n\n'));
+  const nextNumber = state.scripts.length > 0 ? Math.max(...state.scripts.map(sc => sc.number || 0)) + 1 : 1;
+  const newScript = {
+    id: generateId(),
+    number: nextNumber,
+    client: client,
+    ideaGanadora: idea.substring(0, 80),
+    gancho: hook,
+    historia: story,
+    moraleja: moral,
+    cta: cta,
+    actor: client,
+    status: 'Idea',
+    createdAt: new Date().toISOString()
+  };
+
+  state.scripts.unshift(newScript);
+  saveScripts();
+  renderMatrix();
+  renderCards();
+  alert(`✅ Guión #${nextNumber} guardado exitosamente en la Matriz de Guiones!`);
+  switchView('matrix');
+}
+
+function copyWizardReelAll() {
+  const hook = document.getElementById('wizFinalHook')?.value?.trim() || wizardState.selectedHook;
+  const story = document.getElementById('wizFinalStory')?.value?.trim() || wizardState.selectedStory;
+  const moral = document.getElementById('wizFinalMoral')?.value?.trim() || wizardState.selectedMoral;
+  const cta = document.getElementById('wizFinalCTA')?.value?.trim() || wizardState.selectedCTA;
+
+  const full = [
+    '🎬 REEL ESTRUCTURADO (BLEX STUDIO):',
+    `🎣 GANCHO (0-3s):\n${hook}`,
+    `📖 CONTEXTO / HISTORIA (3-30s):\n${story}`,
+    `💡 MORALEJA / VALOR (30-40s):\n${moral}`,
+    `📣 CTA (40-50s):\n${cta}`
+  ].join('\n\n');
+
+  navigator.clipboard.writeText(full);
   alert('✅ Guión completo copiado al portapapeles.');
 }
 
+function resetWizard() {
+  wizardState = {
+    step: 1,
+    idea: '',
+    refLink: '',
+    niche: 'MINDSET',
+    client: wizardState.client || 'Jennil',
+    hookOptions: [],
+    selectedHook: '',
+    selectedHookFormula: '',
+    storyOptions: [],
+    selectedStory: '',
+    moralOptions: [],
+    selectedMoral: '',
+    ctaOptions: [],
+    selectedCTA: ''
+  };
+
+  const ideaInput = document.getElementById('wizInputIdea');
+  const linkInput = document.getElementById('wizInputRefLink');
+  if (ideaInput) ideaInput.value = '';
+  if (linkInput) linkInput.value = '';
+
+  for (let i = 1; i <= 4; i++) {
+    const grid = document.getElementById(`wizCardsGrid${i}`);
+    const area = document.getElementById(`wizSelectedArea${i}`);
+    const txt = document.getElementById(`wizSelectedText${i}`);
+    if (grid) grid.innerHTML = '<div class="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl"><p class="text-xs text-slate-400">Presiona el botón para generar 5 opciones.</p></div>';
+    if (area) area.classList.add('hidden');
+    if (txt) txt.value = '';
+  }
+
+  goToWizardStep(1);
+}
+
+
 // -------------------------------------------------------
-// 3. AUDITOR DE VIRALIDAD CON IA
+// 2. AUDITOR DE VIRALIDAD CON IA
 // -------------------------------------------------------
 function loadCurrentScriptIntoAudit() {
   const currentTitle = document.getElementById('viralIdeaTitle')?.value || '';

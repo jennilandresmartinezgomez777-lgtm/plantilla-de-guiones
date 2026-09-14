@@ -1259,7 +1259,7 @@
               <div>
                 <h2 class="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                   <span>BLEX AI STUDIO</span>
-                  <span class="text-[10px] uppercase font-extrabold bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">Qwen 2.5 Local · 64 Ganchos</span>
+                  <span class="text-[10px] uppercase font-extrabold bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">64 Ganchos · Matriz Viral</span>
                 </h2>
                 <p class="text-xs text-slate-300">Generador de ganchos virales, estructurador de reels, auditor de retención y optimizador de teleprónter.</p>
               </div>
@@ -1270,7 +1270,7 @@
           <div class="flex items-center gap-2.5 shrink-0 flex-wrap relative z-10">
             <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl shadow-inner text-xs">
               <span id="aiServerStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80"></span>
-              <span id="aiServerStatusText" class="font-bold text-slate-200">Qwen 2.5 Conectado</span>
+              <span id="aiServerStatusText" class="font-bold text-slate-200">IA Conectada</span>
             </div>
             <button type="button" onclick="openAiServerConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
               <i data-lucide="settings" class="w-3.5 h-3.5 text-purple-400"></i>
@@ -1281,33 +1281,29 @@
 
         <!-- AI Tools Navigation Tabs -->
         <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar gap-1 shadow-lg">
-          <button type="button" onclick="switchAiTab('hooks')" id="aiTabBtnHooks" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer">
+          <button type="button" onclick="switchAiTab('wizard')" id="aiTabBtnWizard" class="flex-1 min-w-[170px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer">
             <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
-            <span>🎣 1. Generador Ganchos</span>
-          </button>
-          <button type="button" onclick="switchAiTab('reel')" id="aiTabBtnReel" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
-            <i data-lucide="video" class="w-4 h-4 text-sky-400"></i>
-            <span>📱 2. Creador Reel (4 Cajas)</span>
+            <span>🎬 1. Creador de Reel (4 Pasos)</span>
           </button>
           <button type="button" onclick="switchAiTab('audit')" id="aiTabBtnAudit" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-            <span>🧠 3. Auditor de Viralidad</span>
+            <span>🧠 2. Auditor de Viralidad</span>
           </button>
           <button type="button" onclick="switchAiTab('tone')" id="aiTabBtnTone" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
-            <span>🎭 4. Adaptador de Tono</span>
+            <span>🎭 3. Adaptador de Tono</span>
           </button>
           <button type="button" onclick="switchAiTab('teleprompter')" id="aiTabBtnTeleprompter" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="clock" class="w-4 h-4 text-rose-400"></i>
-            <span>⏱️ 5. Optimizador Lectura</span>
+            <span>⏱️ 4. Optimizador Lectura</span>
           </button>
           <button type="button" onclick="switchAiTab('clone')" id="aiTabBtnClone" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="share-2" class="w-4 h-4 text-fuchsia-400"></i>
-            <span>🚀 6. Clonador por Link (IG / TikTok)</span>
+            <span>🚀 5. Clonador por Link</span>
           </button>
           <button type="button" onclick="switchAiTab('catalog')" id="aiTabBtnCatalog" class="flex-1 min-w-[150px] px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="book-open" class="w-4 h-4 text-cyan-400"></i>
-            <span>📚 7. Catálogo 64 Ganchos</span>
+            <span>📚 6. Catálogo 64 Ganchos</span>
           </button>
         </div>
 
@@ -2559,6 +2555,6 @@
   <div id="dedicatedPrintArea"></div>
 
   <script src="ai-hooks-data.js?v=2.0"></script>
-  <script src="app.js?v=10.0&t=1789345000"></script>
+  <script src="app.js?v=11.0&t=1789410000"></script>
 </body>
 </html>
