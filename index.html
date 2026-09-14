@@ -1259,7 +1259,6 @@
               <div>
                 <h2 class="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                   <span>BLEX AI STUDIO</span>
-                  <span class="text-[10px] uppercase font-extrabold bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">64 Ganchos · Matriz Viral</span>
                 </h2>
                 <p class="text-xs text-slate-300">Generador de ganchos virales, estructurador de reels, auditor de retención y optimizador de teleprónter.</p>
               </div>
@@ -1308,185 +1307,342 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- TAB 1: GENERADOR DE GANCHOS VIRALES (64 FÓRMULAS) -->
+        <!-- TAB 1: CREADOR DE REEL EN 4 PASOS (GUIADO POR IA) -->
         <!-- ============================================== -->
-        <div id="aiPanelHooks" class="space-y-4">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
-            
-            <!-- Left Input Configuration (5 cols) -->
-            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div id="aiPanelWizard" class="space-y-4">
+          
+          <!-- Top Configuration Card (Nicho, Link Opcional, Tema) -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div>
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="text-amber-400">🎣</span> Parámetros del Gancho
+                  <span class="text-amber-400">🎬</span> Asistente Guiado de Creación de Reel
                 </h3>
-                <span class="text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">64 Fórmulas</span>
+                <p class="text-xs text-slate-400 mt-0.5">Construye tu reel paso a paso con 5 opciones generadas por IA para cada parte.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
+                </button>
+              </div>
+            </div>
+
+            <!-- Inputs Row -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+              <!-- Link Reference (Optional) -->
+              <div class="md:col-span-5 space-y-1">
+                <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="link" class="w-3.5 h-3.5 text-sky-400"></i> Link de Referencia (Opcional)
+                </label>
+                <input type="url" id="aiWizardInputLink" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none placeholder:text-slate-600" placeholder="https://www.instagram.com/reel/... o TikTok / Shorts">
               </div>
 
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-xs font-bold text-slate-300 mb-1">Idea, Tema o Producto *</label>
-                  <textarea id="aiHookInputIdea" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600" placeholder="Ej: Por qué no debes pagar la tarjeta antes de tiempo, tips de crédito, inversiones inmobiliarias..."></textarea>
-                </div>
+              <!-- Niche / Focus Selector -->
+              <div class="md:col-span-4 space-y-1">
+                <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="compass" class="w-3.5 h-3.5 text-emerald-400"></i> Enfoque / Área del Nicho
+                </label>
+                <select id="aiWizardNicheArea" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-200 outline-none cursor-pointer focus:border-emerald-500">
+                  <option value="💰 Riqueza, Mentalidad & Psicología del Dinero">💰 Riqueza & Mentalidad del Dinero</option>
+                  <option value="⚠️ Errores Financieros Comunes y Trampas del Sistema">⚠️ Errores Financieros Comunes</option>
+                  <option value="📈 Hábitos del 1% y Productividad Radical">📈 Hábitos del 1% y Disciplina</option>
+                  <option value="🤯 Mitos Contraintuitivos sobre Dinero y Negocios">🤯 Mitos Contraintuitivos</option>
+                  <option value="🎯 Psicología de Ventas, Precios y Negociación">🎯 Ventas, Precios y Negociación</option>
+                  <option value="⏳ Libertad Financiera, Ingresos Pasivos y Tiempo">⏳ Libertad Financiera e Inversión</option>
+                  <option value="🧠 Desarrollo Personal, Foco y Crecimiento">🧠 Desarrollo Personal y Foco</option>
+                  <option value="🌐 General de Dinero & Crecimiento">🌐 General Dinero & Crecimiento</option>
+                </select>
+              </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Talento</label>
-                    <select id="aiHookClientSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
-                      <!-- Populated via JS -->
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Categoría de Gancho</label>
-                    <select id="aiHookCategorySelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
-                      <option value="ALL">🎯 Combinar 4 Mejores Fórmulas</option>
-                      <option value="Curiosidad y Debate">🧐 Curiosidad y Debate</option>
-                      <option value="Alerta y Negativo">⚠️ Alerta y Error Negativo</option>
-                      <option value="Prueba y Credibilidad">📊 Cifras y Casos Reales</option>
-                      <option value="Storytelling">📖 Storytelling & Transformación</option>
-                      <option value="Contraintuitivo">🤯 Contraintuitivo y Desmitificación</option>
-                      <option value="Ego y Desafío">🔥 Reto y Ego</option>
-                      <option value="Polémica Directa">⚡ Polémica y Provocación</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button type="button" id="btnAiGenerateHooks" onclick="runAiGenerateHooks()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
+              <!-- Action Button -->
+              <div class="md:col-span-3">
+                <button type="button" id="btnStartWizard" onclick="startWizardProcess()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
                   <i data-lucide="sparkles" class="w-4 h-4"></i>
-                  <span>Generar 4 Ganchos Virales con Qwen</span>
+                  <span>Crear con IA</span>
                 </button>
               </div>
             </div>
 
-            <!-- Right Results Display (7 cols) -->
-            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span>✨ Ganchos Generados</span>
-                </h3>
-                <span id="aiHooksTimerBadge" class="text-xs text-slate-500 font-mono">Qwen 2.5 Listo</span>
-              </div>
-
-              <!-- Container for Generated Hook Cards -->
-              <div id="aiGeneratedHooksContainer" class="space-y-3">
-                <div class="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2">
-                  <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-purple-400/50"></i>
-                  <p class="text-xs text-slate-400">Escribe tu idea en el panel izquierdo y pulsa <b>Generar 4 Ganchos Virales</b>.</p>
-                  <p class="text-[11px] text-slate-500">Qwen aplicará las 64 fórmulas psicológicas probadas para crear aperturas que detienen el scroll.</p>
-                </div>
-              </div>
+            <!-- Topic / Idea textarea -->
+            <div class="space-y-1">
+              <label class="block text-xs font-bold text-slate-300">Tema, Idea Clave o Producto *</label>
+              <textarea id="aiWizardInputTopic" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600" placeholder="Ej: Por qué la clase media gasta en pasivos creyendo que son activos, o el hábito nocturno de los millonarios..."></textarea>
             </div>
-
           </div>
-        </div>
 
-        <!-- ============================================== -->
-        <!-- TAB 2: CREADOR DE REEL ESTRUCTURADO (4 CAJAS) -->
-        <!-- ============================================== -->
-        <div id="aiPanelReel" class="hidden space-y-4">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
-            
-            <!-- Left Inputs (4 cols) -->
-            <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-              <div class="border-b border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="text-sky-400">📱</span> Idea para el Reel
-                </h3>
-                <p class="text-[11px] text-slate-400 mt-0.5">La IA estructurará las 4 secciones optimizadas para retención.</p>
-              </div>
+          <!-- 5-Step Progress Stepper -->
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar shadow-md">
+            <button type="button" onclick="goToWizardStep(1)" id="wizStepPill1" class="flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-purple-600 text-white shadow">
+              <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">1</span>
+              <span>Gancho (0-3s)</span>
+            </button>
+            <button type="button" onclick="goToWizardStep(2)" id="wizStepPill2" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50">
+              <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">2</span>
+              <span>Historia (3-30s)</span>
+            </button>
+            <button type="button" onclick="goToWizardStep(3)" id="wizStepPill3" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50">
+              <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">3</span>
+              <span>Moraleja (30-40s)</span>
+            </button>
+            <button type="button" onclick="goToWizardStep(4)" id="wizStepPill4" class="flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50">
+              <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">4</span>
+              <span>CTA (40-50s)</span>
+            </button>
+            <button type="button" onclick="goToWizardStep(5)" id="wizStepPill5" class="flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50">
+              <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">5</span>
+              <span>Reel Final ✨</span>
+            </button>
+          </div>
 
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-xs font-bold text-slate-300 mb-1">Tema / Idea Central *</label>
-                  <textarea id="aiReelInputIdea" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-sky-500 outline-none placeholder:text-slate-600" placeholder="Ej: 3 trucos con tarjetas de crédito para viajar gratis y subir puntaje..."></textarea>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Talento</label>
-                  <select id="aiReelClientSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
-                    <!-- Populated via JS -->
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-400 mb-1">Duración Objetivo</label>
-                  <select id="aiReelDurationSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer">
-                    <option value="45s">⚡ 45 Segundos (~90-110 palabras - Recomendado)</option>
-                    <option value="30s">⏱️ 30 Segundos (~60-75 palabras - Ultra Dinámico)</option>
-                    <option value="60s">📖 60 Segundos (~120-140 palabras - Profundo)</option>
-                  </select>
-                </div>
-
-                <button type="button" id="btnAiGenerateFullReel" onclick="runAiGenerateFullReel()" class="w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 hover:from-sky-400 hover:to-indigo-400 text-white font-extrabold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-sky-950/50 cursor-pointer">
-                  <i data-lucide="zap" class="w-4 h-4"></i>
-                  <span>Crear Reel Completo con Qwen</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Right 4-Section Structured Editor (8 cols) -->
-            <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <!-- STEP 1 CONTAINER: 5 HOOK RECOMMENDATIONS -->
+          <div id="wizStepView1" class="space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div>
-                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                    <span>🎬 Guión Estructurado Generado</span>
-                  </h3>
-                  <p class="text-[11px] text-slate-400">Puedes editar cualquier casilla antes de guardarlo o proyectarlo.</p>
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="text-amber-400">🎣</span> Paso 1: Selecciona tu Gancho Viral (5 Opciones)
+                  </h4>
+                  <p class="text-xs text-slate-400">Haz clic en la opción que más detenga el scroll para seleccionarla.</p>
+                </div>
+                <button type="button" onclick="generateWizardStep1Hooks()" class="text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar 5 Opciones
+                </button>
+              </div>
+
+              <!-- 5 Options Grid -->
+              <div id="wizCardsGrid1" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- Cards injected via JS -->
+                <div class="col-span-full p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-2">
+                  <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-amber-400/50"></i>
+                  <p class="text-xs text-slate-400">Escribe tu tema arriba y pulsa <b>Crear con IA</b> para generar 5 opciones de ganchos virales.</p>
+                </div>
+              </div>
+
+              <!-- Selected Hook Input / Edit Box -->
+              <div class="bg-slate-950 border border-amber-500/30 p-4 rounded-xl space-y-2">
+                <label class="block text-xs font-bold text-amber-400 flex items-center justify-between">
+                  <span>Gancho Seleccionado (Puedes editarlo a tu gusto):</span>
+                  <span class="text-[10px] text-slate-500">0 - 3 Segundos</span>
+                </label>
+                <textarea id="wizSelectedGancho" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs sm:text-sm text-white focus:border-amber-500 outline-none" placeholder="Selecciona una de las 5 opciones de arriba o escribe tu propio gancho..."></textarea>
+              </div>
+
+              <!-- Navigation Button -->
+              <div class="flex justify-end">
+                <button type="button" onclick="advanceWizardToStep2()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-amber-950/40 cursor-pointer">
+                  <span>Paso 2: Generar Historias y Contexto</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 CONTAINER: 5 STORY / CONTEXT RECOMMENDATIONS -->
+          <div id="wizStepView2" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="text-sky-400">📖</span> Paso 2: Selecciona la Historia / Contexto (5 Opciones)
+                  </h4>
+                  <p class="text-xs text-slate-400">Adaptadas al gancho que seleccionaste para mantener alta retención.</p>
+                </div>
+                <button type="button" onclick="generateWizardStep2Stories()" class="text-xs text-sky-300 hover:text-sky-200 bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar 5 Historias
+                </button>
+              </div>
+
+              <!-- Reference chosen hook -->
+              <div class="bg-slate-950 border border-slate-800 px-3.5 py-2 rounded-xl text-xs text-slate-400 flex items-center gap-2">
+                <span class="text-amber-400 font-bold">🎣 Gancho elegido:</span>
+                <span id="wizBadgeChosenHook" class="text-slate-200 italic line-clamp-1"></span>
+              </div>
+
+              <!-- 5 Options Grid -->
+              <div id="wizCardsGrid2" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- Cards injected via JS -->
+              </div>
+
+              <!-- Selected Story Input / Edit Box -->
+              <div class="bg-slate-950 border border-sky-500/30 p-4 rounded-xl space-y-2">
+                <label class="block text-xs font-bold text-sky-400 flex items-center justify-between">
+                  <span>Historia / Contexto Seleccionado (Editable):</span>
+                  <span class="text-[10px] text-slate-500">3 - 30 Segundos</span>
+                </label>
+                <textarea id="wizSelectedHistoria" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none" placeholder="Selecciona una opción de arriba o personalízala..."></textarea>
+              </div>
+
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between items-center">
+                <button type="button" onclick="goToWizardStep(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                  <span>Volver al Gancho</span>
+                </button>
+                <button type="button" onclick="advanceWizardToStep3()" class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-sky-950/40 cursor-pointer">
+                  <span>Paso 3: Generar Moralejas y Valor</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 CONTAINER: 5 MORAL / VALUE RECOMMENDATIONS -->
+          <div id="wizStepView3" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="text-purple-400">💡</span> Paso 3: Selecciona la Moraleja / Valor (5 Opciones)
+                  </h4>
+                  <p class="text-xs text-slate-400">La lección contundente o aprendizaje clave para tu audiencia.</p>
+                </div>
+                <button type="button" onclick="generateWizardStep3Morals()" class="text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar 5 Moralejas
+                </button>
+              </div>
+
+              <!-- 5 Options Grid -->
+              <div id="wizCardsGrid3" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- Cards injected via JS -->
+              </div>
+
+              <!-- Selected Moral Input / Edit Box -->
+              <div class="bg-slate-950 border border-purple-500/30 p-4 rounded-xl space-y-2">
+                <label class="block text-xs font-bold text-purple-400 flex items-center justify-between">
+                  <span>Moraleja / Valor Seleccionado (Editable):</span>
+                  <span class="text-[10px] text-slate-500">30 - 40 Segundos</span>
+                </label>
+                <textarea id="wizSelectedMoraleja" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs sm:text-sm text-white focus:border-purple-500 outline-none" placeholder="Selecciona una opción de arriba o edítala..."></textarea>
+              </div>
+
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between items-center">
+                <button type="button" onclick="goToWizardStep(2)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                  <span>Volver a Historia</span>
+                </button>
+                <button type="button" onclick="advanceWizardToStep4()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-purple-950/40 cursor-pointer">
+                  <span>Paso 4: Generar Llamados a la Acción (CTA)</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4 CONTAINER: 5 CTA RECOMMENDATIONS -->
+          <div id="wizStepView4" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="text-emerald-400">📣</span> Paso 4: Selecciona el CTA / Llamado a la Acción (5 Opciones)
+                  </h4>
+                  <p class="text-xs text-slate-400">Fórmulas de alta conversión con palabras clave para comentarios o guardados.</p>
+                </div>
+                <button type="button" onclick="generateWizardStep4CTAs()" class="text-xs text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar 5 CTAs
+                </button>
+              </div>
+
+              <!-- 5 Options Grid -->
+              <div id="wizCardsGrid4" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- Cards injected via JS -->
+              </div>
+
+              <!-- Selected CTA Input / Edit Box -->
+              <div class="bg-slate-950 border border-emerald-500/30 p-4 rounded-xl space-y-2">
+                <label class="block text-xs font-bold text-emerald-400 flex items-center justify-between">
+                  <span>Llamado a la Acción Seleccionado (Editable):</span>
+                  <span class="text-[10px] text-slate-500">40 - 50 Segundos</span>
+                </label>
+                <textarea id="wizSelectedCTA" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none" placeholder="Selecciona una opción de arriba o edítala..."></textarea>
+              </div>
+
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between items-center">
+                <button type="button" onclick="goToWizardStep(3)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                  <span>Volver a Moraleja</span>
+                </button>
+                <button type="button" onclick="advanceWizardToFinalAssembly()" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-emerald-950/40 cursor-pointer">
+                  <span>Finalizar y Ensamblar Reel ✨</span>
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 5 CONTAINER: REEL FINAL LISTO Y ACCIONES -->
+          <div id="wizStepView5" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="text-emerald-400">🎬</span> Reel Completo y Ensamblado en 4 Cajas
+                  </h4>
+                  <p class="text-xs text-slate-400">Revisa tu guión final, edítalo si deseas y envíalo al teleprónter o guárdalo.</p>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2 flex-wrap">
-                  <button type="button" onclick="saveAiReelToMatrix()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/40 cursor-pointer" title="Guardar como nuevo guión en la Matriz">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                    <span>Guardar en Matriz</span>
-                  </button>
-                  <button type="button" onclick="sendAiReelToTeleprompter()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer" title="Cargar en Teleprompter Pro">
+                  <button type="button" onclick="sendWizardToTeleprompter()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer" title="Cargar en Teleprompter Pro para iPad">
                     <i data-lucide="tv" class="w-3.5 h-3.5"></i>
-                    <span>Teleprónter Pro</span>
+                    <span>📺 Teleprónter Pro (iPad)</span>
                   </button>
-                  <button type="button" onclick="copyAiReelAll()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                  <button type="button" onclick="saveWizardToMatrix()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/40 cursor-pointer" title="Guardar como nuevo guión en la Matriz">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>📥 Guardar en Matriz</span>
+                  </button>
+                  <button type="button" onclick="copyWizardScript()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Copiar Todo</span>
+                    <span>📋 Copiar Todo</span>
+                  </button>
+                  <button type="button" onclick="resetWizard()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>Crear Otro Reel</span>
                   </button>
                 </div>
               </div>
 
-              <!-- The 4 Structured Boxes -->
+              <!-- 4 Final Assembled Boxes -->
               <div class="space-y-3">
                 <div>
                   <label class="block text-xs font-bold text-amber-400 mb-1 flex items-center justify-between">
                     <span>🎣 1. Gancho (Hook):</span>
-                    <span class="text-[10px] text-slate-500 font-normal">0-3 segundos</span>
+                    <span class="text-[10px] text-slate-500">0 - 3 Segundos</span>
                   </label>
-                  <textarea id="aiReelOutputGancho" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-amber-500 outline-none" placeholder="El gancho generado aparecerá aquí..."></textarea>
+                  <textarea id="wizFinalHook" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-amber-500 outline-none"></textarea>
                 </div>
 
                 <div>
                   <label class="block text-xs font-bold text-sky-400 mb-1 flex items-center justify-between">
                     <span>📖 2. Contexto / Historia (Cuerpo del Reel):</span>
-                    <span class="text-[10px] text-slate-500 font-normal">3-35 segundos</span>
+                    <span class="text-[10px] text-slate-500">3 - 30 Segundos</span>
                   </label>
-                  <textarea id="aiReelOutputHistoria" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none" placeholder="El desarrollo del contenido aparecerá aquí..."></textarea>
+                  <textarea id="wizFinalStory" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none"></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-bold text-purple-400 mb-1 flex items-center justify-between">
                       <span>💡 3. Moraleja / Valor:</span>
+                      <span class="text-[10px] text-slate-500">30 - 40 Segundos</span>
                     </label>
-                    <textarea id="aiReelOutputMoraleja" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-purple-500 outline-none" placeholder="La conclusión o enseñanza clave..."></textarea>
+                    <textarea id="wizFinalMoral" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-purple-500 outline-none"></textarea>
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-emerald-400 mb-1 flex items-center justify-between">
                       <span>📣 4. Llamado a la Acción (CTA):</span>
+                      <span class="text-[10px] text-slate-500">40 - 50 Segundos</span>
                     </label>
-                    <textarea id="aiReelOutputCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none" placeholder="El CTA para comentarios / guardados..."></textarea>
+                    <textarea id="wizFinalCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none"></textarea>
                   </div>
                 </div>
               </div>
 
             </div>
-
           </div>
+
         </div>
 
         <!-- ============================================== -->
@@ -2555,6 +2711,6 @@
   <div id="dedicatedPrintArea"></div>
 
   <script src="ai-hooks-data.js?v=2.0"></script>
-  <script src="app.js?v=11.0&t=1789410000"></script>
+  <script src="app.js?v=12.0&t=1789420000"></script>
 </body>
 </html>
