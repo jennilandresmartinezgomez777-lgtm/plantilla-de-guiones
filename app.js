@@ -1,3 +1,345 @@
+
+// =========================================================================
+// UNIVERSAL ATTACHMENTS SUBSYSTEM (PDF, PHOTOS, DOCUMENTS)
+// =========================================================================
+
+let scriptPendingAttachments = [];
+let quickIdeaPendingAttachments = [];
+
+function formatFileSize(bytes) {
+  if (!bytes || isNaN(bytes)) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function getAttachmentIcon(type, name) {
+  const isImage = (type && type.startsWith('image/')) || /.(jpg|jpeg|png|webp|gif|svg)$/i.test(name || '');
+  const isPdf = (type === 'application/pdf') || /.pdf$/i.test(name || '');
+  if (isImage) return 'image';
+  if (isPdf) return 'file-text';
+  return 'paperclip';
+}
+
+async function readFileAsAttachment(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      const isImage = file.type.startsWith('image/') || /.(jpg|jpeg|png|webp)$/i.test(file.name);
+      
+      // Optimize large photos/camera captures to keep storage and sync blazing fast
+      if (isImage && file.size > 400 * 1024) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1600;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          resolve({
+            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+            name: file.name,
+            type: 'image/jpeg',
+            size: Math.round((compressedDataUrl.length * 3) / 4),
+            dataUrl: compressedDataUrl,
+            createdAt: new Date().toISOString()
+          });
+        };
+        img.onerror = () => {
+          resolve({
+            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+            name: file.name,
+            type: file.type || 'application/octet-stream',
+            size: file.size,
+            dataUrl: dataUrl,
+            createdAt: new Date().toISOString()
+          });
+        };
+        img.src = dataUrl;
+      } else {
+        resolve({
+          id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+          size: file.size,
+          dataUrl: dataUrl,
+          createdAt: new Date().toISOString()
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function openAttachmentPreviewModal(att) {
+  if (!att) return;
+  const modal = document.getElementById('attachmentPreviewModal');
+  const title = document.getElementById('attPreviewTitle');
+  const meta = document.getElementById('attPreviewMeta');
+  const icon = document.getElementById('attPreviewIcon');
+  const content = document.getElementById('attPreviewContent');
+  const downloadBtn = document.getElementById('attPreviewDownloadBtn');
+  const openNewTabBtn = document.getElementById('attPreviewOpenNewTabBtn');
+
+  if (!modal || !content) return;
+
+  const isImage = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
+  const isPdf = (att.type === 'application/pdf') || (att.dataUrl && att.dataUrl.startsWith('data:application/pdf')) || /.pdf$/i.test(att.name || '');
+
+  if (title) title.textContent = att.name || 'Archivo Adjunto';
+  if (meta) meta.textContent = `${isImage ? 'Fotografía / Imagen' : isPdf ? 'Documento PDF' : 'Archivo'} • ${formatFileSize(att.size)}`;
+
+  if (downloadBtn) {
+    downloadBtn.href = att.dataUrl || '#';
+    downloadBtn.download = att.name || 'archivo';
+  }
+  if (openNewTabBtn) {
+    openNewTabBtn.href = att.dataUrl || '#';
+  }
+
+  if (isImage) {
+    content.innerHTML = `
+      <div class="max-w-full max-h-[75vh] flex items-center justify-center">
+        <img src="${att.dataUrl}" alt="${att.name}" class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl border border-slate-800">
+      </div>
+    `;
+  } else if (isPdf) {
+    content.innerHTML = `
+      <div class="w-full h-[70vh] flex flex-col items-center justify-center">
+        <iframe src="${att.dataUrl}" class="w-full h-full rounded-xl border border-slate-800 bg-white"></iframe>
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="text-center p-8 space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-slate-800 text-cyan-400 flex items-center justify-center mx-auto">
+          <i data-lucide="file" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold text-white">${att.name}</h4>
+          <p class="text-xs text-slate-400 mt-1">${formatFileSize(att.size)}</p>
+        </div>
+        <a href="${att.dataUrl}" download="${att.name}" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition shadow-md">
+          <i data-lucide="download" class="w-4 h-4"></i> Descargar Archivo
+        </a>
+      </div>
+    `;
+  }
+
+  modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeAttachmentPreviewModal(e) {
+  const modal = document.getElementById('attachmentPreviewModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// -------------------------------------------------------------------------
+// SCRIPT MODAL ATTACHMENTS
+// -------------------------------------------------------------------------
+
+async function handleScriptFileSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const att = await readFileAsAttachment(files[i]);
+      scriptPendingAttachments.push(att);
+    } catch (err) {
+      console.error('Error reading script file:', err);
+    }
+  }
+
+  event.target.value = '';
+  renderScriptAttachmentsList();
+}
+
+function removeScriptAttachment(index) {
+  if (index >= 0 && index < scriptPendingAttachments.length) {
+    scriptPendingAttachments.splice(index, 1);
+    renderScriptAttachmentsList();
+  }
+}
+
+function renderScriptAttachmentsList() {
+  const container = document.getElementById('scriptAttachmentsList');
+  if (!container) return;
+
+  if (scriptPendingAttachments.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = scriptPendingAttachments.map((att, idx) => {
+    const isImage = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
+    const isPdf = (att.type === 'application/pdf') || /.pdf$/i.test(att.name || '');
+
+    return `
+      <div class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2 transition group">
+        <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="openAttachmentPreviewModal(scriptPendingAttachments[${idx}])">
+          ${isImage ? `
+            <img src="${att.dataUrl}" alt="${att.name}" class="w-9 h-9 rounded-lg object-cover border border-slate-700 shrink-0">
+          ` : `
+            <div class="w-9 h-9 rounded-lg ${isPdf ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-300'} flex items-center justify-center shrink-0">
+              <i data-lucide="${isPdf ? 'file-text' : 'paperclip'}" class="w-4 h-4"></i>
+            </div>
+          `}
+          <div class="min-w-0">
+            <p class="text-xs font-semibold text-white truncate group-hover:text-brand-300 transition">${att.name}</p>
+            <p class="text-[10px] text-slate-400">${formatFileSize(att.size)} • ${isImage ? 'Foto' : isPdf ? 'PDF' : 'Archivo'}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button type="button" onclick="openAttachmentPreviewModal(scriptPendingAttachments[${idx}])" title="Ver" class="p-1 text-slate-400 hover:text-white rounded transition">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+          </button>
+          <button type="button" onclick="removeScriptAttachment(${idx})" title="Eliminar" class="p-1 text-slate-400 hover:text-rose-400 rounded transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+// -------------------------------------------------------------------------
+// QUICK IDEA ATTACHMENTS
+// -------------------------------------------------------------------------
+
+async function handleQuickIdeaFileSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const att = await readFileAsAttachment(files[i]);
+      quickIdeaPendingAttachments.push(att);
+    } catch (err) {
+      console.error('Error reading quick idea file:', err);
+    }
+  }
+
+  event.target.value = '';
+  renderQuickIdeaAttachmentsList();
+}
+
+function removeQuickIdeaAttachment(index) {
+  if (index >= 0 && index < quickIdeaPendingAttachments.length) {
+    quickIdeaPendingAttachments.splice(index, 1);
+    renderQuickIdeaAttachmentsList();
+  }
+}
+
+function renderQuickIdeaAttachmentsList() {
+  const container = document.getElementById('quickIdeaAttachmentsList');
+  if (!container) return;
+
+  if (quickIdeaPendingAttachments.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = quickIdeaPendingAttachments.map((att, idx) => {
+    const isImage = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
+    const isPdf = (att.type === 'application/pdf') || /.pdf$/i.test(att.name || '');
+
+    return `
+      <div class="bg-slate-900 border border-slate-800 rounded-lg pl-2 pr-1.5 py-1 flex items-center gap-2 text-xs">
+        ${isImage ? `
+          <img src="${att.dataUrl}" alt="${att.name}" class="w-5 h-5 rounded object-cover border border-slate-700">
+        ` : `
+          <i data-lucide="${isPdf ? 'file-text' : 'paperclip'}" class="w-3.5 h-3.5 ${isPdf ? 'text-rose-400' : 'text-amber-400'}"></i>
+        `}
+        <span class="text-slate-200 truncate max-w-[120px] font-medium">${att.name}</span>
+        <button type="button" onclick="removeQuickIdeaAttachment(${idx})" class="text-slate-400 hover:text-rose-400 p-0.5 rounded transition">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  refreshLucideIcons();
+}
+
+// -------------------------------------------------------------------------
+// NOTES ATTACHMENTS
+// -------------------------------------------------------------------------
+
+async function handleNoteFileSelect(event, noteId) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (!note) return;
+
+  if (!note.attachments) note.attachments = [];
+
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const att = await readFileAsAttachment(files[i]);
+      note.attachments.push(att);
+    } catch (err) {
+      console.error('Error attaching note file:', err);
+    }
+  }
+
+  note.updatedAt = new Date().toISOString();
+  saveState();
+  event.target.value = '';
+  renderNotesForActiveClient();
+}
+
+function deleteNoteAttachment(noteId, attId) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (!note || !note.attachments) return;
+
+  note.attachments = note.attachments.filter(a => a.id !== attId);
+  note.updatedAt = new Date().toISOString();
+  saveState();
+  renderNotesForActiveClient();
+}
+
+function previewNoteAttachment(noteId, attId) {
+  const client = state.activeNotesClient;
+  if (!state.notes[client]) return;
+  const note = state.notes[client].find(n => n.id === noteId);
+  if (!note || !note.attachments) return;
+  const att = note.attachments.find(a => a.id === attId);
+  if (att) openAttachmentPreviewModal(att);
+}
+
+function previewScriptAttachment(scriptId, attId) {
+  const script = state.scripts.find(s => s.id === scriptId);
+  if (!script || !script.attachments) return;
+  const att = script.attachments.find(a => a.id === attId);
+  if (att) openAttachmentPreviewModal(att);
+}
+
 // Content & Script Studio - Core Application Logic
 
 const INITIAL_CLIENTS = [
@@ -2102,6 +2444,8 @@ function getPointsForFormat(format) {
 
 // SCRIPT CRUD
 function openNewScriptModal() {
+  scriptPendingAttachments = [];
+  renderScriptAttachmentsList();
   state.editingScriptId = null;
   modalTitle.innerHTML = `<i data-lucide="plus" class="w-5 h-5 text-brand-500"></i> Nuevo Guión`;
   scriptForm.reset();
@@ -2124,6 +2468,8 @@ function openEditScriptModal(id) {
   if (!script) return;
 
   state.editingScriptId = id;
+  scriptPendingAttachments = Array.isArray(script.attachments) ? script.attachments.slice() : [];
+  renderScriptAttachmentsList();
   modalTitle.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-brand-500"></i> Editar Guión #${script.number || ''}`;
 
   document.getElementById('scriptId').value = script.id;
@@ -2265,6 +2611,51 @@ function openFocusScriptModal(id) {
       </div>
 
       ${script.contextoAdicional ? `
+        
+      ${(script.attachments && script.attachments.length > 0) ? `
+        <!-- Archivos y Fotos Adjuntas -->
+        <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+              <i data-lucide="paperclip" class="w-4 h-4"></i>
+              <span>ARCHIVOS Y FOTOS DE REFERENCIA (${script.attachments.length})</span>
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            ${script.attachments.map(att => {
+              const isImg = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
+              const isPdf = (att.type === 'application/pdf') || /.pdf$/i.test(att.name || '');
+              return `
+                <div class="bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-2.5 group transition flex flex-col justify-between">
+                  <div class="cursor-pointer" onclick="previewScriptAttachment('${script.id}', '${att.id}')">
+                    ${isImg ? `
+                      <div class="w-full h-28 rounded-lg overflow-hidden bg-slate-950 mb-2 border border-slate-800">
+                        <img src="${att.dataUrl}" alt="${att.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                      </div>
+                    ` : `
+                      <div class="w-full h-28 rounded-lg ${isPdf ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-950 text-cyan-400'} flex flex-col items-center justify-center gap-1 mb-2 border border-slate-800">
+                        <i data-lucide="${isPdf ? 'file-text' : 'paperclip'}" class="w-8 h-8"></i>
+                        <span class="text-[10px] font-bold uppercase">${isPdf ? 'PDF' : 'Archivo'}</span>
+                      </div>
+                    `}
+                    <p class="text-xs font-bold text-white truncate" title="${att.name}">${att.name}</p>
+                    <p class="text-[10px] text-slate-400">${formatFileSize(att.size)}</p>
+                  </div>
+                  <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-800/80">
+                    <button onclick="previewScriptAttachment('${script.id}', '${att.id}')" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+                      <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver
+                    </button>
+                    <a href="${att.dataUrl}" download="${att.name}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1" title="Descargar">
+                      <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    </a>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+
         <!-- Contexto Adicional -->
         <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80 text-xs text-slate-400 flex items-center gap-2">
           <span>📍</span>
@@ -2328,6 +2719,7 @@ function handleScriptSubmit(e) {
     moraleja: document.getElementById('formMoraleja').value.trim(),
     cta: document.getElementById('formCTA').value.trim(),
     contextoAdicional: document.getElementById('formContextoAdicional').value.trim(),
+    attachments: scriptPendingAttachments || [],
     views: existingScript ? (existingScript.views || 0) : 0,
     comments: existingScript ? (existingScript.comments || 0) : 0,
     rating: existingScript ? (existingScript.rating || 0) : 0,
@@ -2351,6 +2743,8 @@ function handleScriptSubmit(e) {
 
 // QUICK IDEA CAPTURE LOGIC
 function openQuickIdeaModal() {
+  quickIdeaPendingAttachments = [];
+  renderQuickIdeaAttachmentsList();
   if (!quickIdeaModal) return;
   quickIdeaForm.reset();
 
@@ -2403,6 +2797,7 @@ function handleQuickIdeaSubmit(e) {
     objetivo: 'VIRAL',
     actor: clientName,
     contextoAdicional: notes ? `Idea rápida: ${notes}` : '',
+    attachments: quickIdeaPendingAttachments || [],
     completed: false,
     createdAt: new Date().toISOString()
   };
@@ -4103,6 +4498,11 @@ function renderNotesForActiveClient() {
               <i data-lucide="save" class="w-3.5 h-3.5"></i>
               <span>Guardar</span>
             </button>
+            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-sky-300 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs shadow-sm" title="Adjuntar foto o archivo a esta nota">
+              <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+              <span class="hidden md:inline">Adjuntar</span>
+              <input type="file" multiple accept="image/*,application/pdf,.doc,.docx,.txt,.csv" class="hidden" onchange="handleNoteFileSelect(event, '${note.id}')">
+            </label>
             <button onclick="copyNoteContent('${note.id}', this)" title="Copiar texto de la nota" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs cursor-pointer">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i>
               <span class="hidden md:inline">Copiar</span>
@@ -4121,6 +4521,48 @@ function renderNotesForActiveClient() {
             class="w-full bg-slate-950/70 border border-slate-800 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg p-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition font-sans leading-relaxed resize-y"
           >${escapeHtml(note.content || '')}</textarea>
         </div>
+
+        <!-- Note Attachments List -->
+        ${(note.attachments && note.attachments.length > 0) ? `
+          <div class="pt-2 border-t border-slate-800/60">
+            <p class="text-[11px] font-semibold text-slate-400 mb-2 flex items-center gap-1.5">
+              <i data-lucide="paperclip" class="w-3.5 h-3.5 text-sky-400"></i>
+              <span>Archivos y Fotos Adjuntas (${note.attachments.length})</span>
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              ${note.attachments.map(att => {
+                const isImg = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
+                const isPdf = (att.type === 'application/pdf') || /.pdf$/i.test(att.name || '');
+                return `
+                  <div class="relative bg-slate-950 border border-slate-800 hover:border-sky-500/50 rounded-xl p-2 group transition flex flex-col justify-between">
+                    <div class="cursor-pointer" onclick="previewNoteAttachment('${note.id}', '${att.id}')">
+                      ${isImg ? `
+                        <div class="w-full h-24 rounded-lg overflow-hidden bg-slate-900 mb-1.5 border border-slate-800">
+                          <img src="${att.dataUrl}" alt="${att.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        </div>
+                      ` : `
+                        <div class="w-full h-24 rounded-lg ${isPdf ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-900 text-sky-400'} flex flex-col items-center justify-center gap-1 mb-1.5 border border-slate-800">
+                          <i data-lucide="${isPdf ? 'file-text' : 'paperclip'}" class="w-6 h-6"></i>
+                          <span class="text-[10px] font-bold uppercase">${isPdf ? 'PDF' : 'Archivo'}</span>
+                        </div>
+                      `}
+                      <p class="text-xs font-bold text-white truncate" title="${att.name}">${att.name}</p>
+                      <p class="text-[10px] text-slate-400">${formatFileSize(att.size)}</p>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-800/80">
+                      <button onclick="previewNoteAttachment('${note.id}', '${att.id}')" class="text-[11px] text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1">
+                        <i data-lucide="eye" class="w-3 h-3"></i> Ver
+                      </button>
+                      <button onclick="deleteNoteAttachment('${note.id}', '${att.id}')" class="text-[11px] text-slate-500 hover:text-rose-400 flex items-center gap-1" title="Eliminar adjunto">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   }).join('');
