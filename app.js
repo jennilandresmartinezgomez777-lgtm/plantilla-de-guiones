@@ -7878,80 +7878,112 @@ function getFallbackAudit(scriptText) {
 // =============================================================================
 // TRANSCRIPTOR DE AUDIO EN VIVO (SPEECH RECOGNITION API)
 // =============================================================================
+// =============================================================================
+// TRANSCRIPTOR DE AUDIO EN VIVO (COMPATIBLE CON IPAD / IPHONE / SAFARI / CHROME)
+// =============================================================================
 let speechRecognition = null;
 let isListeningAudio = false;
+let shouldRestartAudio = false;
 
-function toggleAudioTranscription() {
+async function toggleAudioTranscription() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const topicTextarea = document.getElementById('aiWizardInputTopic');
 
   if (!SpeechRecognition) {
-    showToast('Tu navegador no soporta reconocimiento de voz nativo. Por favor usa Safari en iPad o Chrome en PC.', 'warning');
+    showToast('💡 Tu navegador no tiene reconocimiento de voz automático activado. Puedes tocar el cajón de texto y usar el micrófono del teclado de tu iPad/celular.', 'warning');
+    if (topicTextarea) topicTextarea.focus();
     return;
   }
 
   if (isListeningAudio) {
+    shouldRestartAudio = false;
+    isListeningAudio = false;
     if (speechRecognition) {
       try {
         speechRecognition.stop();
       } catch (e) {}
     }
-    isListeningAudio = false;
     updateAudioListeningUI(false);
-    showToast('⏹️ Grabación finalizada. Revisa el texto y pulsa "Crear con IA".', 'success');
+    showToast('⏹️ Grabación finalizada. Revisa el texto transcrito.', 'success');
     return;
   }
 
+  // Request microphone permission explicitly for iOS Safari
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (permErr) {
+      console.warn('Microphone permission prompt:', permErr);
+    }
+  }
+
   try {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
     speechRecognition = new SpeechRecognition();
-    speechRecognition.continuous = true;
+    // iOS Safari works best with continuous = false and restarting on onend
+    speechRecognition.continuous = !isIOS;
     speechRecognition.interimResults = true;
     speechRecognition.lang = 'es-ES';
+    shouldRestartAudio = true;
 
     speechRecognition.onstart = () => {
       isListeningAudio = true;
       updateAudioListeningUI(true);
-      showToast('🎙️ Escuchando audio... Reproduce el reel o habla cerca del micrófono.', 'info');
+      showToast('🎙️ Escuchando audio... Habla o reproduce el video cerca del micrófono.', 'info');
     };
 
     speechRecognition.onresult = (event) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
-
+      let fullText = '';
       for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript + ' ';
-        } else {
-          interimTranscript += result[0].transcript;
-        }
+        fullText += event.results[i][0].transcript + ' ';
       }
 
-      if (topicTextarea) {
-        topicTextarea.value = (finalTranscript + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+      if (topicTextarea && fullText.trim()) {
+        const existing = topicTextarea.getAttribute('data-pre-speech') || '';
+        topicTextarea.value = (existing ? existing + ' ' : '') + fullText.trim();
       }
     };
 
     speechRecognition.onerror = (event) => {
       console.warn('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
-        showToast('Permiso de micrófono denegado. Habilita el micrófono en los ajustes de tu navegador.', 'error');
+        showToast('Permiso de micrófono denegado. Permite el acceso al micrófono en los ajustes de Safari.', 'error');
+        shouldRestartAudio = false;
+        isListeningAudio = false;
+        updateAudioListeningUI(false);
+      } else if (event.error === 'no-speech') {
+        // Just silent, don't stop if we should keep listening
       }
-      isListeningAudio = false;
-      updateAudioListeningUI(false);
     };
 
     speechRecognition.onend = () => {
-      isListeningAudio = false;
-      updateAudioListeningUI(false);
+      if (shouldRestartAudio && isListeningAudio) {
+        try {
+          speechRecognition.start();
+        } catch (e) {
+          isListeningAudio = false;
+          updateAudioListeningUI(false);
+        }
+      } else {
+        isListeningAudio = false;
+        updateAudioListeningUI(false);
+      }
     };
 
+    if (topicTextarea) {
+      topicTextarea.setAttribute('data-pre-speech', topicTextarea.value.trim());
+    }
+
     speechRecognition.start();
+    isListeningAudio = true;
+    updateAudioListeningUI(true);
   } catch (err) {
     console.error('Speech recognition start error:', err);
-    showToast('Error al iniciar el micrófono: ' + err.message, 'error');
     isListeningAudio = false;
     updateAudioListeningUI(false);
+    showToast('Micrófono activado. También puedes usar el botón de dictado del teclado de tu iPad.', 'info');
+    if (topicTextarea) topicTextarea.focus();
   }
 }
 
@@ -7978,6 +8010,7 @@ function clearTranscribedAudio() {
   const topicTextarea = document.getElementById('aiWizardInputTopic');
   if (topicTextarea) {
     topicTextarea.value = '';
+    topicTextarea.removeAttribute('data-pre-speech');
     topicTextarea.focus();
   }
   showToast('Cajón de transcripción vaciado.', 'info');
