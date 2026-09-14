@@ -6474,6 +6474,159 @@ function getAiApiEndpoint(base, route) {
   return `${clean}/api/${route}`;
 }
 
+async 
+// =============================================================================
+// MODAL DE CONFIGURACIÓN DE SERVIDOR IA (OLLAMA / MODELO)
+// =============================================================================
+
+function openAiServerConfigModal() {
+  const modal = document.getElementById('aiServerConfigModal');
+  if (!modal) {
+    console.error('aiServerConfigModal not found');
+    return;
+  }
+  
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const modelInput = document.getElementById('aiConfigModelName');
+  const resultDiv = document.getElementById('aiConfigTestResult');
+
+  const savedUrl = localStorage.getItem('ai_server_url') || aiState.serverUrl || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:11434' : 'http://192.168.1.10:11434');
+  const savedModel = localStorage.getItem('ai_model') || aiState.model || 'qwen2.5:7b';
+
+  if (urlInput) {
+    urlInput.value = savedUrl;
+  }
+  if (modelInput) {
+    modelInput.value = savedModel;
+  }
+  if (resultDiv) {
+    resultDiv.classList.add('hidden');
+    resultDiv.innerHTML = '';
+  }
+
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeAiServerConfigModal() {
+  const modal = document.getElementById('aiServerConfigModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+async function testAiServerConnection() {
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const modelInput = document.getElementById('aiConfigModelName');
+  const resultDiv = document.getElementById('aiConfigTestResult');
+  const btn = document.getElementById('btnAiTestConn');
+
+  const testUrl = urlInput ? urlInput.value.trim() : aiState.serverUrl;
+  const testModel = modelInput ? modelInput.value.trim() : aiState.model;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Conectando...';
+  }
+
+  if (resultDiv) {
+    resultDiv.classList.remove('hidden');
+    resultDiv.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300';
+    resultDiv.innerHTML = 'Probando conexión con <code>' + testUrl + '</code>...';
+  }
+
+  try {
+    const targetUrl = getAiApiEndpoint(testUrl, 'tags');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(targetUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      const models = data.models || [];
+      const modelNames = models.map(m => m.name).join(', ') || 'OK';
+      
+      aiUpdateConnectionBadge(true);
+      if (resultDiv) {
+        resultDiv.className = 'p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-300 space-y-1';
+        resultDiv.innerHTML = '<strong>✅ ¡Conexión exitosa!</strong><br><span class="text-[11px] text-slate-300">Servidor IA detectado y listo. Modelos disponibles: <b>' + (modelNames || testModel) + '</b></span>';
+      }
+      showToast('✅ ¡Conexión con servidor IA exitosa!', 'success');
+    } else {
+      throw new Error('Servidor respondió con código ' + res.status);
+    }
+  } catch (err) {
+    aiUpdateConnectionBadge(false);
+    if (resultDiv) {
+      resultDiv.className = 'p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-xs text-rose-300 space-y-1.5';
+      resultDiv.innerHTML = '<strong>❌ No se pudo conectar al servidor IA</strong><br>' +
+        '<span class="text-[11px] text-slate-300">Asegúrate de que tu PC esté encendido con Ollama activo. Si estás en iPad/iPhone por WiFi, usa: <code>http://192.168.1.10:11434</code> o <code>http://192.168.1.10:3000/api/ollama</code>.</span>';
+    }
+    showToast('No se pudo conectar al servidor IA', 'warning');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Probar Conexión</span>';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+
+function saveAiServerConfig() {
+  const urlInput = document.getElementById('aiConfigServerUrl');
+  const modelInput = document.getElementById('aiConfigModelName');
+
+  if (urlInput) {
+    const cleanUrl = urlInput.value.trim().replace(/\/+$/, '');
+    aiState.serverUrl = cleanUrl;
+    localStorage.setItem('ai_server_url', cleanUrl);
+  }
+
+  if (modelInput) {
+    const cleanModel = modelInput.value.trim();
+    aiState.model = cleanModel;
+    localStorage.setItem('ai_model', cleanModel);
+  }
+
+  showToast('💾 Ajustes de servidor guardados con éxito', 'success');
+  closeAiServerConfigModal();
+  checkAiServerHealth();
+}
+
+// =============================================================================
+// CONECTOR: ENVIAR EVALUACIÓN VIRAL AL CREADOR DE REEL CON IA
+// =============================================================================
+
+function sendViralEvaluationToAiStudio() {
+  const titleInput = document.getElementById('viralIdeaTitle');
+  const ideaTitle = titleInput ? titleInput.value.trim() : '';
+
+  if (!ideaTitle) {
+    showToast('Ingresa un título o idea primero en la calculadora.', 'warning');
+    if (titleInput) titleInput.focus();
+    return;
+  }
+
+  const selectedFormatRadio = document.querySelector('input[name="viralFormatoRadio"]:checked');
+  const format = selectedFormatRadio ? selectedFormatRadio.value : 'Formato POV';
+
+  // Set topic in AI Studio Wizard
+  const wizardTopic = document.getElementById('aiWizardInputTopic');
+  if (wizardTopic) {
+    wizardTopic.value = ideaTitle;
+  }
+
+  // Switch to AI Studio view and wizard tab
+  switchView('ai_studio');
+  if (typeof switchAiTab === 'function') {
+    switchAiTab('wizard');
+  }
+
+  showToast('🎬 ¡Idea cargada en el Creador de Reel (4 Pasos) con IA!', 'success');
+}
+
+
 async function checkAiServerHealth() {
   try {
     const targetUrl = getAiApiEndpoint(aiState.serverUrl, 'tags');
