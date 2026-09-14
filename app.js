@@ -6474,7 +6474,6 @@ function getAiApiEndpoint(base, route) {
   return `${clean}/api/${route}`;
 }
 
-async 
 // =============================================================================
 // MODAL DE CONFIGURACIÓN DE SERVIDOR IA (OLLAMA / MODELO)
 // =============================================================================
@@ -6501,17 +6500,20 @@ function openAiServerConfigModal() {
   }
   if (resultDiv) {
     resultDiv.classList.add('hidden');
+    resultDiv.style.display = 'none';
     resultDiv.innerHTML = '';
   }
 
   modal.classList.remove('hidden');
-  if (window.lucide) lucide.createIcons();
+  modal.style.display = 'flex';
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function closeAiServerConfigModal() {
   const modal = document.getElementById('aiServerConfigModal');
   if (modal) {
     modal.classList.add('hidden');
+    modal.style.display = 'none';
   }
 }
 
@@ -6568,7 +6570,7 @@ async function testAiServerConnection() {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span>Probar Conexión</span>';
-      if (window.lucide) lucide.createIcons();
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
     }
   }
 }
@@ -7172,7 +7174,7 @@ function goToWizardStep(stepNum) {
     if (finalCTA) finalCTA.value = wizardState.selectedCTA || (document.getElementById('wizSelectedCTA') ? document.getElementById('wizSelectedCTA').value : '');
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 
@@ -7644,7 +7646,7 @@ function renderAiAuditResults(data, originalScript) {
   html += '</div>';
 
   container.innerHTML = html;
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 
   // Run initial calculation to update live score badges and verdict
   recalculateAiAuditScore();
@@ -8136,7 +8138,7 @@ function renderWizardStep0Strategy(strat) {
   html += '</div></div></div>';
 
   container.innerHTML = html;
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function selectWizardStrategyAngle(idx) {
@@ -8268,7 +8270,7 @@ function renderWizardStep1Cards(hooks) {
     selectWizardHook(0);
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function selectWizardHook(idx) {
@@ -8400,7 +8402,7 @@ function renderWizardStep2Cards(stories) {
     selectWizardStory(0);
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function selectWizardStory(idx) {
@@ -8525,7 +8527,7 @@ function renderWizardStep3Cards(morals) {
     selectWizardMoral(0);
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function selectWizardMoral(idx) {
@@ -8647,7 +8649,7 @@ function renderWizardStep4Cards(ctas) {
     selectWizardCTA(0);
   }
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
 }
 
 function selectWizardCTA(idx) {
