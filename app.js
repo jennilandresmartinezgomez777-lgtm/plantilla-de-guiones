@@ -7077,18 +7077,133 @@ async function handleWizardLinkInput(url) {
   }, 600);
 }
 
+
+// =============================================================================
+// TRANSCRIPTOR DE AUDIO EN VIVO (SPEECH RECOGNITION API)
+// =============================================================================
+let speechRecognition = null;
+let isListeningAudio = false;
+
+function toggleAudioTranscription() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const topicTextarea = document.getElementById('aiWizardInputTopic');
+
+  if (!SpeechRecognition) {
+    showToast('Tu navegador no soporta reconocimiento de voz nativo. Por favor usa Safari en iPad o Chrome en PC.', 'warning');
+    return;
+  }
+
+  if (isListeningAudio) {
+    if (speechRecognition) {
+      try {
+        speechRecognition.stop();
+      } catch (e) {}
+    }
+    isListeningAudio = false;
+    updateAudioListeningUI(false);
+    showToast('⏹️ Grabación finalizada. Revisa el texto y pulsa "Crear con IA".', 'success');
+    return;
+  }
+
+  try {
+    speechRecognition = new SpeechRecognition();
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = true;
+    speechRecognition.lang = 'es-ES';
+
+    speechRecognition.onstart = () => {
+      isListeningAudio = true;
+      updateAudioListeningUI(true);
+      showToast('🎙️ Escuchando audio... Reproduce el reel o habla cerca del micrófono.', 'info');
+    };
+
+    speechRecognition.onresult = (event) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript + ' ';
+        } else {
+          interimTranscript += result[0].transcript;
+        }
+      }
+
+      if (topicTextarea) {
+        topicTextarea.value = (finalTranscript + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+      }
+    };
+
+    speechRecognition.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        showToast('Permiso de micrófono denegado. Habilita el micrófono en los ajustes de tu navegador.', 'error');
+      }
+      isListeningAudio = false;
+      updateAudioListeningUI(false);
+    };
+
+    speechRecognition.onend = () => {
+      isListeningAudio = false;
+      updateAudioListeningUI(false);
+    };
+
+    speechRecognition.start();
+  } catch (err) {
+    console.error('Speech recognition start error:', err);
+    showToast('Error al iniciar el micrófono: ' + err.message, 'error');
+    isListeningAudio = false;
+    updateAudioListeningUI(false);
+  }
+}
+
+function updateAudioListeningUI(active) {
+  const btn = document.getElementById('btnToggleLiveAudio');
+  const statusBox = document.getElementById('aiAudioStatusBox');
+  const btnText = document.getElementById('btnToggleLiveAudioText');
+  const pulseDot = document.getElementById('aiAudioPulseDot');
+
+  if (active) {
+    if (btn) btn.className = 'w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer animate-pulse';
+    if (btnText) btnText.innerText = '⏹️ Detener Escucha';
+    if (statusBox) statusBox.classList.remove('hidden');
+    if (pulseDot) pulseDot.className = 'w-3 h-3 rounded-full bg-rose-500 animate-ping';
+  } else {
+    if (btn) btn.className = 'w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-600 hover:from-purple-500 hover:to-sky-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer';
+    if (btnText) btnText.innerText = '🎙️ Escuchar Reel / Audio en Vivo';
+    if (statusBox) statusBox.classList.add('hidden');
+    if (pulseDot) pulseDot.className = 'w-3 h-3 rounded-full bg-purple-400';
+  }
+}
+
+function clearTranscribedAudio() {
+  const topicTextarea = document.getElementById('aiWizardInputTopic');
+  if (topicTextarea) {
+    topicTextarea.value = '';
+    topicTextarea.focus();
+  }
+  showToast('Cajón de transcripción vaciado.', 'info');
+}
+
 async function startWizardProcess() {
-  const elLink = document.getElementById('aiWizardInputLink');
   const elTopic = document.getElementById('aiWizardInputTopic');
 
-  wizardState.link = elLink ? elLink.value.trim() : '';
-  wizardState.niche = getEffectiveNiche();
   wizardState.topic = elTopic ? elTopic.value.trim() : '';
+  wizardState.niche = getEffectiveNiche();
+  wizardState.link = '';
 
-  if (!wizardState.topic && !wizardState.link) {
-    showToast('Por favor escribe un tema, idea o pega un link de referencia para comenzar.', 'warning');
+  if (!wizardState.topic) {
+    showToast('Por favor pulsa "🎙️ Escuchar Reel" para capturar el audio o escribe tu idea para comenzar.', 'warning');
     if (elTopic) elTopic.focus();
     return;
+  }
+
+  // Stop listening if active
+  if (isListeningAudio && speechRecognition) {
+    try { speechRecognition.stop(); } catch (e) {}
+    isListeningAudio = false;
+    updateAudioListeningUI(false);
   }
 
   goToWizardStep(0);
