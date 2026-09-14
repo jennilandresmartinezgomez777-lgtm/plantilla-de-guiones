@@ -1,4 +1,3 @@
-// BLEX STUDIO - Servidor Local y Proxy para iPad / iPhone / PC
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +17,96 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml'
 };
 
+async function extractLinkMetadata(targetUrl) {
+  try {
+    const urlObj = new URL(targetUrl);
+    const host = urlObj.hostname.toLowerCase();
+
+    // 1. YouTube
+    if (host.includes('youtube.com') || host.includes('youtu.be')) {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          success: true,
+          platform: 'YouTube',
+          title: data.title || '',
+          author: data.author_name || '',
+          description: `Video de YouTube: "${data.title}" por ${data.author_name}`
+        };
+      }
+    }
+
+    // 2. TikTok
+    if (host.includes('tiktok.com')) {
+      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(targetUrl)}`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          success: true,
+          platform: 'TikTok',
+          title: data.title || '',
+          author: data.author_name || '',
+          description: `Video de TikTok: "${data.title}" por ${data.author_name}`
+        };
+      }
+    }
+
+    // 3. Instagram
+    if (host.includes('instagram.com')) {
+      try {
+        const res = await fetch(targetUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+        const html = await res.text();
+        const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i);
+        const ogDesc = html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i);
+        
+        if (ogDesc && ogDesc[1] && !ogDesc[1].toLowerCase().includes('create an account')) {
+          return {
+            success: true,
+            platform: 'Instagram',
+            title: ogTitle ? ogTitle[1] : 'Reel de Instagram',
+            description: ogDesc[1]
+          };
+        }
+      } catch (e) {}
+
+      return {
+        success: false,
+        platform: 'Instagram',
+        requiresManualText: true,
+        message: 'Instagram protege los reels contra bots directos. Escribe abajo en una frase de qué trata el video para que la IA lo analice con 100% de precisión.'
+      };
+    }
+
+    // 4. Generic Web Page
+    const res = await fetch(targetUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+    });
+    const html = await res.text();
+    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+    const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i) ||
+                      html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i);
+    
+    return {
+      success: true,
+      platform: 'Web',
+      title: titleMatch ? titleMatch[1].trim() : '',
+      description: descMatch ? descMatch[1].trim() : (titleMatch ? titleMatch[1].trim() : '')
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   // CORS Headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,6 +117,37 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200);
     res.end();
     return;
+  }
+
+  // Link Metadata Extractor endpoint
+  if (req.url.startsWith('/api/extract-link')) {
+    let body = '';
+    if (req.method === 'POST') {
+      body = await new Promise((resolve) => {
+        let chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', () => resolve(Buffer.concat(chunks).toString()));
+      });
+    }
+
+    try {
+      const parsed = JSON.parse(body || '{}');
+      const url = parsed.url;
+      if (!url) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'URL is required' }));
+        return;
+      }
+
+      const meta = await extractLinkMetadata(url);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(meta));
+      return;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return;
+    }
   }
 
   // Ollama Proxy route: handles /api/ollama/*, /api/ollama/api/*, /ollama/*
@@ -98,8 +218,9 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`===================================================`);
-  console.log(`🚀 BLEX STUDIO SERVIDOR ACTIVO`);
-  console.log(`• En tu PC: http://localhost:${PORT}`);
-  console.log(`• En tu iPad / iPhone: http://192.168.1.10:${PORT}`);
+  console.log(` BLEX STUDIO SERVIDOR ACTIVO`);
+  console.log(` - Acceso Local (PC): http://localhost:${PORT}`);
+  console.log(` - Acceso iPad / iPhone: http://0.0.0.0:${PORT}`);
+  console.log(` - Ollama Host Proxy: ${OLLAMA_HOST}`);
   console.log(`===================================================`);
 });

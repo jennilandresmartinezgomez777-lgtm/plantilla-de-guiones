@@ -1331,10 +1331,13 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
               <!-- Link Reference (Optional) -->
               <div class="md:col-span-5 space-y-1">
-                <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <i data-lucide="link" class="w-3.5 h-3.5 text-sky-400"></i> Link de Referencia (Opcional)
-                </label>
-                <input type="url" id="aiWizardInputLink" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none placeholder:text-slate-600" placeholder="https://www.instagram.com/reel/... o TikTok / Shorts">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <i data-lucide="link" class="w-3.5 h-3.5 text-sky-400"></i> Link de Referencia (Instagram, YouTube, TikTok)
+                  </label>
+                  <span id="aiWizardLinkBadge" class="text-[10px] text-slate-500 hidden"></span>
+                </div>
+                <input type="url" id="aiWizardInputLink" oninput="handleWizardLinkInput(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:border-sky-500 outline-none placeholder:text-slate-600" placeholder="https://www.instagram.com/reel/... o YouTube / TikTok">
               </div>
 
               <!-- Niche / Focus Selector -->
@@ -1372,10 +1375,13 @@
               </div>
             </div>
 
-            <!-- Topic / Idea textarea -->
+            <!-- Topic / Video Transcript / Idea textarea -->
             <div class="space-y-1">
-              <label class="block text-xs font-bold text-slate-300">Tema, Idea Clave o Mensaje que quieres transmitir *</label>
-              <textarea id="aiWizardInputTopic" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600" placeholder="Ej: Ganar dinero con trading, o la trampa de los pasivos creyendo que son activos..."></textarea>
+              <label class="block text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span>¿De qué trata el video o cuál es tu idea/transcripción? *</span>
+                <span class="text-[11px] text-purple-400 font-normal">💡 Pega el resumen o guión del video aquí</span>
+              </label>
+              <textarea id="aiWizardInputTopic" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600" placeholder="Ej: El video habla sobre 3 trucos de ganchos virales para capturar retención... (O tu propia idea de dinero/desarrollo personal)"></textarea>
             </div>
           </div>
 
@@ -2773,7 +2779,7 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=2.2&t=1789405647270"></script>
-  <script src="app.js?v=18.0&t=1789405647270"></script>
+  <script src="ai-hooks-data.js?v=2.3&t=1789406027007"></script>
+  <script src="app.js?v=19.0&t=1789406027007"></script>
 </body>
 </html>

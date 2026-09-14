@@ -7022,6 +7022,61 @@ function goToWizardStep(stepNum) {
   if (window.lucide) lucide.createIcons();
 }
 
+
+// Helper to inspect links on the fly
+let linkDebounceTimer = null;
+async function handleWizardLinkInput(url) {
+  clearTimeout(linkDebounceTimer);
+  const badge = document.getElementById('aiWizardLinkBadge');
+  const topicInput = document.getElementById('aiWizardInputTopic');
+
+  const trimmed = (url || '').trim();
+  if (!trimmed || !trimmed.startsWith('http')) {
+    if (badge) badge.classList.add('hidden');
+    return;
+  }
+
+  if (badge) {
+    badge.className = 'text-[10px] text-amber-400 flex items-center gap-1';
+    badge.innerHTML = '<span class="inline-block animate-spin w-2.5 h-2.5 border-2 border-amber-400 border-t-transparent rounded-full"></span> Inspeccionando link...';
+    badge.classList.remove('hidden');
+  }
+
+  linkDebounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/extract-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: trimmed })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.title) {
+          if (badge) {
+            badge.className = 'text-[10px] text-emerald-400 font-bold flex items-center gap-1';
+            badge.innerHTML = '✓ Video detectado (' + data.platform + ')';
+            badge.classList.remove('hidden');
+          }
+          if (topicInput && !topicInput.value.trim()) {
+            topicInput.value = data.title;
+          }
+        } else if (data.requiresManualText) {
+          if (badge) {
+            badge.className = 'text-[10px] text-sky-400 flex items-center gap-1';
+            badge.innerHTML = 'ℹ️ Escribe abajo brevemente de qué habla el video';
+            badge.classList.remove('hidden');
+          }
+        } else {
+          if (badge) badge.classList.add('hidden');
+        }
+      }
+    } catch (e) {
+      if (badge) badge.classList.add('hidden');
+    }
+  }, 600);
+}
+
 async function startWizardProcess() {
   const elLink = document.getElementById('aiWizardInputLink');
   const elTopic = document.getElementById('aiWizardInputTopic');
@@ -7042,80 +7097,84 @@ async function startWizardProcess() {
 
 // STEP 0: Generate Strategic Diagnosis & Adaptation Angles
 async function generateWizardStep0Strategy() {
-  const topic = wizardState.topic;
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '');
   const link = wizardState.link;
   const niche = wizardState.niche || getEffectiveNiche();
 
   const container = document.getElementById('wizStrategyCardContainer');
   if (container) {
-    container.innerHTML = '<div class="p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Analizando estrategia y ángulo viral...</p><p class="text-xs text-slate-400">' + (link ? 'Desglosando el video de referencia y diseñando cómo darle la vuelta para tu nicho.' : 'Diagnosticando el dolor de la audiencia y alineando el mensaje clave.') + '</p></div>';
+    container.innerHTML = '<div class="p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Analizando estrategia y ángulo viral...</p><p class="text-xs text-slate-400">' + (link ? 'Analizando el contenido de referencia y estructurando cómo darle la vuelta hacia ' + niche + '.' : 'Diagnosticando la psicología de la audiencia y alineando el mensaje clave.') + '</p></div>';
   }
 
-  const prompt = 'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok para DINERO, FINANZAS Y DESARROLLO PERSONAL.\n\n' +
-    'INFORMACIÓN PROVISTA:\n' +
-    '- Enfoque/Nicho: ' + niche + '\n' +
-    '- Tema o Idea clave: "' + topic + '"\n' +
-    (link ? '- Link o video de referencia: ' + link + '\n' : '') + '\n' +
-    'OBJETIVO DEL PASO 0:\n' +
-    (link ? 
-      '1. Explicar brevemente sobre qué trata el video/concepto de referencia.\n' +
-      '2. Explicar exactamente CÓMO DARLE LA VUELTA a ese video para adaptarlo de forma original a tu nicho de dinero/desarrollo personal.\n' +
-      '3. Proponer 3 ángulos estratégicos de adaptación para que el creador elija.' :
-      '1. Analizar el valor psicológico de esta idea y qué es lo que la audiencia necesita escuchar con urgencia.\n' +
-      '2. Plantear la dirección estratégica recomendada para este guión.\n' +
-      '3. Proponer 3 ángulos estratégicos de enfoque.') + '\n\n' +
-    'Responde ÚNICAMENTE con un objeto JSON válido con este formato exacto:\n' +
-    '{\n' +
-    '  "overview": "Explicación clara de qué trata la idea o video y el valor central (2-3 líneas)",\n' +
-    '  "howToFlip": "Estrategia de cómo darle la vuelta y transformarlo en un contenido original de alto impacto para ' + niche + '",\n' +
-    '  "keyQuestion": "Pregunta de enfoque para alinear el propósito del video con el creador",\n' +
-    '  "angles": [\n' +
-    '    {\n' +
-    '      "title": "Nombre del Ángulo 1 (ej: Contraintuitivo / El Error que Nadie Ve)",\n' +
-    '      "desc": "Breve explicación de cómo se abordará el tema en el guión",\n' +
-    '      "hookIdea": "Idea de arranque"\n' +
-    '    },\n' +
-    '    {\n' +
-    '      "title": "Nombre del Ángulo 2 (ej: La Mentalidad del 1% vs 99%)",\n' +
-    '      "desc": "Breve explicación de la perspectiva",\n' +
-    '      "hookIdea": "Idea de arranque"\n' +
-    '    },\n' +
-    '    {\n' +
-    '      "title": "Nombre del Ángulo 3 (ej: Storytelling Personal & Revelación)",\n' +
-    '      "desc": "Breve explicación de la perspectiva",\n' +
-    '      "hookIdea": "Idea de arranque"\n' +
-    '    }\n' +
-    '  ]\n' +
-    '}';
+  // Build high-context prompt
+  const videoContentDesc = topic ? topic : (link ? 'un video viral de redes sociales (' + link + ')' : 'crecimiento y finanzas');
+
+  const prompt = [
+    'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok especializado en transformar cualquier contenido hacia DINERO, FINANZAS Y DESARROLLO PERSONAL.',
+    '',
+    'INFORMACIÓN DEL CREADOR:',
+    '- Contenido real de referencia o idea: "' + videoContentDesc + '"',
+    (link ? '- Enlace del video: ' + link : ''),
+    '- Nicho al que debemos adaptarlo: ' + niche,
+    '',
+    'TU TAREA DE DIAGNÓSTICO (Paso 0):',
+    '1. En "overview": Explica con precisión sobre qué trata el contenido de referencia ("' + videoContentDesc + '") y cuál es su mecánica de enganche o valor.',
+    '2. En "howToFlip": Explica EXACTAMENTE CÓMO DARLE LA VUELTA a ese tema ("' + videoContentDesc + '") para convertirlo en un guión de alto impacto enfocado en ' + niche + ' (ej: si habla de edición/guiones, cómo usar los guiones y la retención para monetizar y multiplicar ingresos; si habla de hábitos, cómo aplicarlo a las finanzas).',
+    '3. En "keyQuestion": Plantea una pregunta clave para que el creador defina su intención.',
+    '4. En "angles": Proporciona 3 ángulos estratégicos de adaptación para este tema.',
+    '',
+    'Responde ÚNICAMENTE con un objeto JSON válido con este formato exacto:',
+    '{',
+    '  "overview": "Explicación precisa de qué trata la referencia (' + videoContentDesc.replace(/"/g, '') + ')",',
+    '  "howToFlip": "Estrategia concreta de cómo darle la vuelta para ' + niche + ' manteniendo la esencia del tema",',
+    '  "keyQuestion": "Pregunta de enfoque",',
+    '  "angles": [',
+    '    {',
+    '      "title": "Ángulo 1 (ej: Aplicación Práctica a ' + niche + ')",',
+    '      "desc": "Cómo se abordará el tema en el guión",',
+    '      "hookIdea": "Idea de arranque"',
+    '    },',
+    '    {',
+    '      "title": "Ángulo 2 (ej: El Error del 99% vs La Regla del 1%)",',
+    '      "desc": "Perspectiva de shock",',
+    '      "hookIdea": "Idea de arranque"',
+    '    },',
+    '    {',
+    '      "title": "Ángulo 3 (ej: Storytelling y Transformación)",',
+    '      "desc": "Perspectiva de historia personal y monetización",',
+    '      "hookIdea": "Idea de arranque"',
+    '    }',
+    '  ]',
+    '}'
+  ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
-    let parsed = extractJsonObject(raw);
+    let parsed = null;
 
-    if (!parsed || !parsed.angles || parsed.angles.length < 2) {
-      parsed = getFallbackStrategy(topic, link, niche);
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+    } catch (pe) {
+      console.warn('Could not parse JSON directly from Ollama response, trying cleanup:', pe);
     }
 
-    wizardState.strategy = parsed;
-    renderWizardStep0Strategy(parsed);
+    if (parsed && parsed.angles && Array.isArray(parsed.angles) && parsed.angles.length > 0) {
+      wizardState.strategy = parsed;
+      renderWizardStep0Strategy(parsed);
+    } else {
+      console.warn('Incomplete parsed strategy, using fallback strategy:', raw);
+      wizardState.strategy = getFallbackStrategy(topic, link, niche);
+      renderWizardStep0Strategy(wizardState.strategy);
+    }
 
   } catch (err) {
-    console.warn('Ollama strategy error, using fallback:', err);
+    console.warn('Ollama Step 0 error, using high-quality fallback strategy:', err);
     wizardState.strategy = getFallbackStrategy(topic, link, niche);
     renderWizardStep0Strategy(wizardState.strategy);
   }
-}
-
-function extractJsonObject(text) {
-  if (!text) return null;
-  try {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start !== -1 && end !== -1 && end > start) {
-      return JSON.parse(text.substring(start, end + 1));
-    }
-  } catch (e) {}
-  return null;
 }
 
 function renderWizardStep0Strategy(strat) {
@@ -7757,27 +7816,27 @@ function copyWizardScript() {
 
 function getFallbackStrategy(topic, link, niche) {
   const isLink = Boolean(link);
+  const displayTopic = topic || (isLink ? 'el video de referencia' : 'estrategia financiera');
+
   return {
-    overview: isLink 
-      ? 'El video de referencia utiliza una estructura de curiosidad para enganchar a la audiencia en los primeros 3 segundos y luego entrega una lista o reflexión sobre hábitos.'
-      : 'Tu idea aborda uno de los mayores puntos de dolor de la audiencia: la frustración de intentar avanzar financieramente y cometer errores evitables.',
-    howToFlip: 'Para adaptarlo a ' + niche + ', no nos limitaremos a dar consejos genéricos. Vamos a presentar un contraste fuerte entre lo que hace el 99% (perseguir ganancias rápidas / gastar en pasivos) versus el sistema del 1% (gestión de riesgo, mentalidad de largo plazo y activos).',
-    keyQuestion: '¿Quieres enfocar este video como una advertencia sobre el error que más dinero les cuesta, o como una guía paso a paso para aplicar hoy mismo?',
+    overview: 'El contenido de referencia trata sobre: "' + displayTopic + '", utilizando una estructura de alto impacto para retener la atención.',
+    howToFlip: 'Para adaptarlo a ' + niche + ', mantendremos la estructura original de "' + displayTopic + '", pero redirigiendo la conclusión y el aprendizaje hacia la psicología del dinero, hábitos de riqueza y toma de decisiones inteligentes.',
+    keyQuestion: '¿Quieres enfocar este reel hacia inspirar acción inmediata o hacia advertir de un error grave sobre ' + displayTopic + '?',
     angles: [
       {
-        title: 'Mito Contraintuitivo & Error Oculto',
-        desc: 'Desafía la creencia popular y demuestra por qué la mayoría pierde dinero al seguir consejos comunes.',
-        hookIdea: 'Si crees que para tener éxito en esto necesitas más capital, estás cayendo en la trampa del 90%.'
+        title: 'Contraintuitivo & Romper Creencias',
+        desc: 'Desafía lo que el 90% cree sobre ' + displayTopic + ' y muestra por qué aplicarlo con mentalidad de riqueza lo cambia todo.',
+        hookIdea: 'Si aplicas ' + displayTopic + ' como la mayoría, estás perdiendo tiempo y dinero sin darte cuenta.'
       },
       {
-        title: 'La Regla de Oro del 1%',
-        desc: 'Muestra la diferencia exacta entre cómo piensa la persona promedio versus quien domina sus números.',
-        hookIdea: 'El 99% persigue resultados rápidos, pero los verdaderos ganadores aplican esta regla estricta.'
+        title: 'La Regla del 1% vs 99%',
+        desc: 'Compara cómo la persona promedio ignora ' + displayTopic + ' mientras el 1% lo usa como ventaja competitiva.',
+        hookIdea: 'El 99% no entiende el verdadero poder de ' + displayTopic + ', pero el 1% construye su libertad con esta regla.'
       },
       {
-        title: 'Storytelling & Método Práctico',
-        desc: 'Comparte un aprendizaje de transformación personal y entrega 3 pasos directos sin relleno.',
-        hookIdea: 'Tardé años en entender esto, pero cuando lo apliqué, mis resultados dieron un giro de 180 grados.'
+        title: 'Storytelling & Monetización',
+        desc: 'Comparte una lección práctica de cómo dominar ' + displayTopic + ' acelera tus resultados financieros.',
+        hookIdea: 'Cuando entendí cómo aplicar ' + displayTopic + ' a mis finanzas personales, mis resultados se multiplicaron.'
       }
     ]
   };
