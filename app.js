@@ -6318,6 +6318,97 @@ function setupTeleprompterProEventListeners() {
 // BLEX AI STUDIO & 64 VIRAL HOOKS ENGINE (QWEN 2.5 LOCAL)
 // =======================================================
 
+
+// =========================================================================
+// ENCICLOPEDIA MAESTRA DE CONTENIDO: DINERO & DESARROLLO PERSONAL EN REDES
+// =========================================================================
+const BLEX_MONEY_PERSONAL_DEV_KNOWLEDGE = `
+ENCICLOPEDIA MAESTRA DE CONTENIDO VIRAL: DINERO, FINANZAS & DESARROLLO PERSONAL (BLEX STUDIO)
+
+=============================================================================
+I. DOMINIO DEL DINERO & FINANZAS EN REDES SOCIALES
+=============================================================================
+1. PSICOLOGÍA DEL DINERO & SESGOS COGNITIVOS:
+   • La trampa del estatus (Status Trap): Gastar dinero que no tienes para impresionar a gente que no te importa.
+   • Riqueza Silenciosa (Stealth Wealth) vs. "Pobreza con Ropa Cara": El rico compra activos y tiempo; el que aparenta compra pasivos con logotipos gigantes.
+   • Gratificación Instantánea vs. Interés Compuesto: Por qué el 95% prefiere $100 hoy que $100,000 en 5 años.
+   • El Dolor de Pagar & Microfugas: Cómo las suscripciones invisibles y los "gastos hormiga" drenan más capital que un gasto grande.
+   • Relación emocional con el dinero: Curar la mentalidad de escasez (creer que el dinero es malo o finito) y adoptar mentalidad de valor (el dinero sigue al valor que aportas).
+
+2. EDUCACIÓN FINANCIERA PRÁCTICA & NIVELES DE RIQUEZA:
+   • Nivel 1: Sobrevivencia Financiera (Gastas más de lo que ganas, dependes de una sola fuente, deudas de consumo tóxicas con intereses altos).
+   • Nivel 2: Estabilidad & Control (Fondo de paz mental de 3 a 6 meses, presupuesto 50/30/20 real, 0 deudas destructivas).
+   • Nivel 3: Crecimiento & Habilidades de Alto Valor (Ventas, copywriting, creación de contenido, tecnología, consultoría, monetización de audiencia).
+   • Nivel 4: Libertad & Activos (Negocios digitales escalables, inversiones indexadas, bienes raíces, sistemas automatizados).
+
+3. ERRORES FATALES CON EL DINERO QUE LA GENTE COMETE:
+   • Dejar el dinero quieto en el banco perdiendo valor contra la inflación todos los días.
+   • Comprar un auto nuevo financiado a 5 o 7 años como "primer gran logro".
+   • Usar las tarjetas de crédito como una extensión del sueldo en vez de una herramienta de apalancamiento y cashback.
+   • Creer que necesitas ganar mucho dinero para empezar a invertir (el hábito y el tiempo importan más que la cantidad inicial).
+
+4. ÁNGULOS Y GANCHOS VIRALES DE DINERO:
+   • "Si tienes entre 20 y 35 años y tu cuenta bancaria sigue en cero, este es el porqué..."
+   • "La diferencia entre alguien que gana $1,000 y alguien que gana $10,000 no es el esfuerzo..."
+   • "3 cosas que los millonarios nunca compran (y la clase media presume)..."
+   • "La regla de las 72 horas antes de comprar cualquier cosa que supere $50..."
+
+=============================================================================
+II. DOMINIO DEL DESARROLLO PERSONAL & ALTO RENDIMIENTO (HIGH PERFORMANCE)
+=============================================================================
+1. DISCIPLINA SOBRE MOTIVACIÓN:
+   • La motivación es una emoción temporal; la disciplina es un sistema que funciona cuando no tienes ganas.
+   • Fricción vs. Facilidad: Cómo diseñar tu entorno para que los malos hábitos sean difíciles y los buenos sean automáticos.
+   • La Regla del 1% (Mejora Continua Kaizen): Pequeñas victorias diarias invisibles que producen resultados exponenciales en 1 año.
+
+2. DESINTOXICACIÓN DE DOPAMINA & ENFOQUE PROFUNDO (DEEP WORK):
+   • La epidemia del cerebro quemado (Brain Rot): Scroll infinito, pornografía, comida chatarra y recompensas sin esfuerzo.
+   • Cómo recuperar la concentración: Bloques de 90 minutos de trabajo sin teléfono ni notificaciones.
+   • El poder del Aburrimiento: Los momentos de creatividad nacen cuando dejas que tu cerebro descanse sin pantallas.
+
+3. RELACIONES & EL ENTORNO (LA REGLA DE LAS 5 PERSONAS):
+   • Eres el promedio de las 5 personas con las que más tiempo pasas y el contenido que más consumes.
+   • Aprender a decir NO sin sentir culpa: Proteger tu tiempo y energía como el activo más valioso.
+   • El silencio estratégico: Trabajar en secreto hasta que tus resultados hablen por ti.
+
+4. RESILIENCIA & RESPONSABILIDAD TOTAL (EXTREME OWNERSHIP):
+   • No es tu culpa de dónde vienes, pero es 100% tu responsabilidad dónde terminas.
+   • El fracaso no es lo opuesto al éxito, es el ingrediente principal del aprendizaje.
+   • Cómo matar el síndrome del impostor: Enfocarse en el servicio y en los hechos, no en las opiniones ajenas.
+
+5. ÁNGULOS Y GANCHOS VIRALES DE DESARROLLO PERSONAL:
+   • "El 99% de las personas va a desperdiciar este año haciendo exactamente lo mismo..."
+   • "Una verdad incómoda que tardé 5 años en aceptar..."
+   • "Cómo reprogramar tu mente en 30 días eliminando estas 3 cosas..."
+   • "Tus amigos no quieren verte quebrado, pero tampoco quieren verte más exitoso que ellos..."
+`;
+
+const BLEX_VIRAL_CALCULATOR_KNOWLEDGE = `
+MATRIZ Y CRITERIOS DE VIRALIDAD BLEX STUDIO (MÁXIMO 14.5 PUNTOS):
+Para que cualquier guión o gancho alcance millones de reproducciones y máxima retención en Reels, TikTok y YouTube Shorts, debe estructurarse obligatoriamente bajo estos 7 pilares:
+
+1. COMPRENSIÓN SIMPLE / NIÑO DE 5 AÑOS (+2.5 pts):
+   - Cero jerga técnica o explicaciones complejas. La idea debe entenderse en los primeros 2 segundos.
+
+2. ATRACCIÓN MASIVA / 50 DE 100 PERSONAS (+2.5 pts):
+   - Toca dolores y deseos universales (dinero, ahorro, errores cotidianos, estatus, tiempo, salud, relaciones).
+
+3. REFERENCIA VIRAL PREVIA / ÁNGULO PROBADO (+2.0 pts):
+   - Estructura inspirada en patrones y ganchos que ya superaron 1 millón de vistas.
+
+4. MERCADO Y AVATAR ACTIVO (+0.5 pts):
+   - Conexión emocional auténtica con la audiencia del creador/cliente.
+
+5. TENDENCIA / COYUNTURA ACTUAL (+1.5 pts):
+   - Conexión con temas actuales, patrones de búsqueda o sentido de urgencia temporal ("en 2026...", "hoy mismo...").
+
+6. CONTROVERSIA / DEBATE POLARIZANTE (+1.0 pts):
+   - Plantea afirmaciones contraintuitivas o preguntas provocativas respetuosas para que el público comente masivamente.
+
+7. INMERSIÓN VISUAL Y FORMATO DINÁMICO (+4.5 pts):
+   - Ritmo ágil: Gancho magnético (0-3s), Historia/Contexto sin relleno (3-30s), Moraleja con la pepita de oro (30-40s) y un CTA con palabra clave para comentar.
+`;
+
 const aiState = {
   serverUrl: localStorage.getItem('ai_server_url') || 'http://localhost:11434',
   model: localStorage.getItem('ai_model') || 'qwen2.5:7b',
@@ -6437,7 +6528,7 @@ function initAiStudio() {
 
 function populateAiClientDropdowns() {
   const clients = state.clients || ['Jennil'];
-  const selects = ['aiHookClientSelect', 'aiReelClientSelect', 'aiToneClientSelect'];
+  const selects = ['aiHookClientSelect', 'aiReelClientSelect', 'aiToneClientSelect', 'aiCloneClientSelect'];
   
   selects.forEach(selId => {
     const sel = document.getElementById(selId);
@@ -6460,7 +6551,7 @@ function populateAiClientDropdowns() {
 
 function switchAiTab(tabName) {
   aiState.activeTab = tabName;
-  const tabs = ['hooks', 'reel', 'audit', 'tone', 'teleprompter', 'catalog'];
+  const tabs = ['hooks', 'reel', 'audit', 'tone', 'teleprompter', 'clone', 'catalog'];
   
   tabs.forEach(t => {
     const panel = document.getElementById('aiPanel' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -6483,6 +6574,294 @@ function switchAiTab(tabName) {
   if (tabName === 'catalog') {
     renderAiCatalog();
   }
+}
+
+
+// -------------------------------------------------------
+// 6. CLONADOR & MODELADOR VIRAL POR LINK (INGENIERÍA INVERSA)
+// -------------------------------------------------------
+let aiCloneGeneratedScriptsCache = [];
+
+async function runAiCloneViralVideo() {
+  const url = document.getElementById('aiCloneInputUrl')?.value?.trim();
+  const desc = document.getElementById('aiCloneInputDesc')?.value?.trim();
+  const subNiche = document.getElementById('aiCloneSubNicheSelect')?.value || 'ALL_VARIED';
+  const count = parseInt(document.getElementById('aiCloneCountSelect')?.value || '4', 10);
+  const client = document.getElementById('aiCloneClientSelect')?.value || 'Jennil';
+  
+  const btn = document.getElementById('btnAiRunClone');
+  const timerBadge = document.getElementById('aiCloneTimerBadge');
+  const analysisCard = document.getElementById('aiCloneAnalysisCard');
+  const analysisContent = document.getElementById('aiCloneAnalysisContent');
+  const scriptsContainer = document.getElementById('aiCloneScriptsContainer');
+
+  if (!url && !desc) {
+    alert('Por favor ingresa al menos un enlace de Reel/TikTok o una breve descripción del video que deseas modelar.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Qwen 2.5 deconstruyendo video y redactando guiones...</span>';
+  }
+  if (timerBadge) timerBadge.textContent = '⏳ Analizando en GPU RTX...';
+
+  const startTime = Date.now();
+
+  const systemPrompt = `Eres el Director Estratégico de Contenido y Guionista Principal de BLEX STUDIO.
+Tu especialidad es la INGENIERÍA INVERSA VIRAL: tomas un video exitoso de redes sociales (Instagram, TikTok, YouTube Shorts), analizas por qué se volvió viral y trasladas su misma fórmula psicológica, gancho y cadencia al nicho de DINERO, FINANZAS Y DESARROLLO PERSONAL para el creador "${client}".
+
+BASE DE CONOCIMIENTO MAESTRA DE DINERO & DESARROLLO PERSONAL:
+${BLEX_MONEY_PERSONAL_DEV_KNOWLEDGE}
+
+MATRIZ DE VIRALIDAD (14.5 PUNTOS):
+${BLEX_VIRAL_CALCULATOR_KNOWLEDGE}
+
+OBJETIVO:
+1. Realiza una breve RADIOGRAFÍA VIRAL del video de referencia (Tipo de Gancho utilizado del catálogo de 64, Gatillo psicológico y Por qué retiene).
+2. Genera exactamente ${count} GUIONES COMPLETOS Y DIFERENTES adaptados al nicho de DINERO & DESARROLLO PERSONAL (Sub-enfoque: ${subNiche}).
+Cada guion debe estructurarse en 4 secciones obligatorias:
+- GANCHO (0-3s): Magnético, directo, aplicando la fórmula viral.
+- HISTORIA / CONTEXTO (3-30s): Lenguaje simple (entendible por un niño de 5 años), dinámico y de interés masivo (50 de 100 personas).
+- MORALEJA (30-40s): La pepita de oro o aprendizaje sintetizado.
+- CTA (40-50s): Llamado a la acción específico pidiendo comentar una palabra clave (ej: "Comenta DINERO...", "Escribe HABITOS...").
+
+FORMATO OBLIGATORIO DE RESPUESTA:
+[RADIOGRAFIA]
+• Fórmula de Gancho: [Nombre del gancho usado en el original]
+• Gatillo Psicológico: [Curiosidad, Controversia, Dolor/Error, etc.]
+• Por qué funciona: [Explicación de 1 o 2 líneas]
+
+[GUION 1: Sub-enfoque 1 (ej: Mentalidad & Psicología del Dinero)]
+[GANCHO]:
+[HISTORIA]:
+[MORALEJA]:
+[CTA]:
+
+[GUION 2: Sub-enfoque 2 (ej: Errores Financieros & Fugas de Capital)]
+[GANCHO]:
+[HISTORIA]:
+[MORALEJA]:
+[CTA]:
+
+[GUION 3: Sub-enfoque 3 (ej: Disciplina, Hábitos & Alto Rendimiento)]
+[GANCHO]:
+[HISTORIA]:
+[MORALEJA]:
+[CTA]:
+
+[GUION 4: Sub-enfoque 4 (ej: Creación de Riqueza & Habilidades de Alto Valor)]
+[GANCHO]:
+[HISTORIA]:
+[MORALEJA]:
+[CTA]:` + (count === 5 ? `\n\n[GUION 5: Sub-enfoque 5 (ej: Contraintuitivo / Rompiendo Mitos)]\n[GANCHO]:\n[HISTORIA]:\n[MORALEJA]:\n[CTA]:` : '');
+
+  const userPrompt = `Video de referencia:
+URL: ${url || 'No especificada'}
+Descripción o contenido del video original: ${desc || 'Modelar la estructura y ángulo de éxito para el nicho de dinero y superación personal'}`;
+
+  try {
+    const response = await aiCallOllama(userPrompt, systemPrompt, 0.72);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    if (timerBadge) timerBadge.textContent = `⚡ Generado en ${duration}s`;
+
+    // Extract Radiografia
+    const radioMatch = response.match(/\[RADIOGRAFIA\]([\s\S]*?)(?=\[GUION 1|$)/i);
+    if (radioMatch && analysisCard && analysisContent) {
+      analysisContent.innerHTML = radioMatch[1].trim().replace(/\n/g, '<br>');
+      analysisCard.classList.remove('hidden');
+    }
+
+    // Extract Scripts
+    aiCloneGeneratedScriptsCache = [];
+    const scriptBlocks = response.split(/\[GUION\s*(\d+):?\s*([^\]]*)\]/i);
+    
+    // Parse the matched blocks
+    for (let i = 1; i < scriptBlocks.length; i += 3) {
+      const num = scriptBlocks[i];
+      const title = scriptBlocks[i + 1] ? scriptBlocks[i + 1].trim() : `Guión ${num}`;
+      const body = scriptBlocks[i + 2] || '';
+
+      const ganchoMatch = body.match(/\[GANCHO\]:?([\s\S]*?)(?=\[HISTORIA\]|$)/i);
+      const historiaMatch = body.match(/\[HISTORIA\]:?([\s\S]*?)(?=\[MORALEJA\]|$)/i);
+      const moralejaMatch = body.match(/\[MORALEJA\]:?([\s\S]*?)(?=\[CTA\]|$)/i);
+      const ctaMatch = body.match(/\[CTA\]:?([\s\S]*?)$/i);
+
+      aiCloneGeneratedScriptsCache.push({
+        number: parseInt(num, 10) || (aiCloneGeneratedScriptsCache.length + 1),
+        title: title || `Guión ${aiCloneGeneratedScriptsCache.length + 1}`,
+        gancho: ganchoMatch ? ganchoMatch[1].trim() : '',
+        historia: historiaMatch ? historiaMatch[1].trim() : '',
+        moraleja: moralejaMatch ? moralejaMatch[1].trim() : '',
+        cta: ctaMatch ? ctaMatch[1].trim() : '',
+        client: client
+      });
+    }
+
+    // Render cards
+    renderAiCloneScripts(scriptsContainer);
+    if (window.lucide) window.lucide.createIcons();
+  } catch (err) {
+    alert('Error al clonar video con IA: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i><span>Desglosar Video y Crear Guiones de Nicho</span>';
+    }
+  }
+}
+
+function renderAiCloneScripts(container) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (aiCloneGeneratedScriptsCache.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center bg-slate-900 border border-slate-800 rounded-2xl text-xs text-slate-400">
+        No se pudieron estructurar los guiones. Intenta de nuevo.
+      </div>
+    `;
+    return;
+  }
+
+  aiCloneGeneratedScriptsCache.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'bg-slate-900 border border-slate-800 hover:border-fuchsia-500/50 rounded-2xl p-5 shadow-xl space-y-4 transition group';
+    
+    card.innerHTML = `
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+            ${s.number || idx + 1}
+          </span>
+          <h4 class="font-bold text-white text-xs sm:text-sm">${escapeHtml(s.title)}</h4>
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button type="button" onclick="sendCloneScriptToTeleprompter(${idx})" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer" title="Cargar este guión en el Teleprónter Pro para iPad">
+            <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+            <span>Teleprónter Pro</span>
+          </button>
+          <button type="button" onclick="saveCloneScriptToMatrix(${idx})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer" title="Guardar en Matriz de Guiones">
+            <i data-lucide="save" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span class="hidden sm:inline">Guardar en</span> Matriz
+          </button>
+          <button type="button" onclick="copyCloneScript(${idx})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs p-1.5 rounded-lg border border-slate-700 transition cursor-pointer" title="Copiar guión completo">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Structured Boxes -->
+      <div class="space-y-3 text-xs">
+        <!-- Hook -->
+        <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
+          <div class="flex items-center justify-between text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+            <span>🎣 1. Gancho (0-3s)</span>
+            <span class="text-[10px] text-slate-400 lowercase">alta retención</span>
+          </div>
+          <p class="text-slate-100 font-medium leading-relaxed">${escapeHtml(s.gancho)}</p>
+        </div>
+
+        <!-- Story / Context -->
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <div class="flex items-center justify-between text-[11px] font-bold text-sky-400 uppercase tracking-wider">
+            <span>📖 2. Historia / Desarrollo (3-30s)</span>
+            <span class="text-[10px] text-slate-400 lowercase">sin relleno</span>
+          </div>
+          <p class="text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(s.historia)}</p>
+        </div>
+
+        <!-- Moral -->
+        <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1">
+          <div class="flex items-center justify-between text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+            <span>💡 3. Moraleja / Valor (30-40s)</span>
+            <span class="text-[10px] text-slate-400 lowercase">la pepita de oro</span>
+          </div>
+          <p class="text-slate-100 font-medium leading-relaxed">${escapeHtml(s.moraleja)}</p>
+        </div>
+
+        <!-- CTA -->
+        <div class="p-3 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-1">
+          <div class="flex items-center justify-between text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+            <span>📣 4. CTA / Llamado a la Acción (40-50s)</span>
+            <span class="text-[10px] text-slate-400 lowercase">generador de comentarios</span>
+          </div>
+          <p class="text-slate-100 font-semibold leading-relaxed">${escapeHtml(s.cta)}</p>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function sendCloneScriptToTeleprompter(index) {
+  const s = aiCloneGeneratedScriptsCache[index];
+  if (!s) return;
+
+  if (typeof tpState !== 'undefined') {
+    tpState.mode = 'reel';
+    tpState.activeReelSlot = 1;
+    tpState.activeReelSection = 'all';
+    tpState.reelScripts[1] = {
+      title: s.title.substring(0, 25),
+      gancho: s.gancho,
+      historia: s.historia,
+      moraleja: s.moraleja,
+      cta: s.cta
+    };
+    if (typeof tpSaveScriptsToStorage === 'function') tpSaveScriptsToStorage();
+    if (typeof tpUpdateToolbarSelectors === 'function') tpUpdateToolbarSelectors();
+    if (typeof tpGetActiveDisplayScript === 'function') tpState.scriptText = tpGetActiveDisplayScript();
+    if (typeof tpRenderScript === 'function') tpRenderScript();
+    if (typeof tpResetToTop === 'function') tpResetToTop();
+  }
+
+  switchView('teleprompter_pro');
+  alert(`✅ Guión "${s.title}" cargado en el Teleprónter Pro para iPad.`);
+}
+
+function saveCloneScriptToMatrix(index) {
+  const s = aiCloneGeneratedScriptsCache[index];
+  if (!s) return;
+
+  const nextNumber = state.scripts.length > 0 ? Math.max(...state.scripts.map(sc => sc.number || 0)) + 1 : 1;
+  const newScript = {
+    id: generateId(),
+    number: nextNumber,
+    client: s.client || 'Jennil',
+    ideaGanadora: s.title.substring(0, 80),
+    gancho: s.gancho,
+    historia: s.historia,
+    moraleja: s.moraleja,
+    cta: s.cta,
+    actor: s.client || 'Jennil',
+    status: 'Idea',
+    createdAt: new Date().toISOString()
+  };
+
+  state.scripts.unshift(newScript);
+  saveScripts();
+  renderMatrix();
+  renderCards();
+  alert(`✅ Guión #${nextNumber} ("${s.title}") guardado en la Matriz de Guiones.`);
+}
+
+function copyCloneScript(index) {
+  const s = aiCloneGeneratedScriptsCache[index];
+  if (!s) return;
+
+  const full = [
+    `🎬 TÍTULO: ${s.title}`,
+    `🎣 GANCHO (0-3s):\n${s.gancho}`,
+    `📖 HISTORIA / DESARROLLO:\n${s.historia}`,
+    `💡 MORALEJA:\n${s.moraleja}`,
+    `📣 CTA:\n${s.cta}`
+  ].join('\n\n');
+
+  navigator.clipboard.writeText(full);
+  alert('✅ Guión copiado al portapapeles.');
 }
 
 // -------------------------------------------------------
