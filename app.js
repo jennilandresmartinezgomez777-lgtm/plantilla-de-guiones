@@ -8065,6 +8065,58 @@ function clearTranscribedAudio() {
   showToast('Cajón de transcripción vaciado.', 'info');
 }
 
+
+async function polishTranscriptWithAi() {
+  const topicTextarea = document.getElementById('aiWizardInputTopic');
+  const rawText = topicTextarea ? topicTextarea.value.trim() : '';
+
+  if (!rawText) {
+    showToast('Por favor habla o escribe algo primero en el cajón de transcripción.', 'warning');
+    if (topicTextarea) topicTextarea.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btnPolishTranscript');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Pulinedo con IA...';
+  }
+
+  const prompt = [
+    'Actúa como el editor de texto y transcriptor profesional #1 para creadores de contenido viral.',
+    '',
+    'TEXTO EN BRUTO / TRANSCRIPCIÓN HABLADA:',
+    rawText,
+    '',
+    'OBJETIVO:',
+    'Limpia, corrige la ortografía, elimina muletillas ("ehh", "este", "o sea", "bueno pues"), ordena las ideas con claridad y redáctalo de forma concisa, profesional y de alto impacto manteniendo fielmente la idea original.',
+    '',
+    'Devuelve ÚNICAMENTE el texto limpio pulido en un solo párrafo claro y directo, sin explicaciones ni saludos.'
+  ].join('\n');
+
+  try {
+    const cleanText = await callOllama(prompt, 0.4);
+    if (topicTextarea && cleanText && cleanText.trim()) {
+      topicTextarea.value = cleanText.trim().replace(/^["']|["']$/g, '');
+      showToast('✨ ¡Transcripción pulida y optimizada profesionalmente con IA!', 'success');
+    }
+  } catch (err) {
+    console.warn('Error polishing transcript with AI:', err);
+    showToast('No se pudo conectar con la IA de tu PC para pulir. Revisa la conexión.', 'warning');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i> <span>✨ Pulir con IA</span>';
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      } else if (typeof window !== 'undefined' && window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  }
+}
+
+
 async function startWizardProcess() {
   const elTopic = document.getElementById('aiWizardInputTopic');
 
