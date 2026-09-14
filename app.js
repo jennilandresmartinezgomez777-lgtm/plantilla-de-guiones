@@ -6879,6 +6879,10 @@ function copyCloneScript(index) {
 
 // -------------------------------------------------------
 
+async function callOllama(prompt, temperature = 0.7) {
+  return await aiCallOllama(prompt, '', temperature);
+}
+
 // =============================================================================
 // BLEX AI STUDIO - CREADOR DE REEL INTERACTIVO EN 4 PASOS + DIAGNÓSTICO ESTRATÉGICO
 // =============================================================================
