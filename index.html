@@ -47,7 +47,7 @@
   </script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="styles.css?v=6.0&t=1789411219006">
+  <link rel="stylesheet" href="styles.css?v=6.1&t=1789412033428">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -111,54 +111,54 @@
           </div>
         </div>
 
-        <!-- Client Selector & Actions -->
+        <!-- Top Action Controls Ordered -->
         <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          <!-- Client Selector -->
-          <div class="relative shrink-0">
-            <select id="clientFilter" class="bg-slate-800 border border-slate-700 text-xs sm:text-sm font-semibold rounded-lg px-3 py-2 text-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none cursor-pointer pr-8 appearance-none">
-              <option value="ALL">🏢 Todos los Clientes</option>
-            </select>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-          </div>
-
-          <!-- New Client Button -->
-          <button id="btnNewClient" title="Agregar / Gestionar Clientes" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition flex items-center justify-center shrink-0">
-            <i data-lucide="folder-plus" class="w-4 h-4"></i>
+          <!-- 1. Quick Idea Button (1st) -->
+          <button id="btnQuickIdea" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-amber-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0 cursor-pointer">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i>
+            <span>Nueva Idea</span>
           </button>
 
-          <!-- Notes Button with Counter Badge -->
+          <!-- 2. Primary Add Script Button (2nd) -->
+          <button id="btnNewScript" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-semibold px-3.5 py-2 rounded-lg text-xs sm:text-sm shadow-md shadow-brand-900/40 transition flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Nuevo Guión</span>
+          </button>
+
+          <!-- 3. Client Selector & New Client (3rd) -->
+          <div class="flex items-center gap-1 shrink-0">
+            <div class="relative">
+              <select id="clientFilter" class="bg-slate-800 border border-slate-700 text-xs sm:text-sm font-semibold rounded-lg px-3 py-2 text-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none cursor-pointer pr-8 appearance-none">
+                <option value="ALL">🏢 Todos los Clientes</option>
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+            <button id="btnNewClient" title="Agregar / Gestionar Clientes" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition flex items-center justify-center shrink-0 cursor-pointer">
+              <i data-lucide="folder-plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- 4. Notes Button with Counter Badge (4th) -->
           <button id="btnNotes" title="Bloc de Notas por Cliente" class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-sky-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0">
             <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
             <span>Notas</span>
             <span id="notesCountBadge" class="text-xs font-bold px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">0</span>
           </button>
 
-          <!-- Quick Idea Button -->
-          <button id="btnQuickIdea" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-amber-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap shrink-0">
-            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i>
-            <span>Nueva Idea</span>
-          </button>
-
-          <!-- Primary Add Script Button -->
-          <button id="btnNewScript" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-semibold px-3.5 py-2 rounded-lg text-xs sm:text-sm shadow-md shadow-brand-900/40 transition flex items-center gap-2 whitespace-nowrap shrink-0">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>Nuevo Guión</span>
-          </button>
-
-          <!-- AI Tools Hub Button -->
+          <!-- 5. AI Tools Hub Button -->
           <button id="btnAiStudioHeader" onclick="switchView('ai_studio')" title="Herramientas de IA (Qwen 2.5 Local + 64 Ganchos)" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-purple-400/40 transition flex items-center gap-1.5 shadow-md shadow-purple-950/50 cursor-pointer whitespace-nowrap shrink-0">
             <i data-lucide="sparkles" class="w-4 h-4 text-cyan-200"></i>
             <span>Herramientas de IA</span>
             <span id="aiStatusHeaderDot" title="Servidor IA Activo" class="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80 animate-pulse"></span>
           </button>
 
-          <!-- Save Platform Data Button -->
+          <!-- 6. Save Platform Data Button -->
           <button id="btnSavePlatformData" onclick="savePlatformDataToCloud(false)" title="Guardar todo en la Nube (Vercel/GitHub)" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-emerald-400/30 transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer whitespace-nowrap shrink-0">
             <i data-lucide="save" class="w-4 h-4 text-emerald-100"></i>
             <span>Guardar Datos</span>
           </button>
 
-          <!-- Device Sync Button (PC ↔ iPad ↔ iPhone) -->
+          <!-- 7. Device Sync Button (PC ↔ iPad ↔ iPhone) -->
           <button id="btnSyncDevicesHeader" onclick="openSyncModal()" title="Sincronizar Dispositivos (PC · iPad · iPhone)" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0">
             <span id="cloudStatusDot" title="Nube Sincronizada" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
             <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
@@ -2565,8 +2565,8 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=3.5&t=1789411219006"></script>
-  <script src="app.js?v=32.0&t=1789411219006"></script>
+  <script src="ai-hooks-data.js?v=3.6&t=1789412033428"></script>
+  <script src="app.js?v=33.0&t=1789412033428"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)

@@ -60,7 +60,7 @@ let state = {
   scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   viralEvaluations: Array.isArray(savedViralEvals) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
-  challengeStartDate: savedChallengeStartDate || getColombiaTodayDateString(),
+  challengeStartDate: savedChallengeStartDate || '2026-09-13',
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
@@ -250,8 +250,8 @@ function renderChallengeCountdown() {
   const todayColStr = getColombiaTodayDateString();
 
   if (!state.challengeStartDate) {
-    state.challengeStartDate = todayColStr;
-    localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+    state.challengeStartDate = '2026-09-13';
+    localStorage.setItem('css_challenge_start_date', '2026-09-13');
   }
 
   const [sy, sm, sd] = state.challengeStartDate.split('-').map(Number);
