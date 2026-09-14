@@ -1,4 +1,21 @@
 
+function get64HooksKnowledgeContext() {
+  const hooks = getHooksData();
+  if (!hooks || hooks.length === 0) return '';
+
+  const hooksSummary = hooks.map(h => 
+    `#${h.id} [${h.name}] (Cat: ${h.category}) -> Fórmula: "${h.formula}" | Ejemplo: "${h.example}" | Psicología: ${h.summary}`
+  ).join('\n');
+
+  return [
+    '=== BASE DE DATOS DE CONOCIMIENTO: 64 GANCHOS VIRALES DE BLEX STUDIO ===',
+    'Tienes en tu memoria las 64 fórmulas psicológicas oficiales de BLEX STUDIO. Para cualquier idea o video, selecciona las fórmulas que maximicen la retención en los primeros 3 segundos:',
+    hooksSummary,
+    '=== FIN BASE DE DATOS 64 GANCHOS ==='
+  ].join('\n');
+}
+
+
 // =========================================================================
 // CEREBRO & BASE DE CONOCIMIENTO DE LA MARCA (AI TRAINING & BRAND DNA)
 // =========================================================================
@@ -9155,9 +9172,13 @@ async function generateWizardStep0Strategy() {
   const videoContentDesc = topic ? topic : (link ? 'un video viral de redes sociales (' + link + ')' : 'crecimiento y finanzas');
 
   const prompt = [
-    'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok especializado en transformar cualquier contenido hacia DINERO, FINANZAS Y DESARROLLO PERSONAL.',
+    'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL.',
     '',
-    'INFORMACIÓN DEL CREADOR:',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    (typeof get64HooksKnowledgeContext === 'function' ? get64HooksKnowledgeContext() : ''),
+    '',
+    'INFORMACIÓN DEL CREADOR Y ENCARGO:',
     '- Contenido real de referencia o idea: "' + videoContentDesc + '"',
     (link ? '- Enlace del video: ' + link : ''),
     '- Nicho al que debemos adaptarlo: ' + niche,
@@ -9331,6 +9352,10 @@ async function generateWizardStep1Hooks() {
   const prompt = [
     'Actúa como el estratega viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL.',
     '',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    (typeof get64HooksKnowledgeContext === 'function' ? get64HooksKnowledgeContext() : ''),
+    '',
     'CONTEXTO DEL CONTENIDO:',
     '- Idea/Transcripción original: "' + topic + '"',
     (selectedHook ? '- FÓRMULA DE GANCHO OBLIGATORIA DEL CATÁLOGO #' + selectedHook.id + ' (' + selectedHook.name + '): "' + selectedHook.formula + '" (Ejemplo: "' + selectedHook.example + '")' : ''),
@@ -9339,10 +9364,10 @@ async function generateWizardStep1Hooks() {
     (intent ? '- Intención: "' + intent + '"' : ''),
     '',
     'REGLAS CRÍTICAS PARA EL GANCHO (Paso 1):',
-    '1. TIEMPO EXACTO: El gancho debe durar exactamente 0 a 3 segundos.',
-    '2. LONGITUD ESTRICTA: MÁXIMO 8 A 12 PALABRAS (1 sola frase contundente).',
-    '3. PROHIBIDO pegar la transcripción larga. Extrae solo el concepto central e inventa 5 aperturas.',
-    (selectedHook ? '4. REGLA ESTRICTA: Las 5 opciones deben ser variaciones de la fórmula #' + selectedHook.id + ' ("' + selectedHook.formula + '") aplicadas a ' + niche + '.' : ''),
+    '1. TIEMPO EXACTO: El gancho debe durar exactamente 0 a 3 segundos (máximo 8 a 12 palabras).',
+    '2. BASE DE CONOCIMIENTO DE 64 GANCHOS: Selecciona y aplica 5 fórmulas DISTINTAS del catálogo de 64 ganchos (ej: #1 Contra corriente, #2 Número específico, #3 Error, #6 Secreto, #18 Open loop, etc.). En el campo "formula", indica siempre el "# y Nombre del Gancho" del catálogo.',
+    '3. LENGUAJE Y TONO: Debe cumplir estrictamente el ADN de la marca aprendido en el Cerebro de la IA.',
+    (selectedHook ? '4. FÓRMULA OBLIGATORIA: Las 5 opciones deben ser variaciones de la fórmula #' + selectedHook.id + ' ("' + selectedHook.formula + '") aplicadas a ' + niche + '.' : ''),
     '',
     'Responde ÚNICAMENTE con un arreglo JSON válido con 5 ganchos cortos:',
     '[',
