@@ -2665,6 +2665,12 @@
             <input type="file" id="modalScriptPdfInput" accept="application/pdf,.pdf,.txt,.json,.doc,.docx" class="hidden" onchange="handleModalScriptPdfSelect(event)">
           </label>
 
+          <!-- Transportar a IA Button -->
+          <button type="button" onclick="transportActiveScriptModalToAi()" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 hover:text-purple-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-purple-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Transportar este guión a BLEX Studio (Herramientas IA)">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
+            <span class="hidden sm:inline">Transportar a IA</span>
+          </button>
+
           <!-- Mirar Tarjeta Visual Button -->
           <button type="button" onclick="viewVisualCardForScript()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Ver la ficha gráfica / tarjeta visual de este guión">
             <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-amber-400"></i>
@@ -3270,6 +3276,10 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button id="btnTransportFocusScript" type="button" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-purple-950/50 cursor-pointer" title="Transportar este guión a BLEX Studio (Herramientas IA)">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
+            <span class="hidden sm:inline">Transportar a IA</span>
+          </button>
           <button id="btnViewCardsFocusScript" type="button" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 cursor-pointer" title="Mirar Tarjeta Visual de este Guión">
             <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-amber-400"></i>
             <span class="hidden sm:inline">Tarjeta Visual</span>
@@ -4148,6 +4158,214 @@
           <i data-lucide="check-circle" class="w-4 h-4"></i>
           <span>Incorporar & Actualizar Plataforma</span>
         </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Modal: Transportar Guión a BLEX Studio (Herramientas IA) -->
+  <div id="transportScriptModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-purple-500/30 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 sm:px-6 sm:py-4 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-950/40 via-slate-900 to-slate-950 shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/30 shadow-inner">
+            <i data-lucide="zap" class="w-5 h-5 text-amber-300"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-black text-white truncate">⚡ Transportar a BLEX Studio</h3>
+              <span id="transportModalScriptNumber" class="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30 shrink-0">#1</span>
+            </div>
+            <p id="transportModalScriptTitle" class="text-xs text-slate-400 truncate max-w-sm sm:max-w-md mt-0.5">Título del guión</p>
+          </div>
+        </div>
+        
+        <button type="button" onclick="closeTransportScriptModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition shrink-0 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-slate-200">
+        
+        <div class="bg-purple-950/20 border border-purple-500/20 rounded-xl p-3 sm:p-4 text-xs text-purple-200 flex items-start gap-2.5">
+          <span class="text-base shrink-0">✨</span>
+          <p class="leading-relaxed">
+            Selecciona el destino dentro de <b>BLEX Studio</b>. Puedes transportar el <b>guión completo</b> al paso final para revisar y pasar a buscar el espacio, o llevar una parte específica (Gancho, Historia, Moraleja, CTA) para generar 5 nuevas alternativas con IA.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          
+          <!-- Option 1: Guión Completo (Paso 5) -->
+          <div onclick="executeTransportAction(5)" class="group cursor-pointer bg-gradient-to-br from-purple-900/30 to-indigo-950/40 hover:from-purple-900/50 hover:to-indigo-900/60 p-4 rounded-xl border border-purple-500/40 hover:border-purple-400 transition-all duration-200 shadow-md hover:shadow-purple-900/20 flex flex-col justify-between sm:col-span-2">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <h4 class="text-sm font-black text-white group-hover:text-purple-200 transition">🚀 Transportar Guión Completo</h4>
+                  <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30">Paso 5: Final</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-1 leading-snug">
+                  Carga tus 4 partes (Gancho, Historia, Moraleja y CTA) ensambladas en el editor final. Desde allí puedes revisarlo y pasar directamente al <b>Paso 6 (Espacio)</b> o enviarlo al Teleprónter.
+                </p>
+              </div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-purple-500/20 flex items-center justify-end">
+              <span class="text-xs font-bold text-purple-400 group-hover:text-purple-300 flex items-center gap-1">
+                Llevar a Paso 5 (Final) <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 2: Espacio de Grabación (Paso 6) -->
+          <div onclick="executeTransportAction(6)" class="group cursor-pointer bg-slate-950/80 hover:bg-pink-950/30 p-4 rounded-xl border border-slate-800 hover:border-pink-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between sm:col-span-2">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-pink-300 transition">📍 Buscar Espacios & Vestimenta con IA</h4>
+                  <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">Paso 6: Espacio</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+                  Lleva tu guión (haya sido redactado en la plataforma o por fuera) y genera automáticamente <b>5 recomendaciones de lugares, set, vestimenta, iluminación y estilo de grabación</b>.
+                </p>
+              </div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-800 flex items-center justify-end">
+              <span class="text-[11px] font-bold text-pink-400 group-hover:text-pink-300 flex items-center gap-1">
+                Generar 5 Espacios con IA <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 3: Gancho (Paso 1) -->
+          <div onclick="executeTransportAction(1)" class="group cursor-pointer bg-slate-950/80 hover:bg-amber-950/25 p-3.5 rounded-xl border border-slate-800 hover:border-amber-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-white group-hover:text-amber-300 transition">🪝 Solo Gancho</h4>
+                  <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Paso 1</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  Genera 5 nuevos ganchos virales usando las 64 fórmulas psicológicas de BLEX STUDIO.
+                </p>
+              </div>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-end">
+              <span class="text-[10px] font-bold text-amber-400 group-hover:text-amber-300 flex items-center gap-1">
+                Ir a Ganchos <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 4: Historia (Paso 2) -->
+          <div onclick="executeTransportAction(2)" class="group cursor-pointer bg-slate-950/80 hover:bg-sky-950/25 p-3.5 rounded-xl border border-slate-800 hover:border-sky-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-white group-hover:text-sky-300 transition">📖 Solo Historia</h4>
+                  <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">Paso 2</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  Desarrolla 5 variantes de historia y estructura narrativa con retención continua.
+                </p>
+              </div>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-end">
+              <span class="text-[10px] font-bold text-sky-400 group-hover:text-sky-300 flex items-center gap-1">
+                Ir a Historias <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 5: Moraleja (Paso 3) -->
+          <div onclick="executeTransportAction(3)" class="group cursor-pointer bg-slate-950/80 hover:bg-yellow-950/25 p-3.5 rounded-xl border border-slate-800 hover:border-yellow-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center text-yellow-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="lightbulb" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-white group-hover:text-yellow-300 transition">💡 Solo Moraleja</h4>
+                  <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300">Paso 3</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  Genera 5 remates y enseñanzas profundas de alto valor con IA.
+                </p>
+              </div>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-end">
+              <span class="text-[10px] font-bold text-yellow-400 group-hover:text-yellow-300 flex items-center gap-1">
+                Ir a Moralejas <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 6: CTA (Paso 4) -->
+          <div onclick="executeTransportAction(4)" class="group cursor-pointer bg-slate-950/80 hover:bg-rose-950/25 p-3.5 rounded-xl border border-slate-800 hover:border-rose-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="megaphone" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-white group-hover:text-rose-300 transition">📣 Solo CTA</h4>
+                  <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">Paso 4</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                  Crea 5 llamados a la acción de alta conversión para este guión.
+                </p>
+              </div>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-end">
+              <span class="text-[10px] font-bold text-rose-400 group-hover:text-rose-300 flex items-center gap-1">
+                Ir a CTA <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Option 7: Diagnóstico Estratégico (Paso 0) -->
+          <div onclick="executeTransportAction(0)" class="group cursor-pointer bg-slate-950/80 hover:bg-indigo-950/25 p-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/50 transition-all duration-200 shadow-sm flex flex-col justify-between sm:col-span-2">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition shrink-0">
+                <i data-lucide="target" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <h4 class="text-xs font-bold text-white group-hover:text-indigo-300 transition">🎯 Diagnóstico Estratégico & Ángulos</h4>
+                  <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Paso 0</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">
+                  Pasa el tema a la IA para analizar la psicología de retención y seleccionar nuevos ángulos disruptivos.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between shrink-0">
+        <button type="button" onclick="closeTransportScriptModal()" class="px-4 py-2 rounded-xl text-slate-400 hover:text-white transition text-xs sm:text-sm font-semibold cursor-pointer">
+          Cancelar
+        </button>
+        <span class="text-[11px] text-slate-500">BLEX Studio • Transporte de Contenido Inteligente</span>
       </div>
 
     </div>

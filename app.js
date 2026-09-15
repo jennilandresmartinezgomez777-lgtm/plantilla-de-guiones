@@ -1650,10 +1650,16 @@ function renderMatrixView(scripts) {
       <!-- Actions (Mirar Tarjeta, Ampliar, Print single, Edit, Delete) -->
       <td class="py-3.5 px-4 text-right print:hidden">
         <div class="flex items-center justify-end gap-1">
+          <button onclick="openTransportScriptModal('${script.id}')" title="⚡ Transportar a BLEX Studio (IA)" class="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition">
+            <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+          </button>
           <button onclick="viewVisualCardForScript('${script.id}')" title="Mirar Tarjeta Visual" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition">
             <i data-lucide="layout-grid" class="w-4 h-4"></i>
           </button>
-          <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
+          <button onclick="openTransportScriptModal('${script.id}')" title="⚡ Transportar a BLEX Studio (IA)" class="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition">
+                <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+              </button>
+              <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
             <i data-lucide="maximize-2" class="w-4 h-4"></i>
           </button>
           <button onclick="printSingleScript('${script.id}')" title="Imprimir este guión" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-400 hover:bg-slate-800 transition">
@@ -2183,9 +2189,15 @@ function openFocusScriptModal(scriptId) {
   const btnEdit = document.getElementById('btnEditFocusScript');
   const btnPrint = document.getElementById('btnPrintFocusScript');
   const btnCopy = document.getElementById('btnCopyFocusScript');
+  const btnTransport = document.getElementById('btnTransportFocusScript');
 
   if (modalTitle) modalTitle.textContent = `#${script.number || ''} - ${script.ideaGanadora}`;
   const btnViewCards = document.getElementById('btnViewCardsFocusScript');
+  if (btnTransport) {
+    btnTransport.onclick = () => {
+      openTransportScriptModal(scriptId);
+    };
+  }
   if (btnViewCards) {
     btnViewCards.onclick = () => {
       closeFocusModal();
@@ -13182,5 +13194,196 @@ function populateScriptModalWithData(script) {
     setScriptModalMode('libre');
   } else {
     setScriptModalMode('structured');
+  }
+}
+
+
+// =========================================================================
+// TRANSPORTE INTELIGENTE DE GUIONES A BLEX STUDIO (HERRAMIENTAS DE IA)
+// =========================================================================
+let activeTransportScriptId = null;
+
+function openTransportScriptModal(scriptId) {
+  const script = state.scripts.find(s => String(s.id) === String(scriptId));
+  if (!script) {
+    if (typeof showToastNotification === 'function') showToastNotification('Guión no encontrado.', 'error');
+    return;
+  }
+  activeTransportScriptId = scriptId;
+
+  const modal = document.getElementById('transportScriptModal');
+  const numBadge = document.getElementById('transportModalScriptNumber');
+  const titleEl = document.getElementById('transportModalScriptTitle');
+
+  if (numBadge) numBadge.textContent = '#' + (script.number || '1');
+  if (titleEl) titleEl.textContent = (script.ideaGanadora || script.title || 'Guión sin título') + ' • ' + (script.client || 'Jennil');
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+}
+
+function closeTransportScriptModal() {
+  const modal = document.getElementById('transportScriptModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+}
+
+function executeTransportAction(targetStep) {
+  if (!activeTransportScriptId) return;
+  transportScriptToAiStudio(activeTransportScriptId, targetStep);
+}
+
+function transportActiveScriptModalToAi() {
+  if (state.editingScriptId) {
+    openTransportScriptModal(state.editingScriptId);
+  } else {
+    // If it's a new draft being written, grab values from current form inputs
+    const formIdea = document.getElementById('formIdeaGanadora')?.value?.trim();
+    const formGancho = document.getElementById('formGancho')?.value?.trim();
+    const formHistoria = document.getElementById('formHistoria')?.value?.trim();
+    const formMoraleja = document.getElementById('formMoraleja')?.value?.trim();
+    const formCTA = document.getElementById('formCTA')?.value?.trim();
+    const formGuionLibre = document.getElementById('formGuionLibre')?.value?.trim();
+    const formClient = document.getElementById('formClient')?.value || 'Jennil';
+    const formNumber = document.getElementById('formNumber')?.value || '1';
+
+    const tempScript = {
+      id: 'draft_' + Date.now(),
+      number: formNumber,
+      client: formClient,
+      ideaGanadora: formIdea || 'Guión en Borrador',
+      gancho: formGancho || formGuionLibre || '',
+      historia: formHistoria || '',
+      moraleja: formMoraleja || '',
+      cta: formCTA || '',
+      formato: 'Hablando a cámara',
+      objetivo: 'VENTA'
+    };
+
+    state.scripts.unshift(tempScript);
+    if (typeof renderScripts === 'function') renderScripts();
+    openTransportScriptModal(tempScript.id);
+  }
+}
+
+async function transportScriptToAiStudio(scriptId, targetStep = 5) {
+  const script = state.scripts.find(s => String(s.id) === String(scriptId));
+  if (!script) {
+    if (typeof showToastNotification === 'function') showToastNotification('Guión no encontrado.', 'error');
+    return;
+  }
+
+  closeTransportScriptModal();
+  if (typeof closeFocusModal === 'function') closeFocusModal();
+  if (typeof closeScriptModal === 'function') closeScriptModal();
+
+  // Populate wizardState with the script's exact data
+  wizardState.topic = script.ideaGanadora || script.title || script.tema || 'Guión importado';
+  wizardState.selectedAngle = script.tipoGancho || script.formato || 'Reel Viral';
+  wizardState.selectedHook = script.gancho || (script.scriptType === 'libre' ? script.guionLibre : '') || '';
+  wizardState.selectedStory = script.historia || '';
+  wizardState.selectedMoral = script.moraleja || '';
+  wizardState.selectedCTA = script.cta || '';
+  wizardState.client = script.client || (state.activeClient !== 'ALL' ? state.activeClient : 'Jennil');
+  wizardState.niche = script.objetivo || 'Finanzas y Crecimiento';
+  wizardState.userIntent = script.contextoAdicional || script.espacio || '';
+  wizardState.transportedFromScriptId = script.id;
+
+  // Sync DOM elements in AI Wizard
+  const elTopic = document.getElementById('aiWizardInputTopic');
+  if (elTopic) elTopic.value = wizardState.topic;
+
+  const elHook = document.getElementById('wizSelectedGancho');
+  if (elHook) elHook.value = wizardState.selectedHook;
+
+  const elStory = document.getElementById('wizSelectedHistoria');
+  if (elStory) elStory.value = wizardState.selectedStory;
+
+  const elMoral = document.getElementById('wizSelectedMoraleja');
+  if (elMoral) elMoral.value = wizardState.selectedMoral;
+
+  const elCTA = document.getElementById('wizSelectedCTA');
+  if (elCTA) elCTA.value = wizardState.selectedCTA;
+
+  // Sync final step 5 assembled textareas
+  const finalHook = document.getElementById('wizFinalHook');
+  const finalStory = document.getElementById('wizFinalStory');
+  const finalMoral = document.getElementById('wizFinalMoral');
+  const finalCTA = document.getElementById('wizFinalCTA');
+
+  if (finalHook) finalHook.value = wizardState.selectedHook;
+  if (finalStory) finalStory.value = wizardState.selectedStory;
+  if (finalMoral) finalMoral.value = wizardState.selectedMoral;
+  if (finalCTA) finalCTA.value = wizardState.selectedCTA;
+
+  // Switch to AI Studio view and to Wizard tab
+  switchView('ai_studio');
+  if (typeof switchAiTab === 'function') {
+    switchAiTab('wizard');
+  }
+
+  // Navigate to the target step
+  goToWizardStep(targetStep);
+
+  // Target specific actions
+  if (targetStep === 1) {
+    const manualContextInput = document.getElementById('wizHookManualContext');
+    if (manualContextInput && script.gancho) {
+      manualContextInput.value = 'Gancho actual: ' + script.gancho;
+    }
+    if (typeof generateWizardStep1Hooks === 'function') {
+      generateWizardStep1Hooks();
+    }
+  } else if (targetStep === 2) {
+    const manualStoryInput = document.getElementById('wizStoryManualContext');
+    if (manualStoryInput && script.historia) {
+      manualStoryInput.value = 'Historia actual: ' + script.historia;
+    }
+    if (typeof generateWizardStep2Stories === 'function') {
+      generateWizardStep2Stories();
+    }
+  } else if (targetStep === 3) {
+    const manualMoralInput = document.getElementById('wizMoralManualContext');
+    if (manualMoralInput && script.moraleja) {
+      manualMoralInput.value = 'Moraleja actual: ' + script.moraleja;
+    }
+    if (typeof generateWizardStep3Morals === 'function') {
+      generateWizardStep3Morals();
+    }
+  } else if (targetStep === 4) {
+    const manualCtaInput = document.getElementById('wizCtaManualContext');
+    if (manualCtaInput && script.cta) {
+      manualCtaInput.value = 'CTA actual: ' + script.cta;
+    }
+    if (typeof generateWizardStep4CTAs === 'function') {
+      generateWizardStep4CTAs();
+    }
+  } else if (targetStep === 6) {
+    if (typeof generateWizardStep6Spaces === 'function') {
+      generateWizardStep6Spaces();
+    }
+  } else if (targetStep === 0) {
+    if (typeof generateWizardStep0Strategy === 'function') {
+      generateWizardStep0Strategy();
+    }
+  }
+
+  if (typeof showToastNotification === 'function') {
+    const stepNames = {
+      0: 'Diagnóstico Estratégico',
+      1: 'Ganchos Virales (Paso 1)',
+      2: 'Historia y Desarrollo (Paso 2)',
+      3: 'Moraleja y Valor (Paso 3)',
+      4: 'Llamado a la Acción (Paso 4)',
+      5: 'Guión Completo Final (Paso 5)',
+      6: 'Espacios & Set de Grabación (Paso 6)'
+    };
+    showToastNotification(`⚡ Guión transportado a ${stepNames[targetStep] || 'BLEX Studio'}`, 'success');
   }
 }
