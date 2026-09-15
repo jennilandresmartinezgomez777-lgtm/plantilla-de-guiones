@@ -940,14 +940,6 @@ const savedViralEvals = rawSavedViralEvals !== null ? JSON.parse(rawSavedViralEv
 
 const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
 
-
-// Ensure Jennil and Natalia are ALWAYS default clients
-if (!state.clients.includes("Jennil")) state.clients.unshift("Jennil");
-if (!state.clients.includes("Natalia")) state.clients.push("Natalia");
-if (!state.notes) state.notes = {};
-if (!state.notes["Jennil"]) state.notes["Jennil"] = [];
-if (!state.notes["Natalia"]) state.notes["Natalia"] = [];
-
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
   scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
@@ -961,6 +953,13 @@ let state = {
   editingScriptId: null,
   activeNotesClient: (Array.isArray(savedClients) && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
+
+// Ensure Jennil and Natalia are ALWAYS default clients
+if (!state.clients.includes("Jennil")) state.clients.unshift("Jennil");
+if (!state.clients.includes("Natalia")) state.clients.push("Natalia");
+if (!state.notes) state.notes = {};
+if (!state.notes["Jennil"]) state.notes["Jennil"] = [];
+if (!state.notes["Natalia"]) state.notes["Natalia"] = [];
 
 // Auto-sanitize legacy saved data to purge any traces of USACREDITO
 if (state.clients.includes("USACREDITO")) {
