@@ -3129,6 +3129,8 @@ function selectMasterMenuOption(type, value) {
       openNotesModal();
     } else if (value === 'clients') {
       openClientManagerModal();
+    } else if (value === 'notifications') {
+      openNotificationHubModal();
     } else if (value === 'sync') {
       openSyncModal();
     } else if (value === 'print') {
