@@ -4053,12 +4053,18 @@ function deleteScript(scriptId) {
     state.deletedScripts = state.deletedScripts.filter(s => String(s.id) !== String(scriptId));
     state.deletedScripts.unshift(scriptCopy);
 
-    // Remove from state.scripts (by ID AND by identical content)
-    const fp = `${(script.client || 'Jennil').toLowerCase().trim()}|${(script.ideaGanadora || script.title || '').toLowerCase().trim()}|${(script.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+    const normTitle = (script.ideaGanadora || script.title || '').trim().toLowerCase();
+    const normGancho = (script.gancho || '').trim().toLowerCase().slice(0, 50);
+    const normClient = (script.client || 'Jennil').trim().toLowerCase();
+
+    // REMOVE THIS SCRIPT AND ANY DUPLICATE OF IT FROM ACTIVE SCRIPTS
     state.scripts = (state.scripts || []).filter(s => {
       if (String(s.id) === String(scriptId)) return false;
-      const sFp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
-      if (fp.length > 5 && sFp === fp) return false;
+      const sTitle = (s.ideaGanadora || s.title || '').trim().toLowerCase();
+      const sGancho = (s.gancho || '').trim().toLowerCase().slice(0, 50);
+      const sClient = (s.client || 'Jennil').trim().toLowerCase();
+      if (normTitle && sTitle && sTitle === normTitle && normClient === sClient) return false;
+      if (normGancho && sGancho && sGancho === normGancho && normClient === sClient) return false;
       return true;
     });
 
@@ -13688,12 +13694,18 @@ function restoreScriptFromTrash(scriptId) {
   state.deletedScripts.splice(scriptIndex, 1);
   if (!Array.isArray(state.scripts)) state.scripts = [];
   
-  // Remove any duplicate in active scripts before restoring
-  const fp = `${(script.client || 'Jennil').toLowerCase().trim()}|${(script.ideaGanadora || script.title || '').toLowerCase().trim()}|${(script.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+  const normTitle = (script.ideaGanadora || script.title || '').trim().toLowerCase();
+  const normGancho = (script.gancho || '').trim().toLowerCase().slice(0, 50);
+  const normClient = (script.client || 'Jennil').trim().toLowerCase();
+
+  // Remove any duplicates before restoring
   state.scripts = state.scripts.filter(s => {
     if (String(s.id) === String(scriptId)) return false;
-    const sFp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
-    if (fp.length > 5 && sFp === fp) return false;
+    const sTitle = (s.ideaGanadora || s.title || '').trim().toLowerCase();
+    const sGancho = (s.gancho || '').trim().toLowerCase().slice(0, 50);
+    const sClient = (s.client || 'Jennil').trim().toLowerCase();
+    if (normTitle && sTitle && sTitle === normTitle && normClient === sClient) return false;
+    if (normGancho && sGancho && sGancho === normGancho && normClient === sClient) return false;
     return true;
   });
 
@@ -13733,6 +13745,26 @@ function emptyTrash() {
     updateTrashBadgeCount();
     if (typeof showToastNotification === 'function') {
       showToastNotification('🗑️ Papelera vaciada completamente.', 'info');
+    }
+  }
+}
+
+
+async function forceCleanSyncFromCloud() {
+  if (confirm('¿Descargar la última versión limpia de la nube y limpiar la memoria local?')) {
+    try {
+      localStorage.removeItem('css_scripts');
+      localStorage.removeItem('css_deleted_scripts');
+      localStorage.removeItem('css_clients');
+      const remoteData = await fetchLatestCloudData();
+      if (remoteData && Array.isArray(remoteData.scripts)) {
+        applyCloudData(remoteData, null, false);
+        showToastNotification('🎉 ¡Memoria limpia y datos actualizados desde la nube!', 'check-circle');
+      } else {
+        location.reload();
+      }
+    } catch(e) {
+      location.reload();
     }
   }
 }

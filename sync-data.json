@@ -101,7 +101,7 @@
       "espacio": "",
       "updatedAt": "2026-09-15T20:37:52.944Z",
       "createdAt": "2026-09-15T00:00:00.000Z",
-      "deletedAt": "2026-09-15T20:56:38.772Z"
+      "deletedAt": "2026-09-15T21:00:29.853Z"
     },
     {
       "id": "script-trabajar-duro",
@@ -177,5 +177,5 @@
   },
   "aiBrain": {},
   "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-15T20:57:02.287Z"
+  "updatedAt": "2026-09-15T21:00:59.289Z"
 }
