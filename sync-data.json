@@ -25,7 +25,7 @@
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:54:04.474Z",
+      "updatedAt": "2026-09-15T20:37:52.944Z",
       "createdAt": "2026-09-15T00:00:00.000Z"
     },
     {
@@ -49,7 +49,7 @@
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:54:04.474Z",
+      "updatedAt": "2026-09-15T20:37:52.945Z",
       "createdAt": "2026-09-15T01:00:00.000Z"
     },
     {
@@ -73,11 +73,87 @@
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:54:04.474Z",
+      "updatedAt": "2026-09-15T20:37:52.945Z",
       "createdAt": "2026-09-15T03:31:24.089Z"
     }
   ],
-  "deletedScripts": [],
+  "deletedScripts": [
+    {
+      "id": "script-andres-presentacion",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Andrés",
+      "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
+      "linkReferencia": "",
+      "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
+      "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
+      "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
+      "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
+      "contextoAdicional": "Grabación en setup profesional / oficina",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "completed": false,
+      "espacio": "",
+      "updatedAt": "2026-09-15T20:37:52.944Z",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "deletedAt": "2026-09-15T20:56:38.772Z"
+    },
+    {
+      "id": "script-trabajar-duro",
+      "client": "Jennil",
+      "number": 2,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VIRAL",
+      "actor": "Andrés",
+      "ideaGanadora": "Mentalidad & Apalancamiento - El Mito de Trabajar Duro",
+      "linkReferencia": "",
+      "gancho": "Si trabajar duro fuera el secreto para hacerte rico, los obreros de construcción que trabajan 14 horas al día bajo el sol serían los más millonarios del mundo.",
+      "historia": "El trabajo duro sin dirección solo te deja exhausto. Los que realmente multiplican sus ingresos no trabajan más horas: se apalancan en sistemas, tecnología y decisiones inteligentes.\n\nMientras unos siguen intercambiando tiempo por dinero, otros construyen vehículos que trabajan para ellos las 24 horas.",
+      "moraleja": "No trabajes más duro, trabaja con apalancamiento y con el sistema correcto.",
+      "cta": "Comenta la palabra SISTEMA y te muestro el método exacto con el que puedes empezar a transformar tus resultados hoy.",
+      "contextoAdicional": "Tomas dinámicas con transiciones y b-rolls de alto impacto",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "completed": false,
+      "espacio": "",
+      "updatedAt": "2026-09-15T20:54:04.474Z",
+      "createdAt": "2026-09-15T01:00:00.000Z",
+      "deletedAt": "2026-09-15T20:56:04.586Z"
+    },
+    {
+      "id": "script-no-importa-nivel",
+      "client": "Jennil",
+      "number": 3,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Jennil / Andrés",
+      "ideaGanadora": "Venta - Casos de Éxito y Metodología desde Cero",
+      "linkReferencia": "",
+      "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprender desde cero toda la metodología aplicada que utilizaron nuestros alumnos Mabel, Asceineth, Jeison, Tomás, Deysi y Andrés.",
+      "historia": "Obtendrás metodología y entorno propio de análisis para que aprendas a tomar tus propias decisiones sin depender de nadie.\n- Plataforma con herramientas exclusivas\n- Sala operativa en vivo 4 veces por semana\n- Acompañamiento personalizado y estrategias rentables\n- Algoritmos entrenados con IA y mucho más.",
+      "moraleja": "Aprender un sistema probado es la diferencia entre improvisar y tener resultados consistentes.",
+      "cta": "Si quieres tener resultados y mejorar tus ingresos mientras haces lo que amas, escribe la palabra CAMBIO, te ayudaré y te mostraré cómo lograrlo.",
+      "contextoAdicional": "PRUEBAS VIDEOS CORTOS (VARIOS)",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "completed": false,
+      "espacio": "",
+      "updatedAt": "2026-09-15T20:54:04.474Z",
+      "createdAt": "2026-09-15T03:31:24.089Z",
+      "deletedAt": "2026-09-15T20:56:06.005Z"
+    }
+  ],
   "notes": {
     "Jennil": [],
     "Natalia": []
@@ -101,5 +177,5 @@
   },
   "aiBrain": {},
   "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-15T20:54:04.475Z"
+  "updatedAt": "2026-09-15T20:57:02.287Z"
 }

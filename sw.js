@@ -1,12 +1,16 @@
 // BLEX Studio Service Worker for PWA Push & Offline
-const CACHE_NAME = 'blex-studio-v2';
+const CACHE_NAME = 'blex-studio-1789505865967';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((k) => caches.delete(k)));
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('push', (event) => {

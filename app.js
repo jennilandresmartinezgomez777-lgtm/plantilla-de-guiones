@@ -1215,6 +1215,17 @@ try {
   }
 } catch(e) {}
 
+
+// INSTANT IPAD/MOBILE CLEAN DEDUPLICATION & SYNC
+try {
+  const ipadCleanKey = 'css_ipad_auto_clean_v_1789505865969';
+  // Always clean state.scripts of any duplicated items
+  if (Array.isArray(state.scripts)) {
+    state.scripts = deduplicateScripts(state.scripts);
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  }
+} catch(e) {}
+
 document.addEventListener('DOMContentLoaded', () => {
   checkUrlForSyncData();
   renderClientSelect();
