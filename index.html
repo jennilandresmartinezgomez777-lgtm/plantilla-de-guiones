@@ -412,7 +412,7 @@
               <i data-lucide="file-input" class="w-4 h-4"></i>
               <span class="hidden xl:inline">Incorporar PDF</span>
             </button>
-            <button id="btnPrint" title="Imprimir / Exportar a PDF" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
+            <button id="btnPrint" onclick="openPrintModalForCurrentView()" title="Imprimir / Exportar a PDF (Módulo Activo)" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="printer" class="w-4 h-4"></i>
             </button>
             <button id="btnExportJSON" title="Respaldar Datos (JSON)" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
@@ -544,11 +544,15 @@
             <div class="flex items-center gap-2">
               <button type="button" onclick="openSmartDocImportModal('viral')" class="bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 hover:text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                 <i data-lucide="file-input" class="w-3.5 h-3.5 text-amber-400"></i>
-                <span>Incorporar PDF Viral</span>
+                <span>📥 Incorporar PDF Viral</span>
               </button>
-              <button id="btnPrintViralGuide" type="button" onclick="printViralGuide()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-300 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir Guía Oficial y Conceptos Técnicos de Viralidad">
+              <button type="button" onclick="openPrintModalFor('viral')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir / Exportar Evaluación Viral a PDF">
+                <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>🔥 Imprimir / PDF</span>
+              </button>
+              <button id="btnPrintViralGuide" type="button" onclick="printViralGuide()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir Guía Oficial y Conceptos Técnicos de Viralidad">
                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i>
-                <span>Guía & Conceptos</span>
+                <span>Guía</span>
               </button>
               <button id="btnResetViralCalc" type="button" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Reiniciar calculadora">
                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
@@ -1047,10 +1051,14 @@
             <span id="matrixCounter" class="bg-slate-800 text-slate-300 text-xs font-semibold px-2.5 py-1 rounded-md border border-slate-700">0 guiones</span>
           </div>
           
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="openSmartDocImportModal('matrix')" class="bg-brand-950/70 hover:bg-brand-900/80 text-brand-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-lg border border-brand-500/40 transition flex items-center gap-1.5 cursor-pointer">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="openSmartDocImportModal('matrix')" class="bg-brand-950/70 hover:bg-brand-900/80 text-brand-300 hover:text-white font-bold text-xs px-3 py-2 rounded-xl border border-brand-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
               <i data-lucide="file-input" class="w-3.5 h-3.5 text-brand-400"></i>
               <span>📥 Incorporar PDF Matriz</span>
+            </button>
+            <button type="button" onclick="openPrintModalFor('matrix')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>📊 Imprimir Matriz / PDF</span>
             </button>
             <button id="btnClearAllScripts" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
               <i data-lucide="trash" class="w-3.5 h-3.5"></i>

@@ -1,4 +1,38 @@
 
+function sanitizeScriptData(s) {
+  if (!s || typeof s !== 'object') return s;
+  const cleanStr = (val, fallback = '') => {
+    if (val === undefined || val === null || val === 'undefined' || val === 'UNDEFINED' || val === 'null') return fallback;
+    return String(val);
+  };
+
+  s.ideaGanadora = cleanStr(s.ideaGanadora || s.title || s.tema, 'Idea sin título');
+  s.client = cleanStr(s.client, (state && state.activeClient !== 'ALL' ? state.activeClient : 'Jennil'));
+  s.status = cleanStr(s.status, 'Idea');
+  s.formato = cleanStr(s.formato, 'Talking Head');
+  s.objetivo = cleanStr(s.objetivo, 'General');
+  s.actor = cleanStr(s.actor, 'Principal');
+  s.gancho = cleanStr(s.gancho || s.hook, '');
+  s.historia = cleanStr(s.historia || s.story, '');
+  s.moraleja = cleanStr(s.moraleja || s.moral, '');
+  s.cta = cleanStr(s.cta || s.callToAction, '');
+  s.espacio = cleanStr(s.espacio, '');
+  s.contextoAdicional = cleanStr(s.contextoAdicional, '');
+  return s;
+}
+
+function openPrintModalForCurrentView() {
+  let mod = 'matrix';
+  if (state.currentView === 'cards') mod = 'cards';
+  else if (state.currentView === 'viral_calc') mod = 'viral';
+  else if (state.currentView === 'calendar') mod = 'calendar';
+  else if (state.currentView === 'teleprompter' || state.currentView === 'teleprompter_pro') mod = 'set';
+  else if (state.currentView === 'matrix') mod = 'matrix';
+  openPrintModalFor(mod);
+}
+
+
+
 function get64HooksKnowledgeContext() {
   const hooks = getHooksData();
   if (!hooks || hooks.length === 0) return '';
@@ -1640,7 +1674,8 @@ function renderMatrixView(scripts) {
 function renderCardsView(scripts) {
   cardsGrid.innerHTML = '';
   
-  scripts.forEach(script => {
+  scripts.forEach(rawScript => {
+    const script = sanitizeScriptData(rawScript);
     const card = document.createElement('div');
     const isCompleted = script.completed || script.status === 'Publicado';
     card.className = `bg-slate-900 border rounded-2xl p-6 shadow-xl space-y-4 hover:border-slate-700 transition flex flex-col justify-between script-card-print ${isCompleted ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'}`;
@@ -1651,6 +1686,12 @@ function renderCardsView(scripts) {
     if (script.status === 'En Edición') statusClass = "bg-purple-500/10 text-purple-300 border-purple-500/30";
     if (script.status === 'Publicado' || isCompleted) statusClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
     if (script.status === 'Editado') statusClass = "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
+
+    const titleText = script.ideaGanadora || 'Idea sin título';
+    const hookText = script.gancho || '(Sin gancho definido)';
+    const storyText = script.historia || '(Sin desarrollo definido)';
+    const moralText = script.moraleja || '(Sin moraleja definida)';
+    const ctaText = script.cta || '(Sin llamado a la acción)';
 
     card.innerHTML = `
       <div class="space-y-4">
@@ -1664,13 +1705,13 @@ function renderCardsView(scripts) {
               #${script.number || '?'}
             </span>
             <span class="text-xs font-semibold text-brand-400 uppercase tracking-wider">
-              ${script.client}
+              ${escapeHtml(script.client)}
             </span>
           </div>
 
           <div class="flex items-center gap-2">
             <span class="text-xs font-medium px-2.5 py-1 rounded-full border ${statusClass} badge-print">
-              ${isCompleted ? '✓ Realizado' : script.status}
+              ${isCompleted ? '✓ Realizado' : escapeHtml(script.status)}
             </span>
             <div class="flex items-center gap-1 print:hidden">
               <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
@@ -1692,7 +1733,7 @@ function renderCardsView(scripts) {
         <!-- Idea Ganadora -->
         <div>
           <span class="text-[10px] font-bold tracking-wider uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Idea Ganadora</span>
-          <h3 class="text-lg font-bold ${isCompleted ? 'text-slate-400 line-through' : 'text-white'} mt-1.5 leading-snug">${script.ideaGanadora}</h3>
+          <h3 class="text-lg font-bold ${isCompleted ? 'text-slate-400 line-through' : 'text-white'} mt-1.5 leading-snug">${escapeHtml(titleText)}</h3>
           ${script.linkReferencia ? `
             <div class="mt-2">
               <a href="${script.linkReferencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 font-semibold bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20 transition">
@@ -1705,13 +1746,13 @@ function renderCardsView(scripts) {
         <!-- Meta info pills -->
         <div class="flex flex-wrap gap-2 text-xs">
           <span class="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-500/20 font-medium">
-            🎯 Objetivo: <strong>${script.objetivo}</strong>
+            🎯 Objetivo: <strong>${escapeHtml(script.objetivo || 'General')}</strong>
           </span>
           <span class="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-500/20 font-medium">
-            📹 Formato: <strong>${script.formato}</strong>
+            📹 Formato: <strong>${escapeHtml(script.formato || 'Talking Head')}</strong>
           </span>
           <span class="bg-slate-950 text-slate-300 px-2.5 py-1 rounded-md border border-slate-800 font-medium">
-            👤 Actor: <strong>${script.actor || 'N/A'}</strong>
+            👤 Actor: <strong>${escapeHtml(script.actor || 'Principal')}</strong>
           </span>
         </div>
 
@@ -1749,7 +1790,7 @@ function renderCardsView(scripts) {
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
             </div>
-            <p class="text-slate-200 font-medium leading-relaxed">${script.gancho}</p>
+            <p class="text-slate-200 font-medium leading-relaxed">${escapeHtml(hookText)}</p>
           </div>
 
           <!-- Historia - Contexto -->
@@ -1760,7 +1801,7 @@ function renderCardsView(scripts) {
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
             </div>
-            <p class="text-slate-300 whitespace-pre-line leading-relaxed">${script.historia}</p>
+            <p class="text-slate-300 whitespace-pre-line leading-relaxed">${escapeHtml(storyText)}</p>
           </div>
 
           <!-- Moraleja -->
@@ -1771,7 +1812,7 @@ function renderCardsView(scripts) {
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
             </div>
-            <p class="text-slate-300 whitespace-pre-line leading-relaxed">${script.moraleja}</p>
+            <p class="text-slate-300 whitespace-pre-line leading-relaxed">${escapeHtml(moralText)}</p>
           </div>
 
           <!-- CTA -->
@@ -1782,13 +1823,19 @@ function renderCardsView(scripts) {
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
             </div>
-            <p class="text-slate-200 font-medium leading-relaxed">${script.cta}</p>
+            <p class="text-slate-200 font-medium leading-relaxed">${escapeHtml(ctaText)}</p>
           </div>
+
+          ${script.espacio ? `
+          <div class="bg-indigo-950/30 rounded-xl p-3 border border-indigo-500/30">
+            <p class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">📍 Espacio & Rodaje</p>
+            <p class="text-slate-300 whitespace-pre-line text-xs leading-relaxed">${escapeHtml(script.espacio)}</p>
+          </div>` : ''}
 
           ${script.contextoAdicional ? `
           <div class="text-xs text-slate-400 pt-1 flex items-center gap-1.5">
             <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
-            <span>${script.contextoAdicional}</span>
+            <span>${escapeHtml(script.contextoAdicional)}</span>
           </div>` : ''}
 
         </div>
@@ -5104,7 +5151,15 @@ function executeEnhancedPrint(openInNewTab = false) {
 // UNIVERSAL SMART PDF & DOCUMENT INCORPORATION / IMPORT BRIDGE
 // =========================================================================
 
-function openSmartDocImportModal(preferredTarget = 'auto') {
+function openSmartDocImportModal(preferredTarget = null) {
+  if (!preferredTarget || preferredTarget === 'auto') {
+    if (state.currentView === 'cards') preferredTarget = 'cards';
+    else if (state.currentView === 'viral_calc') preferredTarget = 'viral';
+    else if (state.currentView === 'calendar') preferredTarget = 'calendar';
+    else if (state.currentView === 'teleprompter' || state.currentView === 'teleprompter_pro') preferredTarget = 'set';
+    else if (state.currentView === 'matrix') preferredTarget = 'matrix';
+    else preferredTarget = 'auto';
+  }
   smartDocPendingItems = [];
   smartDocSelectedTarget = preferredTarget;
   setImportTargetModule(preferredTarget);
