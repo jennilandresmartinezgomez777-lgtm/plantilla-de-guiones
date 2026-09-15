@@ -953,7 +953,7 @@ let state = {
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
-  currentView: 'ai_studio', // Default is MATRIX
+  currentView: 'matrix', // Default is MATRIX
   editingScriptId: null,
   activeNotesClient: (Array.isArray(savedClients) && savedClients.length > 0) ? savedClients[0] : INITIAL_CLIENTS[0]
 };
@@ -1078,17 +1078,20 @@ document.addEventListener('DOMContentLoaded', () => {
   renderViralHistoryTable();
   setupEventListeners();
   renderChallengeCountdown();
-  // Auto-refresh countdown every 60s so crossing Colombian midnight updates immediately
   setInterval(renderChallengeCountdown, 60000);
   initTeleprompterProEngine();
+  
+  // Matrix is the 1st foreground view
+  switchView('matrix');
   refreshLucideIcons();
 
-  // Automatic background load from Cloud on startup (iPhone/iPad receives PC changes instantly)
+  // Real-time server sync on startup
   setTimeout(() => {
     if (typeof loadStateFromCloud === 'function') {
       loadStateFromCloud(true);
     }
-  }, 600);
+    startAutoSyncEngine();
+  }, 300);
 
   // Auto-sync whenever the app/tab becomes active or visible (e.g. unlocking iPhone, switching back to Safari/Chrome)
   document.addEventListener('visibilitychange', () => {
@@ -2548,6 +2551,69 @@ async function savePlatformDataToCloud(isSilent = false) {
   return await saveStateToCloud(isSilent);
 }
 
+// =========================================================================
+// REAL-TIME AUTO-SYNC & CONNECTION STATUS SUBSYSTEM
+// =========================================================================
+
+let isServerConnected = true;
+let syncPollingTimer = null;
+
+function getEffectiveServerUrl() {
+  const custom = localStorage.getItem('blex_server_url');
+  if (custom && custom.trim()) {
+    return custom.trim().replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
+    if (isLocal && window.location.port) {
+      return window.location.origin;
+    }
+  }
+  return 'http://localhost:3000';
+}
+
+function updateSyncStatus(connected, lastSyncMsg = '') {
+  isServerConnected = !!connected;
+  
+  const dot = document.getElementById('cloudStatusDot');
+  const text = document.getElementById('cloudStatusText');
+  const btnHeader = document.getElementById('btnSyncDevicesHeader');
+  const offlineAlert = document.getElementById('offlineSyncAlert');
+
+  if (connected) {
+    if (dot) {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50';
+      dot.title = 'Servidor Conectado y Sincronizado';
+    }
+    if (text) {
+      text.innerText = 'Sincronizado';
+    }
+    if (btnHeader) {
+      btnHeader.className = 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
+    }
+    if (offlineAlert) {
+      offlineAlert.classList.add('hidden');
+    }
+  } else {
+    if (dot) {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/80 animate-pulse';
+      dot.title = 'Sin Conexión con Servidor (Modo Local)';
+    }
+    if (text) {
+      text.innerText = 'Desconectado';
+    }
+    if (btnHeader) {
+      btnHeader.className = 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 font-bold px-3 py-2 rounded-lg text-xs sm:text-sm border border-rose-500/40 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
+    }
+    if (offlineAlert) {
+      offlineAlert.classList.remove('hidden');
+    }
+  }
+
+  if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+}
+
 async function saveStateToCloud(isSilent = false) {
   const btnHeader = document.getElementById('btnSavePlatformData');
   const btnModal = document.getElementById('btnSaveCloud');
@@ -2563,42 +2629,49 @@ async function saveStateToCloud(isSilent = false) {
     btnModal.disabled = true;
     btnModal.innerHTML = '<span>☁️ Guardando...</span>';
   }
-  updateCloudStatusBadge(false);
 
   try {
     const payloadObj = JSON.parse(getFullAppStateJSON());
     payloadObj.updatedAt = new Date().toISOString();
 
+    const baseUrl = getEffectiveServerUrl();
     let syncCode = localStorage.getItem('blex_cloud_sync_code');
-    let syncEndpoint = '/api/sync';
+    let syncEndpoint = baseUrl + '/api/sync';
     if (syncCode) {
-      syncEndpoint += `?channel=${encodeURIComponent(syncCode)}`;
+      syncEndpoint += '?channel=' + encodeURIComponent(syncCode);
     }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(syncEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadObj)
+      body: JSON.stringify(payloadObj),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (res.ok) {
-      updateCloudStatusBadge(true);
+      updateSyncStatus(true);
       if (typeof resetAutoSaveTimer === 'function') resetAutoSaveTimer();
 
       if (!isSilent) {
         const scriptCount = state.scripts ? state.scripts.length : 0;
-        showToastNotification(`💾 ¡Datos Guardados con Éxito! (${scriptCount} guiones e ideas en Nube/Vercel)`);
+        showToastNotification('💾 ¡Datos Sincronizados con el Servidor! (' + scriptCount + ' guiones en todos tus dispositivos)');
       }
       return true;
     }
 
+    updateSyncStatus(false);
     if (!isSilent) {
-      alert("☁️ No se pudo conectar a la Nube en este momento.");
+      alert("☁️ No se pudo conectar al servidor de sincronización en este momento.");
     }
   } catch (err) {
-    console.warn("Cloud save network exception:", err);
+    updateSyncStatus(false);
+    console.warn("Auto-sync save exception:", err);
     if (!isSilent) {
-      alert("No se pudo conectar a la nube. Verifica tu conexión a internet.");
+      alert("No se pudo conectar al servidor. Verifica que el servidor de BLEX Studio esté activo en el PC.");
     }
   } finally {
     if (btnHeader && !isSilent) {
@@ -2624,36 +2697,47 @@ async function loadStateFromCloud(isSilent = false) {
   }
 
   try {
+    const baseUrl = getEffectiveServerUrl();
     let syncCode = localStorage.getItem('blex_cloud_sync_code');
-    let syncEndpoint = '/api/sync?t=' + Date.now();
+    let syncEndpoint = baseUrl + '/api/sync?t=' + Date.now();
     if (syncCode) {
-      syncEndpoint += `&channel=${encodeURIComponent(syncCode)}`;
+      syncEndpoint += '&channel=' + encodeURIComponent(syncCode);
     }
 
-    let res = await fetch(syncEndpoint);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    let res = await fetch(syncEndpoint, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
+      updateSyncStatus(false);
       if (!isSilent) {
-        alert("No se encontró ninguna copia previa en la Nube. Haz clic en 'Guardar Datos' primero.");
+        alert("No se encontró ninguna copia previa en el servidor.");
       }
       return;
     }
 
     const data = await res.json();
     if (data && Array.isArray(data.scripts)) {
+      updateSyncStatus(true);
       const localUpdatedAt = localStorage.getItem('css_updated_at') || '0';
       const cloudUpdatedAt = data.updatedAt || '0';
 
-      // Apply if manually requested (!isSilent) OR cloud is newer/equal to local
-      if (!isSilent || cloudUpdatedAt >= localUpdatedAt) {
+      // If remote has data and is equal/newer, or local is empty, apply it
+      if (!isSilent || cloudUpdatedAt >= localUpdatedAt || (state.scripts.length === 0 && data.scripts.length > 0)) {
         applyCloudData(data, null, isSilent);
+      } else if (localUpdatedAt > cloudUpdatedAt && state.scripts.length > 0) {
+        // If local has newer edits, push them to server silently so server catches up
+        saveStateToCloud(true);
       }
-    } else if (!isSilent) {
-      alert("Los datos en la Nube no tienen un formato de guiones válido.");
+    } else {
+      updateSyncStatus(true);
     }
   } catch (err) {
-    console.warn("Cloud load network exception:", err);
+    updateSyncStatus(false);
     if (!isSilent) {
-      alert("Error al cargar de la Nube: " + err.message);
+      alert("Error al conectar con el Servidor: " + err.message + "\n\nVerifica que la PC tenga el servidor encendido.");
     }
   } finally {
     if (btn && !isSilent) {
@@ -2661,6 +2745,16 @@ async function loadStateFromCloud(isSilent = false) {
       btn.innerHTML = originalHTML;
     }
   }
+}
+
+function startAutoSyncEngine() {
+  if (syncPollingTimer) clearInterval(syncPollingTimer);
+  // Auto-sync polling every 8 seconds in background
+  syncPollingTimer = setInterval(() => {
+    if (typeof loadStateFromCloud === 'function') {
+      loadStateFromCloud(true);
+    }
+  }, 8000);
 }
 
 function applyCloudData(data, blobId, isSilent = false) {
