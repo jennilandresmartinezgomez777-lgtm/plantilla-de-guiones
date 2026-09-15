@@ -3723,12 +3723,19 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <button type="button" onclick="saveUserNotificationEmails()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold px-4 py-2 rounded-xl transition cursor-pointer text-xs shadow-md flex items-center gap-1.5">
-                <i data-lucide="check" class="w-3.5 h-3.5"></i> Guardar Ambos Correos
+              <button id="btnSaveEmailsHub" type="button" onclick="saveUserNotificationEmails()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold px-4 py-2.5 rounded-xl transition cursor-pointer text-xs shadow-md flex items-center gap-1.5 active:scale-95">
+                <i id="btnSaveEmailsHubIcon" data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span id="btnSaveEmailsHubText">Guardar Ambos Correos</span>
               </button>
-              <button type="button" onclick="testEmailDispatch()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold px-3 py-2 rounded-xl transition cursor-pointer text-xs border border-rose-500/30 flex items-center gap-1.5">
+              <button type="button" onclick="testEmailDispatch()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold px-3.5 py-2.5 rounded-xl transition cursor-pointer text-xs border border-rose-500/30 flex items-center gap-1.5 active:scale-95">
                 <i data-lucide="send" class="w-3.5 h-3.5"></i> 📨 Enviar Correo de Prueba Ahora
               </button>
+            </div>
+
+            <!-- Inline Success Badge -->
+            <div id="emailSaveInlineFeedback" class="hidden p-3 bg-emerald-950/70 border border-emerald-500/50 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2.5 shadow-md">
+              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span id="emailSaveInlineText">¡Correos guardados y sincronizados en la nube con éxito!</span>
             </div>
 
             <p class="text-[11px] text-slate-500 leading-relaxed">💡 Al tocar <em>"Abrir en Google Calendar / Gmail"</em> en cualquier actividad, Google los añadirá a ambos automáticamente como invitados y les enviará la alarma a ambos celulares y correos.</p>

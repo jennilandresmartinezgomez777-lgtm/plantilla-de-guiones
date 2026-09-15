@@ -2756,7 +2756,7 @@ function showToastNotification(message, iconName = 'check-circle') {
   if (!toastContainer) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'blexToastContainer';
-    toastContainer.className = 'fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+    toastContainer.className = 'fixed bottom-5 right-5 z-[100000] flex flex-col gap-2 pointer-events-none';
     document.body.appendChild(toastContainer);
   }
 
@@ -11317,11 +11317,24 @@ function openNotificationHubModal() {
   // Load saved Gmails (Primary + Wife)
   const email1Input = document.getElementById('userNotificationEmail');
   const email2Input = document.getElementById('partnerNotificationEmail');
-  if (email1Input) {
-    email1Input.value = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
-  }
-  if (email2Input) {
-    email2Input.value = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
+  const inlineFeedback = document.getElementById('emailSaveInlineFeedback');
+  const inlineText = document.getElementById('emailSaveInlineText');
+
+  const e1 = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
+  const e2 = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
+
+  if (email1Input) email1Input.value = e1;
+  if (email2Input) email2Input.value = e2;
+
+  if (inlineFeedback && inlineText && (e1 || e2)) {
+    let summary = '✅ Correos activos en la nube: ';
+    if (e1 && e2) summary += `${e1} y ${e2}`;
+    else if (e1) summary += e1;
+    else if (e2) summary += e2;
+    inlineText.textContent = summary;
+    inlineFeedback.classList.remove('hidden');
+  } else if (inlineFeedback) {
+    inlineFeedback.classList.add('hidden');
   }
 
   updatePushPermissionBadge();
@@ -11338,19 +11351,26 @@ function closeNotificationHubModal(e = null) {
 function saveUserNotificationEmails() {
   const email1Input = document.getElementById('userNotificationEmail');
   const email2Input = document.getElementById('partnerNotificationEmail');
+  const btnSave = document.getElementById('btnSaveEmailsHub');
+  const btnText = document.getElementById('btnSaveEmailsHubText');
+  const inlineFeedback = document.getElementById('emailSaveInlineFeedback');
+  const inlineText = document.getElementById('emailSaveInlineText');
 
   const email1 = email1Input ? email1Input.value.trim() : '';
   const email2 = email2Input ? email2Input.value.trim() : '';
 
   if (email1 && !email1.includes('@')) {
-    showToastNotification('⚠️ El correo principal no tiene un formato válido (@)', 'alert-circle');
+    showToastNotification('⚠️ El correo principal debe contener un formato válido (@)', 'alert-circle');
+    if (email1Input) email1Input.focus();
     return;
   }
   if (email2 && !email2.includes('@')) {
-    showToastNotification('⚠️ El correo de tu esposa no tiene un formato válido (@)', 'alert-circle');
+    showToastNotification('⚠️ El correo de tu esposa debe contener un formato válido (@)', 'alert-circle');
+    if (email2Input) email2Input.focus();
     return;
   }
 
+  // Persist locally and in synced cloud state
   localStorage.setItem('blex_user_email', email1);
   localStorage.setItem('blex_partner_email', email2);
 
@@ -11361,13 +11381,37 @@ function saveUserNotificationEmails() {
   };
   saveState();
 
-  let msg = '📧 Correos configurados: ';
-  if (email1 && email2) msg += `${email1} y ${email2}`;
-  else if (email1) msg += email1;
-  else if (email2) msg += email2;
-  else msg = 'Correos eliminados.';
+  // Play audio confirmation chime
+  if (typeof playChimeSound === 'function') playChimeSound();
 
-  showToastNotification(msg, 'check-circle');
+  // High visibility button feedback
+  if (btnSave && btnText) {
+    btnSave.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition cursor-pointer text-xs shadow-lg shadow-emerald-950/80 flex items-center gap-1.5 animate-pulse";
+    btnText.textContent = "✅ ¡Guardados con Éxito!";
+  }
+
+  // Inline feedback box
+  if (inlineFeedback && inlineText) {
+    let summary = '✅ Correos guardados en la nube: ';
+    if (email1 && email2) summary += `${email1} y ${email2}`;
+    else if (email1) summary += email1;
+    else if (email2) summary += email2;
+    else summary = 'Se han borrado los correos.';
+
+    inlineText.textContent = summary;
+    inlineFeedback.classList.remove('hidden');
+  }
+
+  showToastNotification('✅ ¡Correos guardados y sincronizados en la nube!', 'check-circle');
+
+  // Reset button state after 3 seconds
+  setTimeout(() => {
+    if (btnSave && btnText) {
+      btnSave.className = "bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold px-4 py-2.5 rounded-xl transition cursor-pointer text-xs shadow-md flex items-center gap-1.5 active:scale-95";
+      btnText.textContent = "Guardar Ambos Correos";
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }, 3500);
 }
 
 // Alias for backwards compatibility
