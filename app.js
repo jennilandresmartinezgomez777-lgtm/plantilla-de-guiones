@@ -3038,6 +3038,10 @@ let syncPollingTimer = null;
 function getEffectiveServerUrl() {
   const custom = localStorage.getItem('blex_server_url');
   if (custom && custom.trim()) {
+    // Safety check: on HTTPS (e.g. Vercel), ignore custom localhost URLs to prevent Mixed Content blocking on iPhone/iPad
+    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:' && (custom.startsWith('http://localhost') || custom.startsWith('http://127.0.0.1'))) {
+      return window.location.origin;
+    }
     return custom.trim().replace(/\/+$/, '');
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
@@ -7975,7 +7979,7 @@ Para que cualquier guión o gancho alcance millones de reproducciones y máxima 
 `;
 
 const aiState = {
-  serverUrl: localStorage.getItem('ai_server_url') || 'http://localhost:11434',
+  serverUrl: localStorage.getItem('ai_server_url') || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'http://192.168.1.10:3000/api/ollama' : 'http://localhost:11434'),
   model: localStorage.getItem('ai_model') || 'qwen2.5:7b',
   isConnected: false,
   isGenerating: false,
