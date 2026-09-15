@@ -5,6 +5,30 @@
   ],
   "scripts": [
     {
+      "id": "script-andres-presentacion",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Andrés",
+      "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
+      "linkReferencia": "",
+      "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
+      "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
+      "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
+      "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
+      "contextoAdicional": "Grabación en setup profesional / oficina",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "completed": false,
+      "espacio": "",
+      "updatedAt": "2026-09-15T20:48:00.514Z",
+      "createdAt": "2026-09-15T00:00:00.000Z"
+    },
+    {
       "id": "script-trabajar-duro",
       "client": "Jennil",
       "number": 2,
@@ -25,7 +49,7 @@
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.945Z",
+      "updatedAt": "2026-09-15T20:48:00.515Z",
       "createdAt": "2026-09-15T01:00:00.000Z"
     },
     {
@@ -49,97 +73,11 @@
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.945Z",
+      "updatedAt": "2026-09-15T20:48:00.515Z",
       "createdAt": "2026-09-15T03:31:24.089Z"
     }
   ],
-  "deletedScripts": [
-    {
-      "id": "script-1",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-2",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-29",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-24",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-3",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-1789481120131",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "s1",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "s2",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "test_1",
-      "deletedAt": "2026-09-15T20:39:38.544Z"
-    },
-    {
-      "id": "script-andres-presentacion",
-      "client": "Jennil",
-      "number": 1,
-      "status": "Por Grabar",
-      "formato": "Hablando a cámara",
-      "objetivo": "VENTA",
-      "actor": "Andrés",
-      "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
-      "linkReferencia": "",
-      "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
-      "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
-      "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
-      "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
-      "contextoAdicional": "Grabación en setup profesional / oficina",
-      "attachments": [],
-      "views": 0,
-      "comments": 0,
-      "rating": 0,
-      "completed": false,
-      "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.944Z",
-      "createdAt": "2026-09-15T00:00:00.000Z",
-      "deletedAt": "2026-09-15T20:43:07.961Z"
-    },
-    {
-      "id": "script-1789443084089",
-      "client": "Jennil",
-      "number": 1,
-      "status": "Por Grabar",
-      "formato": "Hablando a cámara",
-      "objetivo": "VENTA",
-      "actor": "Jennil",
-      "ideaGanadora": "Venta",
-      "linkReferencia": "",
-      "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprenden desde cero toda la metodología aplicada que utilizaron nuestro alumnos Mabel, Asceineth, Jeison y otros  Más",
-      "historia": "Obtendrás metodología y entorno propio de análisis para que aprendas a tomar tus propias decisiones sin depender de nadie\n.plataforma con herramientas \n.sala de operativo en vivo 4 veces por semana\n.Acompañamiento personalizado \n.estrategia rentables.\n.algoritmos entrenados con IA y muchos más.",
-      "moraleja": "",
-      "cta": "Si quieres tener resultados, mejorar tus ingresos, mientras haces lo que amas escribe la palabra CAMBIO te ayudaré y te mostraré como lograrlo!",
-      "contextoAdicional": "PRUEBAS VIDEOS CORTOS (VARIOS)",
-      "attachments": [],
-      "views": 0,
-      "comments": 0,
-      "rating": 0,
-      "updatedAt": "2026-09-15T03:31:24.089Z",
-      "createdAt": "2026-09-15T03:31:24.089Z",
-      "espacio": "",
-      "deletedAt": "2026-09-15T20:25:15.880Z"
-    }
-  ],
+  "deletedScripts": [],
   "notes": {
     "Jennil": [],
     "Natalia": []
@@ -163,5 +101,5 @@
   },
   "aiBrain": {},
   "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-15T20:43:32.301Z"
+  "updatedAt": "2026-09-15T20:48:00.568Z"
 }
