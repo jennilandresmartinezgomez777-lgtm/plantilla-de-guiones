@@ -11601,3 +11601,82 @@ function generateAndDownloadICS(eventsList, filename) {
   document.body.removeChild(link);
   showToastNotification('📅 Archivo de calendario descargado con alarma para iPhone/Google', 'download');
 }
+
+
+// Register Service Worker for PWA Push Notifications
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('✅ ServiceWorker registrado con éxito:', reg.scope);
+      })
+      .catch(err => {
+        console.warn('⚠️ Error al registrar ServiceWorker:', err);
+      });
+  });
+}
+
+// Check if mobile banner should be shown
+function checkMobileNotificationBanner() {
+  const banner = document.getElementById('mobileNotificationBanner');
+  if (!banner) return;
+
+  const dismissed = sessionStorage.getItem('blex_banner_dismissed');
+  if (dismissed) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  if (typeof Notification !== 'undefined') {
+    if (Notification.permission === 'granted') {
+      banner.classList.add('hidden');
+    } else {
+      banner.classList.remove('hidden');
+    }
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+function dismissMobileBanner() {
+  sessionStorage.setItem('blex_banner_dismissed', 'true');
+  const banner = document.getElementById('mobileNotificationBanner');
+  if (banner) banner.classList.add('hidden');
+}
+
+function activateMobilePushPermission() {
+  if (typeof Notification !== 'undefined') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        const banner = document.getElementById('mobileNotificationBanner');
+        if (banner) banner.classList.add('hidden');
+        showToastNotification('🎉 ¡Notificaciones activadas en este dispositivo!', 'check-circle');
+        testStudioAlarmNotification();
+      } else {
+        showToastNotification('⚠️ Permiso no concedido. Revisa los ajustes de tu navegador.', 'alert-circle');
+      }
+    });
+  } else {
+    showToastNotification('ℹ️ Este dispositivo no admite notificaciones web push.', 'info');
+  }
+}
+
+// Subscribe Apple / Google Calendar Live Feed (webcal://)
+function subscribeLiveCalendarFeed() {
+  const host = window.location.host;
+  const webcalUrl = 'webcal://' + host + '/api/calendar';
+  const httpsUrl = 'https://' + host + '/api/calendar';
+
+  // Try opening webcal:// protocol for native Apple Calendar subscription on iOS/Mac
+  window.location.href = webcalUrl;
+  
+  // Also provide fallback toast and modal
+  setTimeout(() => {
+    showToastNotification('📲 Abriendo suscripción de calendario para tus 2 celulares y iPad...', 'smartphone');
+  }, 1000);
+}
+
+// Run banner check after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(checkMobileNotificationBanner, 1500);
+});

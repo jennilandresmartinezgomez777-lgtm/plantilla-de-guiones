@@ -7,7 +7,11 @@
       "use": "@vercel/node"
     },
     {
-      "src": "{index.html,app.js,styles.css,ai-hooks-data.js,manifest.json,*.png,sync-data.json,favicon.png}",
+      "src": "api/calendar.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "{index.html,app.js,styles.css,ai-hooks-data.js,manifest.json,sw.js,*.png,sync-data.json,favicon.png}",
       "use": "@vercel/static"
     }
   ],
@@ -15,6 +19,14 @@
     {
       "src": "/api/sync(.*)",
       "dest": "/api/sync.js$1"
+    },
+    {
+      "src": "/api/calendar(.*)",
+      "dest": "/api/calendar.js$1"
+    },
+    {
+      "src": "/sw.js",
+      "dest": "/sw.js"
     },
     {
       "src": "/(.*)",
