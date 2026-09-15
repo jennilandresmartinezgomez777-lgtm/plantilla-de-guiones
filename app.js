@@ -2461,6 +2461,65 @@ function savePersonalSyncCode() {
   }
 }
 
+
+async function forceSyncAllNow() {
+  const btn = document.getElementById('btnForceSyncNow');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Sincronizando...</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  try {
+    await saveStateToCloud(true);
+    await loadStateFromCloud(true);
+    updateSyncModalDetails();
+    showToastNotification('⚡ ¡Sincronización inmediata completada con éxito!');
+  } catch (e) {
+    showToastNotification('⚠️ No se pudo completar la sincronización en este momento.', 'warning');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }
+}
+
+function copyCleanAppUrl() {
+  const url = window.location.origin + window.location.pathname;
+  navigator.clipboard.writeText(url).then(() => {
+    showToastNotification('📋 Enlace de la plataforma copiado. Ábrelo en tu iPad o celular.');
+  }).catch(() => {
+    prompt('Copia este enlace para abrirlo en tu iPad o celular:', url);
+  });
+}
+
+function updateSyncModalDetails() {
+  const serverLabel = document.getElementById('syncModalServerStatus');
+  const lastTimeLabel = document.getElementById('syncModalLastTime');
+  const effServer = document.getElementById('currentConnectedServerLabel');
+
+  if (serverLabel) {
+    serverLabel.innerHTML = isServerConnected 
+      ? '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Conectado'
+      : '<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-400"></i> Desconectado';
+    serverLabel.className = isServerConnected ? 'font-semibold text-emerald-400 flex items-center gap-1 mt-0.5' : 'font-semibold text-rose-400 flex items-center gap-1 mt-0.5';
+  }
+
+  if (lastTimeLabel) {
+    const d = new Date();
+    lastTimeLabel.innerText = 'Hoy ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  if (effServer) {
+    effServer.innerText = getEffectiveServerUrl();
+  }
+
+  if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+}
+
 function openSyncModal() {
   const modal = document.getElementById('syncModal');
   if (modal) modal.classList.remove('hidden');
