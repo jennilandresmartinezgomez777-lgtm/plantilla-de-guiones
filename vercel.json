@@ -1,17 +1,24 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "builds": [
+    {
+      "src": "api/sync.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "{index.html,app.js,styles.css,ai-hooks-data.js,manifest.json,*.png,sync-data.json,favicon.png}",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
+      "src": "/api/sync(.*)",
+      "dest": "/api/sync.js$1"
     },
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "headers": [
