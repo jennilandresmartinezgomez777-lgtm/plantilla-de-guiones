@@ -2732,6 +2732,18 @@ async function saveStateToCloud(isSilent = false) {
     });
     clearTimeout(timeoutId);
 
+    // Also push directly to Vercel Cloud endpoint if currently on localhost/LAN so iPad/phones get it immediately
+    const vercelCloudUrl = 'https://content-script-studio.vercel.app/api/sync';
+    if (!baseUrl.includes('vercel.app')) {
+      try {
+        fetch(vercelCloudUrl + (syncCode ? '?channel=' + encodeURIComponent(syncCode) : ''), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payloadObj)
+        }).catch(e => console.warn('Vercel cloud background push note:', e));
+      } catch (e) {}
+    }
+
     if (res.ok) {
       updateSyncStatus(true);
       if (typeof resetAutoSaveTimer === 'function') resetAutoSaveTimer();

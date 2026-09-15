@@ -136,10 +136,18 @@ const server = http.createServer(async (req, res) => {
         if (parsed) {
           parsed.updatedAt = new Date().toISOString();
           fs.writeFileSync(syncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
+
+          // Relay to Vercel cloud so mobile/iPad devices stay synchronized in real-time
+          fetch('https://content-script-studio.vercel.app/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed)
+          }).catch(e => console.warn('Vercel sync relay note:', e.message));
+
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ 
             success: true, 
-            message: 'Datos sincronizados y guardados en el PC', 
+            message: 'Datos sincronizados y guardados en el PC y la Nube', 
             count: Array.isArray(parsed.scripts) ? parsed.scripts.length : 0,
             updatedAt: parsed.updatedAt 
           }));
