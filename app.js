@@ -8981,13 +8981,13 @@ function goToWizardStep(stepNum) {
 
     if (pill) {
       if (i === stepNum) {
-        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer ring-1 ring-purple-400/50';
+        pill.className = 'w-full px-1 py-1.5 sm:px-2 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 text-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer ring-1 ring-purple-400/50';
         const sp = pill.querySelector('span:first-child');
-        if (sp) sp.className = 'w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold';
+        if (sp) sp.className = 'w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold shrink-0';
       } else {
-        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800/80 bg-slate-900/60 border border-slate-800 cursor-pointer';
+        pill.className = 'w-full px-1 py-1.5 sm:px-2 sm:py-2 rounded-xl text-[10px] sm:text-xs font-semibold transition flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 text-center text-slate-300 hover:text-white hover:bg-slate-800/80 bg-slate-900/60 border border-slate-800 cursor-pointer';
         const sp = pill.querySelector('span:first-child');
-        if (sp) sp.className = 'w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] text-slate-400';
+        if (sp) sp.className = 'w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[9px] text-slate-400 shrink-0';
       }
     }
 
