@@ -3,10 +3,38 @@ function mergeAppData(local, remote) {
   if (!remote || typeof remote !== 'object') return local || {};
   if (!local || typeof local !== 'object') return remote || {};
 
+  const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const deletedMap = new Map();
+  (remote.deletedScripts || []).forEach(s => {
+    if (s && s.id && s.deletedAt) {
+      const age = now - new Date(s.deletedAt).getTime();
+      if (age < FIFTEEN_DAYS_MS) deletedMap.set(String(s.id), s);
+    }
+  });
+  (local.deletedScripts || []).forEach(s => {
+    if (s && s.id && s.deletedAt) {
+      const age = now - new Date(s.deletedAt).getTime();
+      if (age < FIFTEEN_DAYS_MS) {
+        const existing = deletedMap.get(String(s.id));
+        if (!existing || new Date(s.deletedAt) >= new Date(existing.deletedAt)) {
+          deletedMap.set(String(s.id), s);
+        }
+      }
+    }
+  });
+  const mergedDeletedScripts = Array.from(deletedMap.values());
+  const deletedIdsSet = new Set(mergedDeletedScripts.map(s => String(s.id)));
+
   const scriptsMap = new Map();
-  (remote.scripts || []).forEach(s => { if (s && s.id) scriptsMap.set(String(s.id), s); });
+  (remote.scripts || []).forEach(s => {
+    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
+      scriptsMap.set(String(s.id), s);
+    }
+  });
   (local.scripts || []).forEach(s => {
-    if (s && s.id) {
+    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
       const existing = scriptsMap.get(String(s.id));
       if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
         scriptsMap.set(String(s.id), s);
@@ -62,6 +90,7 @@ function mergeAppData(local, remote) {
   return {
     clients: mergedClients,
     scripts: Array.from(scriptsMap.values()),
+    deletedScripts: mergedDeletedScripts,
     notes: mergedNotes,
     calendarEvents: Array.from(calMap.values()),
     viralEvaluations: Array.from(evalMap.values()),

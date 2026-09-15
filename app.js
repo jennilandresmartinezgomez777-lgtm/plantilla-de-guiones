@@ -980,6 +980,7 @@ const savedCalendarEvents = rawSavedCalendarEvents !== null ? JSON.parse(rawSave
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
   scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
+  deletedScripts: Array.isArray(savedDeletedScripts) ? savedDeletedScripts : [],
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   viralEvaluations: Array.isArray(savedViralEvals) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
   challengeStartDate: savedChallengeStartDate || '2026-09-13',
@@ -1029,6 +1030,7 @@ if (state.activeNotesClient === "USACREDITO" || !state.activeNotesClient) {
 try {
   localStorage.setItem('css_clients', JSON.stringify(state.clients));
   localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+    localStorage.setItem('css_deleted_scripts', JSON.stringify(state.deletedScripts || []));
   localStorage.setItem('css_notes', JSON.stringify(state.notes));
   localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
 } catch (e) {
@@ -1163,6 +1165,7 @@ function saveState() {
   try {
     localStorage.setItem('css_clients', JSON.stringify(state.clients || ['Jennil', 'Natalia']));
     localStorage.setItem('css_scripts', JSON.stringify(state.scripts || []));
+    localStorage.setItem('css_deleted_scripts', JSON.stringify(state.deletedScripts || []));
     localStorage.setItem('css_notes', JSON.stringify(state.notes || {}));
     localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations || []));
     localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
@@ -2629,11 +2632,40 @@ function mergeFullAppData(local, remote) {
   if (!remote || typeof remote !== 'object') return local || {};
   if (!local || typeof local !== 'object') return remote || {};
 
-  // 1. Merge Scripts by ID (preserve all scripts from all devices)
+  const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // 0. Merge Deleted Scripts (Tombstones with 15-day TTL)
+  const deletedMap = new Map();
+  (remote.deletedScripts || []).forEach(s => {
+    if (s && s.id && s.deletedAt) {
+      const age = now - new Date(s.deletedAt).getTime();
+      if (age < FIFTEEN_DAYS_MS) deletedMap.set(String(s.id), s);
+    }
+  });
+  (local.deletedScripts || []).forEach(s => {
+    if (s && s.id && s.deletedAt) {
+      const age = now - new Date(s.deletedAt).getTime();
+      if (age < FIFTEEN_DAYS_MS) {
+        const existing = deletedMap.get(String(s.id));
+        if (!existing || new Date(s.deletedAt) >= new Date(existing.deletedAt)) {
+          deletedMap.set(String(s.id), s);
+        }
+      }
+    }
+  });
+  const mergedDeletedScripts = Array.from(deletedMap.values());
+  const deletedIdsSet = new Set(mergedDeletedScripts.map(s => String(s.id)));
+
+  // 1. Merge Active Scripts by ID (NEVER restore scripts present in deletedIdsSet)
   const scriptsMap = new Map();
-  (remote.scripts || []).forEach(s => { if (s && s.id) scriptsMap.set(String(s.id), s); });
+  (remote.scripts || []).forEach(s => {
+    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
+      scriptsMap.set(String(s.id), s);
+    }
+  });
   (local.scripts || []).forEach(s => {
-    if (s && s.id) {
+    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
       const existing = scriptsMap.get(String(s.id));
       if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
         scriptsMap.set(String(s.id), s);
@@ -2696,6 +2728,7 @@ function mergeFullAppData(local, remote) {
   return {
     clients: mergedClients,
     scripts: mergedScripts,
+    deletedScripts: mergedDeletedScripts,
     notes: mergedNotes,
     calendarEvents: mergedCalendar,
     viralEvaluations: Array.from(evalMap.values()),
@@ -2900,6 +2933,9 @@ async function loadStateFromCloud(isSilent = false) {
 function applyCloudData(data, channel = null, isSilent = false) {
   if (!data) return;
   if (Array.isArray(data.scripts)) state.scripts = data.scripts;
+  if (Array.isArray(data.deletedScripts)) state.deletedScripts = data.deletedScripts;
+  cleanupExpiredDeletedScripts();
+  updateTrashBadgeCount();
   if (Array.isArray(data.clients)) state.clients = data.clients;
   if (data.notes && typeof data.notes === 'object') state.notes = data.notes;
   if (Array.isArray(data.viralEvaluations)) state.viralEvaluations = data.viralEvaluations;
@@ -2946,6 +2982,7 @@ function getFullAppStateJSON() {
   return JSON.stringify({
     clients: state.clients || ['Jennil', 'Natalia'],
     scripts: state.scripts || [],
+    deletedScripts: state.deletedScripts || [],
     notes: state.notes || { Jennil: [], Natalia: [] },
     viralEvaluations: state.viralEvaluations || [],
     calendarEvents: state.calendarEvents || [],
@@ -3911,10 +3948,25 @@ function updateScriptStatus(scriptId, newStatus) {
 }
 
 function deleteScript(scriptId) {
-  if (confirm('¿Estás seguro de que deseas eliminar este guión?')) {
-    state.scripts = state.scripts.filter(s => s.id !== scriptId);
+  const script = (state.scripts || []).find(s => String(s.id) === String(scriptId));
+  if (!script) return;
+
+  const scriptTitle = script.ideaGanadora || script.title || ('Guión #' + (script.number || ''));
+  if (confirm('¿Mover el guión "' + scriptTitle + '" a la papelera? (Permanecerá 15 días antes de borrarse definitivamente)')) {
+    script.deletedAt = new Date().toISOString();
+    
+    if (!Array.isArray(state.deletedScripts)) state.deletedScripts = [];
+    state.deletedScripts = state.deletedScripts.filter(s => String(s.id) !== String(scriptId));
+    state.deletedScripts.unshift(script);
+
+    state.scripts = state.scripts.filter(s => String(s.id) !== String(scriptId));
+
     saveState();
     renderAll();
+    updateTrashBadgeCount();
+    if (typeof showToastNotification === 'function') {
+      showToastNotification('🗑️ Guión movido a la papelera (15 días para restaurar).', 'info');
+    }
   }
 }
 
@@ -13387,5 +13439,182 @@ async function transportScriptToAiStudio(scriptId, targetStep = 5) {
       6: 'Espacios & Set de Grabación (Paso 6)'
     };
     showToastNotification(`⚡ Guión transportado a ${stepNames[targetStep] || 'BLEX Studio'}`, 'success');
+  }
+}
+
+
+// =========================================================================
+// SISTEMA DE PAPELERA DE GUIONES (15 DÍAS DE RETENCIÓN & BORRADO DEFINITIVO)
+// =========================================================================
+
+function cleanupExpiredDeletedScripts() {
+  const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  if (!Array.isArray(state.deletedScripts)) {
+    state.deletedScripts = [];
+    return;
+  }
+  state.deletedScripts = state.deletedScripts.filter(s => {
+    if (!s || !s.deletedAt) return false;
+    const age = now - new Date(s.deletedAt).getTime();
+    return age < FIFTEEN_DAYS_MS;
+  });
+}
+
+function updateTrashBadgeCount() {
+  cleanupExpiredDeletedScripts();
+  const count = (state.deletedScripts || []).length;
+  const badges = [
+    document.getElementById('trashBadgeCount'),
+    document.getElementById('trashBadgeCountCards'),
+    document.getElementById('trashModalCountBadge')
+  ];
+
+  badges.forEach(b => {
+    if (!b) return;
+    b.textContent = count > 0 ? count : '0';
+    if (b.id !== 'trashModalCountBadge') {
+      if (count > 0) b.classList.remove('hidden');
+      else b.classList.add('hidden');
+    } else {
+      b.textContent = count + (count === 1 ? ' guión' : ' guiones');
+    }
+  });
+
+  const btnEmpty = document.getElementById('btnEmptyTrashAll');
+  if (btnEmpty) {
+    btnEmpty.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function openTrashModal() {
+  cleanupExpiredDeletedScripts();
+  renderTrashModalList();
+  updateTrashBadgeCount();
+
+  const modal = document.getElementById('trashModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+  if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+}
+
+function closeTrashModal() {
+  const modal = document.getElementById('trashModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+}
+
+function renderTrashModalList() {
+  const container = document.getElementById('trashModalBody');
+  if (!container) return;
+
+  const list = state.deletedScripts || [];
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 text-center space-y-3">
+        <div class="w-14 h-14 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto text-slate-500">
+          <i data-lucide="trash-2" class="w-7 h-7 text-slate-600"></i>
+        </div>
+        <h4 class="text-sm font-bold text-slate-300">La papelera está vacía</h4>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">No tienes guiones eliminados. Los guiones que elimines de la Matriz se guardarán aquí durante 15 días por si deseas recuperarlos.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  let html = '<div class="space-y-2.5">';
+  list.forEach(script => {
+    const delDate = new Date(script.deletedAt || now);
+    const ageMs = now - delDate.getTime();
+    const daysPassed = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.max(1, 15 - daysPassed);
+    const dateFormatted = delDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+    html += `
+      <div class="bg-slate-950/80 border border-slate-800/90 hover:border-slate-700 p-3.5 rounded-xl transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div class="min-w-0 flex-1 space-y-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">#${script.number || '?'}</span>
+            <span class="text-xs font-semibold text-brand-400">${escapeHtml(script.client || 'Jennil')}</span>
+            <span class="text-[10px] bg-slate-800/60 text-slate-400 px-2 py-0.5 rounded border border-slate-800">${escapeHtml(script.formato || 'Talking Head')}</span>
+            <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+              ⏳ Expira en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}
+            </span>
+          </div>
+          <h4 class="text-xs sm:text-sm font-bold text-slate-200 line-clamp-1">💡 ${escapeHtml(script.ideaGanadora || script.title || 'Guión sin título')}</h4>
+          <p class="text-[11px] text-slate-400 line-clamp-1 font-normal">🪝 ${escapeHtml(script.gancho || '')}</p>
+          <p class="text-[10px] text-slate-500">Eliminado el: ${dateFormatted}</p>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <button type="button" onclick="restoreScriptFromTrash('${script.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm cursor-pointer" title="Restaurar a la Matriz">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Restaurar</span>
+          </button>
+          <button type="button" onclick="permanentlyDeleteScript('${script.id}')" class="bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 text-xs px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer" title="Eliminar definitivamente">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function restoreScriptFromTrash(scriptId) {
+  if (!Array.isArray(state.deletedScripts)) return;
+  const scriptIndex = state.deletedScripts.findIndex(s => String(s.id) === String(scriptId));
+  if (scriptIndex === -1) return;
+
+  const script = state.deletedScripts[scriptIndex];
+  delete script.deletedAt;
+  script.updatedAt = new Date().toISOString();
+
+  state.deletedScripts.splice(scriptIndex, 1);
+  if (!Array.isArray(state.scripts)) state.scripts = [];
+  state.scripts.unshift(script);
+
+  saveState();
+  renderAll();
+  renderTrashModalList();
+  updateTrashBadgeCount();
+  if (typeof showToastNotification === 'function') {
+    showToastNotification('✅ Guión #' + (script.number || '') + ' restaurado a la Matriz.', 'success');
+  }
+}
+
+function permanentlyDeleteScript(scriptId) {
+  if (confirm('¿Eliminar este guión definitivamente? Ya no se podrá recuperar.')) {
+    state.deletedScripts = (state.deletedScripts || []).filter(s => String(s.id) !== String(scriptId));
+    saveState();
+    renderTrashModalList();
+    updateTrashBadgeCount();
+    if (typeof showToastNotification === 'function') {
+      showToastNotification('Guión eliminado definitivamente.', 'info');
+    }
+  }
+}
+
+function emptyTrash() {
+  const count = (state.deletedScripts || []).length;
+  if (count === 0) return;
+
+  if (confirm('¿Vaciar toda la papelera (' + count + ' guiones)? Se borrarán permanentemente.')) {
+    state.deletedScripts = [];
+    saveState();
+    renderTrashModalList();
+    updateTrashBadgeCount();
+    if (typeof showToastNotification === 'function') {
+      showToastNotification('🗑️ Papelera vaciada completamente.', 'info');
+    }
   }
 }
