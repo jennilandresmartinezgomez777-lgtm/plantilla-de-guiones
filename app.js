@@ -3305,203 +3305,7 @@ function closeModal() {
   scriptModal.classList.add('hidden');
 }
 
-function openFocusScriptModal(id) {
-  const script = state.scripts.find(s => s.id === id);
-  if (!script) return;
-
-  const focusModal = document.getElementById('focusScriptModal');
-  const focusModalTitle = document.getElementById('focusModalTitle');
-  const focusModalBody = document.getElementById('focusModalBody');
-  const btnCopyFocusScript = document.getElementById('btnCopyFocusScript');
-  const btnPrintFocusScript = document.getElementById('btnPrintFocusScript');
-  const btnEditFocusScript = document.getElementById('btnEditFocusScript');
-
-  if (!focusModal || !focusModalBody) return;
-
-  focusModalTitle.textContent = `#${script.number || '?'} • ${script.client} — ${script.ideaGanadora}`;
-
-  let statusClass = "bg-slate-800 text-slate-300 border-slate-700";
-  if (script.status === 'Redactado') statusClass = "bg-blue-500/10 text-blue-400 border-blue-500/30";
-  if (script.status === 'Por Grabar') statusClass = "bg-amber-500/10 text-amber-400 border-amber-500/30";
-  if (script.status === 'En Edición') statusClass = "bg-purple-500/10 text-purple-300 border-purple-500/30";
-  if (script.status === 'Publicado' || script.completed) statusClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-  if (script.status === 'Editado') statusClass = "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
-
-  focusModalBody.innerHTML = `
-    <!-- Top Metadata Header -->
-    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="bg-slate-800 text-slate-300 font-bold px-3 py-1 rounded-md border border-slate-700">
-          Guión #${script.number || '?'}
-        </span>
-        <span class="bg-brand-500/10 text-brand-300 font-bold px-3 py-1 rounded-md border border-brand-500/20">
-          🏢 Cliente: ${script.client}
-        </span>
-        <span class="bg-emerald-500/20 text-emerald-300 font-bold px-3 py-1 rounded-md border border-emerald-500/30">
-          📹 Formato: ${script.formato}
-        </span>
-        <span class="bg-emerald-500/10 text-emerald-400 font-semibold px-3 py-1 rounded-md border border-emerald-500/20">
-          🎯 Objetivo: ${script.objetivo}
-        </span>
-        <span class="bg-slate-800 text-slate-300 font-semibold px-3 py-1 rounded-md border border-slate-700">
-          👤 Actor: ${script.actor || 'N/A'}
-        </span>
-      </div>
-      <span class="text-xs font-semibold px-3 py-1 rounded-full border ${statusClass}">
-        ${script.completed ? '✓ Realizado' : script.status}
-      </span>
-    </div>
-
-    <!-- Idea Ganadora -->
-    <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5 space-y-2">
-      <span class="text-xs font-bold uppercase tracking-wider text-amber-400 block">💡 Idea Ganadora</span>
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-white leading-tight">${script.ideaGanadora}</h2>
-      ${script.linkReferencia ? `
-        <div class="pt-1">
-          <a href="${script.linkReferencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs text-sky-400 hover:text-sky-300 font-semibold bg-sky-500/10 px-3 py-1.5 rounded-lg border border-sky-500/20 transition">
-            <i data-lucide="external-link" class="w-4 h-4"></i> Abrir Link de Referencia
-          </a>
-        </div>
-      ` : ''}
-    </div>
-
-    <!-- Script Content Sections -->
-    <div class="space-y-4 text-base">
-      
-      <!-- Gancho -->
-      <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-            <span>🪝</span> GANCHO (HOOK)
-          </span>
-          <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-          </button>
-        </div>
-        <p class="text-white font-medium text-lg leading-relaxed whitespace-pre-line">${script.gancho || 'Sin gancho redactado'}</p>
-      </div>
-
-      <!-- Historia - Contexto -->
-      <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-            <span>📖</span> HISTORIA - CONTEXTO
-          </span>
-          <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-          </button>
-        </div>
-        <p class="text-slate-200 text-lg leading-relaxed whitespace-pre-line">${script.historia || 'Sin historia redactada'}</p>
-      </div>
-
-      <!-- Moraleja / Valor -->
-      <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2">
-            <span>💡</span> MORALEJA / VALOR
-          </span>
-          <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-          </button>
-        </div>
-        <p class="text-slate-200 text-lg leading-relaxed whitespace-pre-line">${script.moraleja || 'Sin moraleja redactada'}</p>
-      </div>
-
-      <!-- Call to Action -->
-      <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-2">
-            <span>📢</span> CALL TO ACTION (CTA)
-          </span>
-          <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-          </button>
-        </div>
-        <p class="text-blue-300 font-medium text-lg leading-relaxed whitespace-pre-line">${script.cta || 'Sin CTA redactado'}</p>
-      </div>
-
-      ${script.contextoAdicional ? `
-        
-      ${(script.attachments && script.attachments.length > 0) ? `
-        <!-- Archivos y Fotos Adjuntas -->
-        <div class="bg-slate-950 rounded-xl p-5 border border-slate-800/90 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-              <i data-lucide="paperclip" class="w-4 h-4"></i>
-              <span>ARCHIVOS Y FOTOS DE REFERENCIA (${script.attachments.length})</span>
-            </span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            ${script.attachments.map(att => {
-              const isImg = (att.type && att.type.startsWith('image/')) || (att.dataUrl && att.dataUrl.startsWith('data:image/'));
-              const isPdf = (att.type === 'application/pdf') || /.pdf$/i.test(att.name || '');
-              return `
-                <div class="bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-2.5 group transition flex flex-col justify-between">
-                  <div class="cursor-pointer" onclick="previewScriptAttachment('${script.id}', '${att.id}')">
-                    ${isImg ? `
-                      <div class="w-full h-28 rounded-lg overflow-hidden bg-slate-950 mb-2 border border-slate-800">
-                        <img src="${att.dataUrl}" alt="${att.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                      </div>
-                    ` : `
-                      <div class="w-full h-28 rounded-lg ${isPdf ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-950 text-cyan-400'} flex flex-col items-center justify-center gap-1 mb-2 border border-slate-800">
-                        <i data-lucide="${isPdf ? 'file-text' : 'paperclip'}" class="w-8 h-8"></i>
-                        <span class="text-[10px] font-bold uppercase">${isPdf ? 'PDF' : 'Archivo'}</span>
-                      </div>
-                    `}
-                    <p class="text-xs font-bold text-white truncate" title="${att.name}">${att.name}</p>
-                    <p class="text-[10px] text-slate-400">${formatFileSize(att.size)}</p>
-                  </div>
-                  <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-800/80">
-                    <button onclick="previewScriptAttachment('${script.id}', '${att.id}')" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
-                      <i data-lucide="eye" class="w-3.5 h-3.5"></i> Ver
-                    </button>
-                    <a href="${att.dataUrl}" download="${att.name}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1" title="Descargar">
-                      <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    </a>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      ` : ''}
-
-        <!-- Contexto Adicional -->
-        <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80 text-xs text-slate-400 flex items-center gap-2">
-          <span>📍</span>
-          <span><strong>Notas / Ubicación:</strong> ${script.contextoAdicional}</span>
-        </div>
-      ` : ''}
-
-    </div>
-  `;
-
-  if (btnCopyFocusScript) {
-    btnCopyFocusScript.onclick = function(e) {
-      copyFullScript(script.id, this);
-    };
-  }
-  if (btnPrintFocusScript) {
-    btnPrintFocusScript.onclick = function() {
-      printSingleScript(script.id);
-    };
-  }
-  if (btnEditFocusScript) {
-    btnEditFocusScript.onclick = function() {
-      closeFocusModal();
-      openEditScriptModal(script.id);
-    };
-  }
-
-  focusModal.classList.remove('hidden');
-  refreshLucideIcons();
-}
-
-function closeFocusModal() {
-  const focusModal = document.getElementById('focusScriptModal');
-  if (focusModal) focusModal.classList.add('hidden');
-}
-
+// (openFocusScriptModal & closeFocusModal defined above)
 
 function submitScriptFormManually() {
   const formClientEl = document.getElementById('formClient');
@@ -3681,11 +3485,7 @@ function deleteScript(scriptId) {
   }
 }
 
-function openTeleprompterForScript(scriptId) {
-  switchView('teleprompter');
-  teleprompterSelect.value = scriptId;
-  displayScriptInTeleprompter(scriptId);
-}
+// (openTeleprompterForScript defined above)
 
 // CLIENT MANAGEMENT (ADD, RENAME, DELETE)
 function openClientManagerModal() {
@@ -5290,15 +5090,7 @@ function renderNotesClientTabs() {
   });
 }
 
-function escapeHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+// (escapeHtml defined above)
 
 function renderNotesForActiveClient() {
   const body = document.getElementById('notesModalBody');
