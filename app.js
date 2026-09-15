@@ -923,19 +923,69 @@ function previewScriptAttachment(scriptId, attId) {
 // Content & Script Studio - Core Application Logic
 
 const INITIAL_CLIENTS = ["Jennil", "Natalia"];
+const INITIAL_NOTES = { Jennil: [], Natalia: [] };
+const INITIAL_VIRAL_EVALUATIONS = [];
 
 const INITIAL_SCRIPTS = [
   {
-    "id": "script-1789443084089",
+    "id": "script-andres-presentacion",
     "client": "Jennil",
     "number": 1,
     "status": "Por Grabar",
     "formato": "Hablando a cámara",
     "objetivo": "VENTA",
-    "actor": "Jennil",
-    "ideaGanadora": "Venta - Metodología desde Cero",
+    "actor": "Andrés",
+    "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
     "linkReferencia": "",
-    "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprender desde cero toda la metodología aplicada que utilizaron nuestros alumnos Mabel, Asceineth, Jeison y otros más.",
+    "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
+    "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
+    "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
+    "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
+    "contextoAdicional": "Grabación en setup profesional / oficina",
+    "attachments": [],
+    "views": 0,
+    "comments": 0,
+    "rating": 0,
+    "completed": false,
+    "espacio": "",
+    "updatedAt": "2026-09-15T20:37:52.944Z",
+    "createdAt": "2026-09-15T00:00:00.000Z"
+  },
+  {
+    "id": "script-trabajar-duro",
+    "client": "Jennil",
+    "number": 2,
+    "status": "Por Grabar",
+    "formato": "Hablando a cámara",
+    "objetivo": "VIRAL",
+    "actor": "Andrés",
+    "ideaGanadora": "Mentalidad & Apalancamiento - El Mito de Trabajar Duro",
+    "linkReferencia": "",
+    "gancho": "Si trabajar duro fuera el secreto para hacerte rico, los obreros de construcción que trabajan 14 horas al día bajo el sol serían los más millonarios del mundo.",
+    "historia": "El trabajo duro sin dirección solo te deja exhausto. Los que realmente multiplican sus ingresos no trabajan más horas: se apalancan en sistemas, tecnología y decisiones inteligentes.\n\nMientras unos siguen intercambiando tiempo por dinero, otros construyen vehículos que trabajan para ellos las 24 horas.",
+    "moraleja": "No trabajes más duro, trabaja con apalancamiento y con el sistema correcto.",
+    "cta": "Comenta la palabra SISTEMA y te muestro el método exacto con el que puedes empezar a transformar tus resultados hoy.",
+    "contextoAdicional": "Tomas dinámicas con transiciones y b-rolls de alto impacto",
+    "attachments": [],
+    "views": 0,
+    "comments": 0,
+    "rating": 0,
+    "completed": false,
+    "espacio": "",
+    "updatedAt": "2026-09-15T20:37:52.945Z",
+    "createdAt": "2026-09-15T01:00:00.000Z"
+  },
+  {
+    "id": "script-no-importa-nivel",
+    "client": "Jennil",
+    "number": 3,
+    "status": "Por Grabar",
+    "formato": "Hablando a cámara",
+    "objetivo": "VENTA",
+    "actor": "Jennil / Andrés",
+    "ideaGanadora": "Venta - Casos de Éxito y Metodología desde Cero",
+    "linkReferencia": "",
+    "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprender desde cero toda la metodología aplicada que utilizaron nuestros alumnos Mabel, Asceineth, Jeison, Tomás, Deysi y Andrés.",
     "historia": "Obtendrás metodología y entorno propio de análisis para que aprendas a tomar tus propias decisiones sin depender de nadie.\n- Plataforma con herramientas exclusivas\n- Sala operativa en vivo 4 veces por semana\n- Acompañamiento personalizado y estrategias rentables\n- Algoritmos entrenados con IA y mucho más.",
     "moraleja": "Aprender un sistema probado es la diferencia entre improvisar y tener resultados consistentes.",
     "cta": "Si quieres tener resultados y mejorar tus ingresos mientras haces lo que amas, escribe la palabra CAMBIO, te ayudaré y te mostraré cómo lograrlo.",
@@ -944,184 +994,30 @@ const INITIAL_SCRIPTS = [
     "views": 0,
     "comments": 0,
     "rating": 0,
-    "updatedAt": "2026-09-15T20:29:29.854Z",
+    "completed": false,
+    "espacio": "",
+    "updatedAt": "2026-09-15T20:37:52.945Z",
     "createdAt": "2026-09-15T03:31:24.089Z"
-  },
-  {
-    "id": "script-1",
-    "client": "Jennil",
-    "number": 2,
-    "status": "Por Grabar",
-    "formato": "Formato entrevista",
-    "objetivo": "VENTA",
-    "actor": "Jennil",
-    "ideaGanadora": "¿Cuánto gastas al mes en Miami?",
-    "linkReferencia": "",
-    "gancho": "¿Cuánto gastas al mes viviendo en Miami?",
-    "historia": "Gasta $5,000 dólares al mes entre casa, coche, comida, hijos y ropa...\n\n¿Y lo pagas con Tarjeta de Crédito o de Débito?\n— Con tarjeta de débito.",
-    "moraleja": "Si pagas con tarjeta de crédito te dan puntos para viajar gratis y además REPORTA POSITIVAMENTE EN TU PUNTAJE DE CRÉDITO.",
-    "cta": "Escribe en comentarios la palabra CRÉDITO para aprender a maximizar tu puntaje.",
-    "contextoAdicional": "Se graba en Brickell Center",
-    "attachments": [],
-    "completed": false,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-13T01:44:41.229Z"
-  },
-  {
-    "id": "script-2",
-    "client": "Jennil",
-    "number": 3,
-    "status": "Redactado",
-    "formato": "Hablando a cámara",
-    "objetivo": "VENTA",
-    "actor": "Jennil",
-    "ideaGanadora": "Deja de pagar por tu tarjeta hasta que no hagas esto",
-    "linkReferencia": "",
-    "gancho": "Deja de pagar por tu tarjeta de crédito hasta que no hagas esto.",
-    "historia": "Ten cuidado con estas 3 cosas porque estás perdiendo mucho dinero y puede hasta bajar tu puntaje:\n1. Fecha de corte en la app del banco.\n2. Evita tarjetas de tiendas comerciales.\n3. Cuidado con adelantos de efectivo.",
-    "moraleja": "Corregir estos 3 errores te ahorrará miles de dólares al año y subirá tu puntaje rápidamente.",
-    "cta": "Escribe CREDITO en comentarios para recibir nuestra guía de reparación gratuita.",
-    "contextoAdicional": "En oficina con pantalla de datos",
-    "attachments": [],
-    "completed": false,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-13T01:44:41.230Z"
-  },
-  {
-    "id": "script-29",
-    "client": "Jennil",
-    "number": 4,
-    "status": "Editado",
-    "formato": "Formato entrevista",
-    "objetivo": "VIRAL",
-    "actor": "Jennil",
-    "ideaGanadora": "Cómo Negociar y Borrar Colecciones Médicas por Ley",
-    "linkReferencia": "",
-    "gancho": "Las facturas médicas menores a $500 NO pueden aparecer en tu reporte de crédito por ley.",
-    "historia": "Explicación de las nuevas normativas federales de los burós de crédito (Equifax, Experian, TransUnion) para remover deudas médicas pagadas o menores de $500 de inmediato.",
-    "moraleja": "Conocer tus derechos financieros te ahorra miles de dólares y protege tu crédito.",
-    "cta": "Comenta MEDICO para enviarte el modelo de carta de disputa legal.",
-    "contextoAdicional": "Oficina ejecutiva con micrófono de pie",
-    "attachments": [],
-    "completed": false,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-12T13:55:04.486Z"
-  },
-  {
-    "id": "script-24",
-    "client": "Jennil",
-    "number": 5,
-    "status": "Por Grabar",
-    "formato": "Formato Dinámico",
-    "objetivo": "VENTA",
-    "actor": "Jennil",
-    "ideaGanadora": "Las 3 Mejores Tarjetas de Crédito de Negocios para Viajar Gratis en Primera Clase",
-    "linkReferencia": "",
-    "gancho": "Este boleto a Europa en Business Class me costó solo $11 dólares en impuestos. Te muestro cómo.",
-    "historia": "Estrategia de transferencia de puntos de Chase Ink y Amex Business Platinum hacia aerolíneas asociadas optimizando bonos de bienvenida.",
-    "moraleja": "Convierte los gastos operativos habituales de tu empresa en viajes de lujo totalmente costeados con puntos.",
-    "cta": "Escribe VIAJE en comentarios y te comparto la comparativa de tarjetas.",
-    "contextoAdicional": "Lounge VIP de aeropuerto con pasaporte y laptop",
-    "attachments": [],
-    "completed": false,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-07T13:55:04.486Z"
-  },
-  {
-    "id": "script-3",
-    "client": "Natalia",
-    "number": 6,
-    "status": "Publicado",
-    "formato": "Formato Vlog",
-    "objetivo": "SEGUIDORES",
-    "actor": "Natalia",
-    "ideaGanadora": "Cómo no engordar en navidad comiendo lo que quieras",
-    "linkReferencia": "",
-    "gancho": "Cómo no engordar en navidad comiendo lo que quieras.",
-    "historia": "El año pasado este era yo el día 24 de diciembre y este era yo el día 7 de Enero después de 7 cenas de navidad. Exactamente la misma composición corporal.",
-    "moraleja": "La clave no es pasar hambre, es controlar los macros principales durante los días entre celebraciones.",
-    "cta": "Comenta NAVIDAD y te envío mi guía gratis de nutrición flexible.",
-    "contextoAdicional": "En la cocina con comida de navidad encima",
-    "attachments": [],
-    "completed": true,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-13T01:44:41.231Z"
-  },
-  {
-    "id": "script-1789481120131",
-    "client": "Jennil",
-    "number": 7,
-    "status": "Idea",
-    "formato": "Hablando a cámara",
-    "objetivo": "VIRAL",
-    "actor": "Jennil",
-    "ideaGanadora": "estar pendiente",
-    "linkReferencia": "",
-    "gancho": "estar pendiente",
-    "historia": "Pendiente de redactar historia...",
-    "moraleja": "Pendiente de redactar moraleja...",
-    "cta": "Pendiente de redactar CTA...",
-    "contextoAdicional": "",
-    "attachments": [],
-    "completed": false,
-    "updatedAt": "2026-09-15T20:29:29.855Z",
-    "createdAt": "2026-09-15T14:05:20.131Z"
   }
 ];
 
-const INITIAL_NOTES = { "Jennil": [], "Natalia": [] };
+let savedClients = null;
+let savedScripts = null;
+let savedDeletedScripts = null;
+let savedNotes = null;
+let savedViralEvals = null;
+let savedChallengeStartDate = null;
+let savedCalendarEvents = null;
 
-const INITIAL_VIRAL_EVALUATIONS = [];
-
-// Helper to get current date formatted as YYYY-MM-DD in Colombia Timezone (America/Bogota, UTC-5)
-function getColombiaTodayDateString() {
-  try {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Bogota',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    return formatter.format(new Date()); // Formats as YYYY-MM-DD
-  } catch (e) {
-    const now = new Date();
-    const utc5 = new Date(now.getTime() - (5 * 60 * 60 * 1000));
-    return utc5.toISOString().split('T')[0];
-  }
-}
-
-// Clean reset migration flag to wipe legacy fictitious/example scripts
-const RESET_KEY = 'css_reset_v20260913_zero';
-if (localStorage.getItem(RESET_KEY) !== 'done') {
-  localStorage.removeItem('css_clients');
-  localStorage.removeItem('css_scripts');
-  localStorage.removeItem('css_notes');
-  localStorage.removeItem('css_viral_evaluations');
-  localStorage.removeItem('css_challenge_start_date');
-  localStorage.setItem(RESET_KEY, 'done');
-}
-
-// STATE
-const rawSavedClients = localStorage.getItem('css_clients');
-const savedClients = rawSavedClients !== null ? JSON.parse(rawSavedClients) : null;
-
-const rawSavedScripts = localStorage.getItem('css_scripts');
-const savedScripts = rawSavedScripts !== null ? JSON.parse(rawSavedScripts) : null;
-
-const rawSavedNotes = localStorage.getItem('css_notes');
-const savedNotes = rawSavedNotes !== null ? JSON.parse(rawSavedNotes) : null;
-
-const rawSavedViralEvals = localStorage.getItem('css_viral_evaluations');
-const savedViralEvals = rawSavedViralEvals !== null ? JSON.parse(rawSavedViralEvals) : null;
-
-const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
-
-const rawSavedCalendarEvents = localStorage.getItem('css_calendar_events');
-const savedCalendarEvents = rawSavedCalendarEvents !== null ? JSON.parse(rawSavedCalendarEvents) : null;
-
-const rawSavedDeletedScripts = localStorage.getItem('css_deleted_scripts');
-const savedDeletedScripts = rawSavedDeletedScripts !== null ? JSON.parse(rawSavedDeletedScripts) : [];
-
+try {
+  savedClients = JSON.parse(localStorage.getItem('css_clients') || 'null');
+  savedScripts = JSON.parse(localStorage.getItem('css_scripts') || 'null');
+  savedDeletedScripts = JSON.parse(localStorage.getItem('css_deleted_scripts') || 'null');
+  savedNotes = JSON.parse(localStorage.getItem('css_notes') || 'null');
+  savedViralEvals = JSON.parse(localStorage.getItem('css_viral_evaluations') || 'null');
+  savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
+  savedCalendarEvents = JSON.parse(localStorage.getItem('css_calendar_events') || 'null');
+} catch (e) {}
 
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
@@ -1268,6 +1164,20 @@ const importFileInput = document.getElementById('importFileInput');
 let autoSyncTimer = null;
 
 // INITIALIZATION
+
+// ONE-TIME CLEAN MIGRATION FOR 3 AUTHENTIC USER SCRIPTS
+try {
+  const migrationKey = 'css_migrated_3_authentic_scripts_v3';
+  if (localStorage.getItem(migrationKey) !== 'true') {
+    state.scripts = JSON.parse(JSON.stringify(INITIAL_SCRIPTS));
+    state.deletedScripts = [];
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+    localStorage.setItem('css_deleted_scripts', JSON.stringify([]));
+    localStorage.setItem(migrationKey, 'true');
+    localStorage.setItem('css_updated_at', new Date().toISOString());
+  }
+} catch(e) {}
+
 document.addEventListener('DOMContentLoaded', () => {
   checkUrlForSyncData();
   renderClientSelect();
@@ -2904,19 +2814,13 @@ async function uploadAndMergeToCloud() {
   }
 
   try {
-    const remoteData = await fetchLatestCloudData();
     const localData = JSON.parse(getFullAppStateJSON());
-    const merged = mergeFullAppData(localData, remoteData);
-    merged.updatedAt = new Date().toISOString();
-
-    // Apply locally
-    applyCloudData(merged, null, true);
-
-    // Save to server/cloud
+    localData.updatedAt = new Date().toISOString();
+    
+    // Save state directly to cloud as authoritative
     await saveStateToCloud(true);
-
     updateSyncModalDetails();
-    showToastNotification('☁️ ¡Datos subidos y unificados en Vercel! (' + merged.scripts.length + ' guiones, ' + (merged.calendarEvents || []).length + ' eventos)', 'check-circle');
+    showToastNotification('☁️ ¡Datos subidos y unificados en Vercel! (' + (localData.scripts || []).length + ' guiones)', 'check-circle');
   } catch (err) {
     console.warn('uploadAndMergeToCloud error:', err);
     showToastNotification('⚠️ Error al subir datos: ' + err.message, 'alert-circle');
