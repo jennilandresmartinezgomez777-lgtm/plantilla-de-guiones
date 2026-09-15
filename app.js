@@ -1,4 +1,3 @@
-
 function sanitizeScriptData(s) {
   if (!s || typeof s !== 'object') return s;
   const cleanStr = (val, fallback = '') => {
@@ -1648,9 +1647,12 @@ function renderMatrixView(scripts) {
         </select>
       </td>
 
-      <!-- Actions (Ampliar, Print single, Edit, Delete) -->
+      <!-- Actions (Mirar Tarjeta, Ampliar, Print single, Edit, Delete) -->
       <td class="py-3.5 px-4 text-right print:hidden">
         <div class="flex items-center justify-end gap-1">
+          <button onclick="viewVisualCardForScript('${script.id}')" title="Mirar Tarjeta Visual" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </button>
           <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
             <i data-lucide="maximize-2" class="w-4 h-4"></i>
           </button>
@@ -1677,6 +1679,7 @@ function renderCardsView(scripts) {
   scripts.forEach(rawScript => {
     const script = sanitizeScriptData(rawScript);
     const card = document.createElement('div');
+    card.id = 'card-' + script.id;
     const isCompleted = script.completed || script.status === 'Publicado';
     card.className = `bg-slate-900 border rounded-2xl p-6 shadow-xl space-y-4 hover:border-slate-700 transition flex flex-col justify-between script-card-print ${isCompleted ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'}`;
     
@@ -2182,6 +2185,13 @@ function openFocusScriptModal(scriptId) {
   const btnCopy = document.getElementById('btnCopyFocusScript');
 
   if (modalTitle) modalTitle.textContent = `#${script.number || ''} - ${script.ideaGanadora}`;
+  const btnViewCards = document.getElementById('btnViewCardsFocusScript');
+  if (btnViewCards) {
+    btnViewCards.onclick = () => {
+      closeFocusModal();
+      viewVisualCardForScript(scriptId);
+    };
+  }
   if (btnOpenTP) {
     btnOpenTP.onclick = () => {
       openScriptInTeleprompterPro(scriptId);
@@ -3640,6 +3650,8 @@ function openNewScriptModal() {
   state.editingScriptId = null;
   modalTitle.innerHTML = `<i data-lucide="plus" class="w-5 h-5 text-brand-500"></i> Nuevo Guión`;
   scriptForm.reset();
+  const statusBox = document.getElementById('modalPdfImportStatusBox');
+  if (statusBox) statusBox.classList.add('hidden');
   
   const initialClient = state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil');
   document.getElementById('scriptId').value = '';
@@ -3668,6 +3680,8 @@ function openEditScriptModal(id) {
   scriptPendingAttachments = Array.isArray(script.attachments) ? script.attachments.slice() : [];
   renderScriptAttachmentsList();
   modalTitle.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-brand-500"></i> Editar Guión #${script.number || ''}`;
+  const statusBox = document.getElementById('modalPdfImportStatusBox');
+  if (statusBox) statusBox.classList.add('hidden');
 
   document.getElementById('scriptId').value = script.id;
   document.getElementById('formClient').value = script.client;
@@ -12633,4 +12647,360 @@ function getFallbackSpaces(topic, niche, hook, manualContext) {
       propsAndEnergy: "Gesticulación abierta con las manos. Energía inspiradora y motivacional para mover a la acción."
     }
   ];
+}
+
+
+// =========================================================================
+
+// =========================================================================
+// SCRIPT MODAL PDF INCORPORATION & VISUAL CARD BRIDGE
+// =========================================================================
+
+function viewVisualCardForScript(scriptId = null) {
+  let targetId = scriptId;
+  if (!targetId) {
+    const existingId = document.getElementById('scriptId') ? document.getElementById('scriptId').value : '';
+    if (existingId) {
+      targetId = existingId;
+      submitScriptFormManually();
+    } else {
+      const ideaGanadora = document.getElementById('formIdeaGanadora') ? document.getElementById('formIdeaGanadora').value.trim() : '';
+      if (!ideaGanadora) {
+        showToastNotification('⚠️ Por favor escribe al menos la Idea Ganadora antes de ver la tarjeta visual.', 'alert-circle');
+        return;
+      }
+      submitScriptFormManually();
+      const lastScript = state.scripts[state.scripts.length - 1];
+      if (lastScript) targetId = lastScript.id;
+    }
+  }
+
+  closeModal();
+  if (typeof closeFocusModal === 'function') closeFocusModal();
+
+  switchView('cards');
+
+  setTimeout(() => {
+    if (targetId) {
+      const cardEl = document.getElementById('card-' + targetId);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cardEl.classList.add('ring-4', 'ring-amber-400', 'shadow-2xl', 'shadow-amber-500/50');
+        setTimeout(() => {
+          cardEl.classList.remove('ring-4', 'ring-amber-400', 'shadow-2xl', 'shadow-amber-500/50');
+        }, 3500);
+      }
+    }
+  }, 350);
+}
+
+function populateScriptModalWithData(script) {
+  if (!script) return;
+
+  const initialClient = script.client || (state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil'));
+  
+  if (initialClient && !state.clients.includes(initialClient)) {
+    state.clients.push(initialClient);
+    renderClientSelect();
+  }
+
+  const formClient = document.getElementById('formClient');
+  if (formClient) formClient.value = initialClient;
+
+  const formNumber = document.getElementById('formNumber');
+  if (formNumber) formNumber.value = script.number || getNextScriptNumber();
+
+  const formStatus = document.getElementById('formStatus');
+  if (formStatus) formStatus.value = script.status || 'Por Grabar';
+
+  const formFormato = document.getElementById('formFormato');
+  if (formFormato) formFormato.value = normalizeScriptFormat(script.formato || 'Hablando a cámara');
+
+  const formObjetivo = document.getElementById('formObjetivo');
+  if (formObjetivo) formObjetivo.value = script.objetivo || 'VENTA';
+
+  populateActorOptions(script.actor || initialClient);
+  const formActor = document.getElementById('formActor');
+  if (formActor) formActor.value = script.actor || initialClient;
+
+  const formIdea = document.getElementById('formIdeaGanadora');
+  if (formIdea) formIdea.value = script.ideaGanadora || script.title || '';
+
+  const formLink = document.getElementById('formLinkReferencia');
+  if (formLink) formLink.value = script.linkReferencia || '';
+
+  const formGancho = document.getElementById('formGancho');
+  if (formGancho) formGancho.value = script.gancho || '';
+
+  const formHistoria = document.getElementById('formHistoria');
+  if (formHistoria) formHistoria.value = script.historia || '';
+
+  const formMoraleja = document.getElementById('formMoraleja');
+  if (formMoraleja) formMoraleja.value = script.moraleja || '';
+
+  const formCTA = document.getElementById('formCTA');
+  if (formCTA) formCTA.value = script.cta || '';
+
+  const formContexto = document.getElementById('formContextoAdicional');
+  if (formContexto) formContexto.value = script.contextoAdicional || script.espacio || '';
+
+  const formGuionLibre = document.getElementById('formGuionLibre');
+  if (formGuionLibre) {
+    formGuionLibre.value = script.guionLibre || (script.scriptType === 'libre' ? script.gancho : '') || '';
+  }
+  updateGuionLibreStats();
+
+  if (script.scriptType === 'libre' || (!script.historia && !script.moraleja && script.guionLibre)) {
+    setScriptModalMode('libre');
+  } else {
+    setScriptModalMode('structured');
+  }
+}
+
+function parseSingleScriptFallbackFromText(text) {
+  if (!text) return null;
+
+  let gancho = '';
+  let historia = '';
+  let moraleja = '';
+  let cta = '';
+  let ideaGanadora = '';
+  let espacio = '';
+
+  const rHook = /^(?:\[|\d+[\.\-\)]|\s*|[🎣🪝])*?(?:GANCHO|HOOK|Gancho|Hook)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rStory = /^(?:\[|\d+[\.\-\)]|\s*|[📖📜])*?(?:HISTORIA|STORY|DESARROLLO|CONTEXTO|Historia|Story|Desarrollo|Contexto)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rMoral = /^(?:\[|\d+[\.\-\)]|\s*|[💡🧠])*?(?:MORALEJA|MORAL|VALOR|ENSEÑANZA|INSIGHT|Moraleja|Moral|Valor|Enseñanza|Insight)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rCta = /^(?:\[|\d+[\.\-\)]|\s*|[📣🚀])*?(?:CTA|CALL TO ACTION|LLAMADO A LA ACCI[OÓ]N|Llamado a la acci[oó]n)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rSpace = /^(?:\[|\d+[\.\-\)]|\s*|[📍📸🎬])*?(?:ESPACIO|SET|LUGAR|AMBIENTE|VESTIMENTA|NOTAS|Espacio|Set|Lugar|Vestimenta|Notas)(?:\s*[\/\-]\s*(?:SET|ESPACIO|LUGAR|AMBIENTE|VESTIMENTA|NOTAS))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  let currentSection = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (rHook.test(line)) {
+      currentSection = 'gancho';
+      const clean = line.replace(rHook, '').trim();
+      if (clean) gancho += (gancho ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rStory.test(line)) {
+      currentSection = 'historia';
+      const clean = line.replace(rStory, '').trim();
+      if (clean) historia += (historia ? '\n' : '') + clean;
+      continue;
+    }
+
+    if (rMoral.test(line)) {
+      currentSection = 'moraleja';
+      const clean = line.replace(rMoral, '').trim();
+      if (clean) moraleja += (moraleja ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rCta.test(line)) {
+      currentSection = 'cta';
+      const clean = line.replace(rCta, '').trim();
+      if (clean) cta += (cta ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rSpace.test(line)) {
+      currentSection = 'espacio';
+      const clean = line.replace(rSpace, '').trim();
+      if (clean) espacio += (espacio ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (currentSection === 'gancho') {
+      gancho += (gancho ? ' ' : '') + line;
+    } else if (currentSection === 'historia') {
+      historia += (historia ? '\n' : '') + line;
+    } else if (currentSection === 'moraleja') {
+      moraleja += (moraleja ? ' ' : '') + line;
+    } else if (currentSection === 'cta') {
+      cta += (cta ? ' ' : '') + line;
+    } else if (currentSection === 'espacio') {
+      espacio += (espacio ? ' ' : '') + line;
+    } else {
+      if (!ideaGanadora && (line.includes('Idea') || line.includes('Tema') || line.includes('#'))) {
+        ideaGanadora = line.replace(/^.*?[:\-\]]\s*/, '').trim();
+      }
+    }
+  }
+
+  // If no sections were explicitly marked, split by paragraphs
+  if (!gancho && !historia) {
+    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+    if (paragraphs.length >= 4) {
+      gancho = paragraphs[0];
+      historia = paragraphs[1];
+      moraleja = paragraphs[2];
+      cta = paragraphs[3];
+    } else if (paragraphs.length >= 2) {
+      gancho = paragraphs[0];
+      historia = paragraphs.slice(1).join('\n\n');
+    } else {
+      gancho = text.slice(0, 120);
+      historia = text;
+    }
+  }
+
+  if (!ideaGanadora) {
+    ideaGanadora = gancho ? (gancho.length > 50 ? gancho.slice(0, 47) + '...' : gancho) : 'Guión Importado';
+  }
+
+  return {
+    id: 'script-' + Date.now(),
+    number: getNextScriptNumber(),
+    client: state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil'),
+    ideaGanadora: ideaGanadora,
+    formato: 'Hablando a cámara',
+    status: 'Por Grabar',
+    objetivo: 'VENTA',
+    gancho: gancho,
+    historia: historia,
+    moraleja: moraleja,
+    cta: cta,
+    espacio: espacio,
+    contextoAdicional: espacio,
+    guionLibre: text
+  };
+}
+
+async function handleModalScriptPdfSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  const file = files[0];
+
+  showToastNotification('⏳ Analizando ' + file.name + ' para incorporar guión...', 'clock');
+
+  try {
+    let fileText = '';
+    let extractedPayload = null;
+
+    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      fileText = await extractTextFromPdfFile(file);
+    } else {
+      fileText = await file.text();
+    }
+
+    // 1. Check for Embedded BLEX Payload
+    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
+    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
+    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
+
+    if (match && match[1]) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(match[1])));
+        extractedPayload = JSON.parse(decoded);
+      } catch(e) {
+        console.warn('Base64 payload parse failed:', e);
+      }
+    }
+
+    // Direct JSON support
+    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{') || fileText.trim().startsWith('['))) {
+      try {
+        const parsed = JSON.parse(fileText);
+        if (Array.isArray(parsed)) {
+          extractedPayload = { module: 'matrix', data: parsed };
+        } else if (parsed.scripts || Array.isArray(parsed.scripts)) {
+          extractedPayload = { module: 'matrix', data: parsed.scripts };
+        } else if (parsed.data) {
+          extractedPayload = parsed;
+        } else if (parsed.ideaGanadora || parsed.gancho || parsed.title) {
+          extractedPayload = { module: 'matrix', data: [parsed] };
+        }
+      } catch(e) {}
+    }
+
+    // 2. Intelligent pattern extraction from text
+    if (!extractedPayload) {
+      extractedPayload = parseTextIntoSmartData(fileText, 'matrix');
+    }
+
+    let items = extractedPayload ? extractedPayload.data : [];
+    if (!Array.isArray(items)) items = items ? [items] : [];
+
+    // Fallback if no items detected: try splitting raw text into structured parts
+    if (items.length === 0 && fileText.trim().length > 10) {
+      const fallbackScript = parseSingleScriptFallbackFromText(fileText);
+      if (fallbackScript) items = [fallbackScript];
+    }
+
+    if (items.length === 0) {
+      showToastNotification('⚠️ No se detectaron guiones o estructura en el archivo.', 'alert-triangle');
+      return;
+    }
+
+    // Sanitize all items
+    const sanitizedItems = items.map(s => sanitizeScriptData({ ...s }));
+    const firstScript = sanitizedItems[0];
+
+    // Fill current open script modal with firstScript
+    populateScriptModalWithData(firstScript);
+
+    // If there are multiple scripts (e.g. 5 or 10)
+    if (sanitizedItems.length > 1) {
+      let addedCount = 0;
+      for (let i = 1; i < sanitizedItems.length; i++) {
+        const item = sanitizedItems[i];
+        const nextNum = getNextScriptNumber();
+        const newScript = {
+          id: 'script-' + Date.now() + '-' + i,
+          number: item.number || nextNum,
+          client: item.client || (state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil')),
+          status: item.status || 'Por Grabar',
+          formato: normalizeScriptFormat(item.formato || 'Hablando a cámara'),
+          objetivo: item.objetivo || 'VENTA',
+          actor: item.actor || item.client || 'Jennil',
+          ideaGanadora: item.ideaGanadora || item.title || ('Guión #' + (item.number || nextNum)),
+          linkReferencia: item.linkReferencia || '',
+          scriptType: item.scriptType || (item.guionLibre ? 'libre' : 'structured'),
+          guionLibre: item.guionLibre || '',
+          gancho: item.gancho || '',
+          historia: item.historia || '',
+          moraleja: item.moraleja || '',
+          cta: item.cta || '',
+          contextoAdicional: item.contextoAdicional || item.espacio || '',
+          attachments: item.attachments || [],
+          views: item.views || 0,
+          comments: item.comments || 0,
+          rating: item.rating || 0,
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        state.scripts.push(newScript);
+        addedCount++;
+      }
+
+      saveState();
+      renderAll();
+
+      showToastNotification('✨ ¡PDF incorporado! Se identificaron ' + sanitizedItems.length + ' guiones. Cargado #' + (firstScript.number || 1) + ' en el formulario y ' + addedCount + ' agregados a tu Matriz.', 'check-circle');
+    } else {
+      showToastNotification('✨ ¡Guión extraído e incorporado con éxito en el formulario!', 'check-circle');
+    }
+
+    // Show visual indicator in modal
+    const statusBox = document.getElementById('modalPdfImportStatusBox');
+    const statusText = document.getElementById('modalPdfStatusText');
+    const statusSubtext = document.getElementById('modalPdfStatusSubtext');
+    if (statusBox) statusBox.classList.remove('hidden');
+    if (statusText) statusText.textContent = 'Archivo incorporado: ' + file.name;
+    if (statusSubtext) statusSubtext.textContent = sanitizedItems.length > 1 
+      ? 'Se detectaron ' + sanitizedItems.length + ' guiones. Guión #' + (firstScript.number || 1) + ' listo para editar.'
+      : 'Estructura redactada y distribuida en todos los campos.';
+
+    refreshLucideIcons();
+
+  } catch(err) {
+    console.error('Error incorporating script PDF:', err);
+    showToastNotification('⚠️ Error al incorporar PDF: ' + (err.message || 'Formato no soportado'), 'alert-triangle');
+  } finally {
+    event.target.value = '';
+  }
 }
