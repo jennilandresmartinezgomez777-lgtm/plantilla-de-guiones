@@ -5232,302 +5232,7 @@ async function handleSmartDocFileSelect(event) {
   await processSmartDocFile(file);
 }
 
-// PDF Text Extractor using PDF.js
-async function extractTextFromPdfFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = async function() {
-      try {
-        const typedArray = new Uint8Array(reader.result);
-        if (typeof pdfjsLib === 'undefined') {
-          // Fallback: decode as latin1/utf-8 raw text
-          const rawText = new TextDecoder('utf-8').decode(typedArray);
-          return resolve(rawText);
-        }
 
-        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += `\n--- Página ${i} ---\n` + pageText;
-        }
-        resolve(fullText);
-      } catch(err) {
-        console.warn('PDF.js parsing error, attempting raw text extraction:', err);
-        try {
-          const rawText = new TextDecoder('utf-8').decode(reader.result);
-          resolve(rawText);
-        } catch(e) {
-          reject(err);
-        }
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-async function processSmartDocFile(file) {
-  const statusBox = document.getElementById('smartDocStatusBox');
-  const statusTitle = document.getElementById('smartDocStatusTitle');
-  const statusDesc = document.getElementById('smartDocStatusDesc');
-  const previewContainer = document.getElementById('smartDocPreviewContainer');
-  const previewList = document.getElementById('smartDocPreviewList');
-  const itemsCountBadge = document.getElementById('smartDocItemsCount');
-  const detectedModuleBadge = document.getElementById('smartDocDetectedModuleBadge');
-  const applyBtn = document.getElementById('btnApplySmartDocImport');
-
-  if (statusBox) statusBox.classList.remove('hidden');
-  if (statusTitle) statusTitle.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-cyan-400"></i> <span>Analizando ${escapeHtml(file.name)}...</span>`;
-  if (statusDesc) statusDesc.textContent = 'Extrayendo datos estructurados, numeraciones, ganchos, historias y CTA...';
-  if (previewContainer) previewContainer.classList.add('hidden');
-  refreshLucideIcons();
-
-  try {
-    let fileText = '';
-    let extractedPayload = null;
-
-    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
-      fileText = await extractTextFromPdfFile(file);
-    } else {
-      fileText = await file.text();
-    }
-
-    // 1. Check for Embedded BLEX Payload (Zero loss instant extraction)
-    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
-    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
-    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
-
-    if (match && match[1]) {
-      try {
-        const decoded = decodeURIComponent(escape(atob(match[1])));
-        extractedPayload = JSON.parse(decoded);
-      } catch(e) {
-        console.warn('Base64 payload parse failed:', e);
-      }
-    }
-
-    // Direct JSON backup support
-    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{'))) {
-      try {
-        const parsed = JSON.parse(fileText);
-        if (parsed.scripts || Array.isArray(parsed)) {
-          extractedPayload = { module: 'matrix', data: Array.isArray(parsed) ? parsed : (parsed.scripts || []) };
-        } else if (parsed.module && parsed.data) {
-          extractedPayload = parsed;
-        }
-      } catch(e) {}
-    }
-
-    // 2. Intelligent Pattern Extraction from Text (for standard exported PDFs)
-    if (!extractedPayload) {
-      extractedPayload = parseTextIntoSmartData(fileText, smartDocSelectedTarget);
-    }
-
-    // Determine target module
-    let finalModule = smartDocSelectedTarget !== 'auto' ? smartDocSelectedTarget : (extractedPayload.module || 'cards');
-    let items = extractedPayload.data || [];
-
-    if (!Array.isArray(items)) {
-      items = [items];
-    }
-
-    smartDocPendingItems = items;
-    smartDocSelectedTarget = finalModule;
-
-    if (items.length === 0) {
-      if (statusTitle) statusTitle.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> <span class="text-amber-300">No se reconocieron elementos claros</span>`;
-      if (statusDesc) statusDesc.textContent = 'Verifica que el PDF o archivo contenga guiones, tarjetas visuales, evaluaciones o actividades de Blex Studio.';
-      refreshLucideIcons();
-      return;
-    }
-
-    // Render Preview
-    if (statusBox) statusBox.classList.remove('hidden');
-    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span class="text-emerald-300">¡Extracción Exitosa!</span>`;
-    if (statusDesc) statusDesc.textContent = `Se encontraron ${items.length} elemento(s) listos para sincronizar en ${finalModule.toUpperCase()}.`;
-
-    if (detectedModuleBadge) {
-      const labels = {
-        'cards': '🎴 Tarjetas Visuales',
-        'set': '🎬 Set de Grabación',
-        'matrix': '📊 Matriz de Guiones',
-        'viral': '🔥 Calculadora Viral',
-        'calendar': '📅 Calendario',
-        'ideas': '💡 Ideas & Notas'
-      };
-      detectedModuleBadge.textContent = labels[finalModule] || finalModule.toUpperCase();
-    }
-
-    if (itemsCountBadge) itemsCountBadge.textContent = items.length;
-
-    if (previewList) {
-      previewList.innerHTML = items.map((item, idx) => {
-        const title = item.ideaGanadora || item.title || item.name || `Elemento #${idx + 1}`;
-        const num = item.number || idx + 1;
-        const hook = item.gancho || item.hook || '';
-        const story = item.historia || item.story || item.notes || '';
-        const client = item.client || state.activeClient || 'General';
-
-        return `
-          <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1.5 min-w-0">
-                <span class="font-mono font-bold text-cyan-400 shrink-0">#${num}</span>
-                <span class="font-bold text-white truncate">${escapeHtml(title)}</span>
-              </div>
-              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 shrink-0">${escapeHtml(client)}</span>
-            </div>
-            ${hook ? `<p class="text-[11px] text-slate-300 line-clamp-1"><strong class="text-red-400 font-semibold">Gancho:</strong> ${escapeHtml(hook)}</p>` : ''}
-            ${story ? `<p class="text-[11px] text-slate-400 line-clamp-1"><strong class="text-sky-400 font-semibold">Historia:</strong> ${escapeHtml(story)}</p>` : ''}
-            ${item.espacio ? `<p class="text-[10px] text-indigo-300 line-clamp-1">📍 ${escapeHtml(item.espacio)}</p>` : ''}
-          </div>
-        `;
-      }).join('');
-    }
-
-    if (previewContainer) previewContainer.classList.remove('hidden');
-    if (applyBtn) {
-      applyBtn.disabled = false;
-      applyBtn.classList.remove('opacity-40', 'cursor-not-allowed');
-    }
-
-    refreshLucideIcons();
-
-  } catch(err) {
-    console.error('Smart Doc Import Error:', err);
-    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i> <span class="text-rose-300">Error al procesar el archivo</span>`;
-    if (statusDesc) statusDesc.textContent = err.message || 'No se pudo leer el PDF o documento.';
-    refreshLucideIcons();
-  }
-}
-
-// Deterministic Intelligent Parser for Printed Texts
-function parseTextIntoSmartData(text, targetModule) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-  
-  // Detect scripts by numbering #1, #2 or "SET #1" or "Idea Ganadora"
-  const scriptBlocks = [];
-  let currentScript = null;
-  let currentField = null;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Check for script start
-    const numMatch = line.match(/^(?:SET\s*)?#(\d+)\s*(?:[:.-]|\s+)?\s*(.*)/i);
-    if (numMatch) {
-      if (currentScript) scriptBlocks.push(currentScript);
-      currentScript = {
-        id: 'script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        number: parseInt(numMatch[1], 10),
-        ideaGanadora: (numMatch[2] || '').trim(),
-        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
-        formato: 'Talking Head',
-        status: 'Por Grabar',
-        gancho: '',
-        historia: '',
-        moraleja: '',
-        cta: '',
-        espacio: '',
-        contextoAdicional: '',
-        actor: 'Principal',
-        createdAt: new Date().toISOString()
-      };
-      currentField = null;
-      continue;
-    }
-
-    if (!currentScript && (line.includes('GANCHO') || line.includes('HISTORIA') || line.includes('FICHAS') || line.includes('TARJETAS'))) {
-      currentScript = {
-        id: 'script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        number: scriptBlocks.length + 1,
-        ideaGanadora: 'Guión Importado #' + (scriptBlocks.length + 1),
-        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
-        status: 'Por Grabar',
-        gancho: '',
-        historia: '',
-        moraleja: '',
-        cta: '',
-        espacio: '',
-        createdAt: new Date().toISOString()
-      };
-    }
-
-    if (currentScript) {
-      if (/^🎣?\s*(?:\[?GANCHO\]?|Gancho)/i.test(line)) {
-        currentField = 'gancho';
-        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
-        if (afterColon && afterColon !== line) currentScript.gancho = afterColon;
-      } else if (/^📖?\s*(?:\[?HISTORIA\]?|Historia)/i.test(line)) {
-        currentField = 'historia';
-        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
-        if (afterColon && afterColon !== line) currentScript.historia = afterColon;
-      } else if (/^💡?\s*(?:\[?MORALEJA\]?|Moraleja)/i.test(line)) {
-        currentField = 'moraleja';
-        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
-        if (afterColon && afterColon !== line) currentScript.moraleja = afterColon;
-      } else if (/^🚀?\s*(?:\[?CTA\]?|Llamado a la Acción|CTA)/i.test(line)) {
-        currentField = 'cta';
-        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
-        if (afterColon && afterColon !== line) currentScript.cta = afterColon;
-      } else if (/^(?:📍?\s*Plan de Espacio|Espacio|Vestimenta|Locación|Indicaciones)/i.test(line)) {
-        currentField = 'espacio';
-        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
-        if (afterColon && afterColon !== line) currentScript.espacio = afterColon;
-      } else if (/^Cliente\s*[:(]/i.test(line)) {
-        currentScript.client = line.replace(/^Cliente\s*[:(]\s*/i, '').trim();
-        currentField = null;
-      } else if (currentField && currentScript[currentField] !== undefined) {
-        if (currentScript[currentField]) {
-          currentScript[currentField] += ' ' + line;
-        } else {
-          currentScript[currentField] = line;
-        }
-      } else if (!currentScript.ideaGanadora && line.length > 5 && !line.startsWith('---') && !line.includes('Formato') && !line.includes('Estado')) {
-        currentScript.ideaGanadora = line;
-      }
-    }
-  }
-
-  if (currentScript) scriptBlocks.push(currentScript);
-
-  if (scriptBlocks.length > 0) {
-    return {
-      module: targetModule === 'set' ? 'set' : 'cards',
-      data: scriptBlocks
-    };
-  }
-
-  // Fallback to calendar parsing if date mentions exist
-  const calendarMatches = [];
-  const dateRegex = /(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})/g;
-  for (let l of lines) {
-    if (dateRegex.test(l)) {
-      calendarMatches.push({
-        id: 'cal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        title: l.substring(0, 60),
-        date: l.match(dateRegex)[0],
-        time: '19:00',
-        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
-        type: 'PUBLICACION',
-        status: 'PROGRAMADO',
-        notes: l
-      });
-    }
-  }
-
-  if (calendarMatches.length > 0) {
-    return {
-      module: 'calendar',
-      data: calendarMatches
-    };
-  }
-
-  return { module: 'cards', data: [] };
-}
 
 function applySmartDocImport() {
   if (!smartDocPendingItems || smartDocPendingItems.length === 0) {
@@ -12653,8 +12358,731 @@ function getFallbackSpaces(topic, niche, hook, manualContext) {
 // =========================================================================
 
 // =========================================================================
-// SCRIPT MODAL PDF INCORPORATION & VISUAL CARD BRIDGE
+// UNIVERSAL SMART PDF & SCRIPT INCORPORATION ENGINE WITH LOCAL AI TRANSCRIPTION
 // =========================================================================
+
+// 1. Geometric Line-Aware PDF.js Extractor
+async function extractTextFromPdfFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = async function() {
+      try {
+        const typedArray = new Uint8Array(reader.result);
+        if (typeof pdfjsLib === 'undefined') {
+          const rawText = new TextDecoder('utf-8').decode(typedArray);
+          return resolve(rawText);
+        }
+
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          
+          if (!textContent || !textContent.items || textContent.items.length === 0) {
+            continue;
+          }
+
+          // Extract items with geometric coordinates
+          const items = textContent.items.map(it => {
+            const tx = it.transform || [1, 0, 0, 1, 0, 0];
+            return {
+              str: it.str || '',
+              x: tx[4] || 0,
+              y: tx[5] || 0,
+              width: it.width || 0
+            };
+          });
+
+          // Sort items by Y (top-to-bottom: descending Y) and X (left-to-right: ascending X)
+          items.sort((a, b) => {
+            const yDiff = b.y - a.y;
+            if (Math.abs(yDiff) > 4) return yDiff;
+            return a.x - b.x;
+          });
+
+          let pageLines = [];
+          let currentLine = [];
+          let lastY = null;
+
+          for (const it of items) {
+            if (lastY === null) {
+              lastY = it.y;
+              currentLine.push(it.str);
+            } else if (Math.abs(it.y - lastY) > 5) {
+              // Line break detected
+              pageLines.push(currentLine.join(' '));
+              currentLine = [it.str];
+              lastY = it.y;
+            } else {
+              // Same horizontal line
+              currentLine.push(it.str);
+            }
+          }
+
+          if (currentLine.length > 0) {
+            pageLines.push(currentLine.join(' '));
+          }
+
+          fullText += `\n--- Página ${i} ---\n` + pageLines.join('\n');
+        }
+
+        resolve(fullText.trim());
+      } catch(err) {
+        console.warn('PDF.js parsing error, attempting raw text fallback:', err);
+        try {
+          const rawText = new TextDecoder('utf-8').decode(reader.result);
+          resolve(rawText);
+        } catch(e) {
+          reject(err);
+        }
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// 2. AI Script Transcriber using Ollama / Local LLM
+async function transcribePdfScriptsWithAi(rawPdfText, clientName = null) {
+  const client = clientName || (state && state.activeClient !== 'ALL' ? state.activeClient : (state?.clients?.[0] || 'Jennil'));
+  
+  const prompt = [
+    'Actúa como el transcriptor y redactor experto de guiones virales de BLEX STUDIO.',
+    '',
+    'A continuación tienes el texto completo extraído de un archivo o PDF de guiones:',
+    '=== INICIO DEL TEXTO EXTRAÍDO DEL PDF ===',
+    rawPdfText,
+    '=== FIN DEL TEXTO EXTRAÍDO ===',
+    '',
+    'TU TAREA OBLIGATORIA:',
+    '1. Identifica con precisión cuántos guiones existen en el documento (1, 2, 5, 10 o más).',
+    '2. Para cada guión, extrae y transcribe de forma exacta, palabra por palabra y sin resumir, los siguientes campos:',
+    '   - "ideaGanadora": Título o tema central del guión.',
+    '   - "gancho": El texto exacto de las palabras del gancho inicial (0 a 3 segundos).',
+    '   - "historia": El texto completo, detallado y exacto del desarrollo, contexto o anécdota (3 a 30 segundos).',
+    '   - "moraleja": La lección clave, solución directa o moraleja (30 a 50 segundos).',
+    '   - "cta": El llamado a la acción o CTA exacto (50 a 60 segundos).',
+    '   - "espacio": Indicaciones de set de grabación, lugar, vestimenta o notas si están presentes.',
+    '   - "formato": "Hablando a cámara", "Formato POV", "Formato Vlog", etc.',
+    '   - "objetivo": "VENTA", "SEGUIDORES", "AUTORIDAD" o "VIRAL".',
+    '   - "numero": Número de guión (1, 2, 3...).',
+    '   - "client": "' + client + '"',
+    '',
+    '3. Si el texto es un guión continuo sin etiquetas explícitas, analiza el texto y distribuye exactamente las palabras del autor en gancho, historia, moraleja y cta.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de objetos:',
+    '[',
+    '  {',
+    '    "numero": 1,',
+    '    "ideaGanadora": "Título del guión",',
+    '    "gancho": "Palabras exactas del gancho...",',
+    '    "historia": "Texto completo y detallado...",',
+    '    "moraleja": "Lección o solución clave...",',
+    '    "cta": "Comenta X o sígueme...",',
+    '    "espacio": "Estudio, plano medio...",',
+    '    "formato": "Hablando a cámara",',
+    '    "objetivo": "VENTA",',
+    '    "client": "' + client + '"',
+    '  }',
+    ']'
+  ].join('\n');
+
+  try {
+    if (typeof aiCallOllama !== 'function') return null;
+    const raw = await aiCallOllama(prompt, 'Eres un asistente especializado en estructurar guiones en JSON estricto.', 0.2);
+    let parsed = null;
+    try {
+      const match = (raw || '').match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch(e) {}
+
+    if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((s, idx) => ({
+        id: 'script-' + Date.now() + '-' + idx,
+        number: s.numero || s.number || (idx + 1),
+        ideaGanadora: (s.ideaGanadora || s.title || s.tema || `Guión #${idx + 1}`).trim(),
+        client: s.client || client,
+        actor: s.actor || s.client || client,
+        formato: normalizeScriptFormat(s.formato || 'Hablando a cámara'),
+        status: s.status || 'Por Grabar',
+        objetivo: s.objetivo || 'VENTA',
+        gancho: (s.gancho || s.hook || '').trim(),
+        historia: (s.historia || s.story || '').trim(),
+        moraleja: (s.moraleja || s.moral || '').trim(),
+        cta: (s.cta || s.callToAction || '').trim(),
+        espacio: (s.espacio || s.set || '').trim(),
+        contextoAdicional: (s.espacio || s.contextoAdicional || '').trim(),
+        linkReferencia: s.linkReferencia || '',
+        guionLibre: s.guionLibre || `${s.gancho || ''}\n\n${s.historia || ''}\n\n${s.moraleja || ''}\n\n${s.cta || ''}`.trim()
+      }));
+    }
+  } catch(err) {
+    console.warn('AI PDF transcription error:', err);
+  }
+  return null;
+}
+
+// 3. Deterministic High-Precision Multi-Script Parser (Fallback)
+function parseTextIntoSmartData(text, targetModule = 'matrix') {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  const scripts = [];
+  let cur = null;
+  let currentField = null;
+
+  const rHook = /^(?:\[|\d+[\.\-\)]|\s*|[🎣🪝])*?(?:GANCHO|HOOK|Gancho|Hook)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rStory = /^(?:\[|\d+[\.\-\)]|\s*|[📖📜])*?(?:HISTORIA|STORY|DESARROLLO|CONTEXTO|Historia|Story|Desarrollo|Contexto)(?:\s*[\/\-]\s*(?:CONTEXTO|DESARROLLO|HISTORIA|STORY|AN[EÉ]CDOTA))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rMoral = /^(?:\[|\d+[\.\-\)]|\s*|[💡🧠])*?(?:MORALEJA|MORAL|VALOR|ENSEÑANZA|INSIGHT|Moraleja|Moral|Valor|Enseñanza|Insight)(?:\s*[\/\-]\s*(?:VALOR|MORAL|MORALEJA|ENSEÑANZA|INSIGHT|LECCI[OÓ]N))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rCta = /^(?:\[|\d+[\.\-\)]|\s*|[📣🚀])*?(?:CTA|CALL TO ACTION|LLAMADO A LA ACCI[OÓ]N|Llamado a la acci[oó]n)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rSpace = /^(?:\[|\d+[\.\-\)]|\s*|[📍📸🎬])*?(?:ESPACIO|SET|LUGAR|AMBIENTE|VESTIMENTA|NOTAS|Espacio|Set|Lugar|Vestimenta|Notas)(?:\s*[\/\-]\s*(?:SET|ESPACIO|LUGAR|AMBIENTE|VESTIMENTA|NOTAS))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+
+  const activeClient = (typeof state !== 'undefined' && state && state.activeClient !== 'ALL') ? state.activeClient : 'Jennil';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check for script separator or numbering
+    const numMatch = line.match(/^(?:===+|\-\-\-+|\*\*\*+)?\s*(?:SET|GUION|GUIÓN|FICHA|SCRIPT|DÍA|DIA)?\s*#?(\d+)\s*(?:[:.-]|\s+)?\s*(.*)/i);
+    if (numMatch && (line.includes('GUION') || line.includes('GUIÓN') || line.includes('SET') || line.includes('FICHA') || line.includes('SCRIPT') || line.includes('#'))) {
+      if (cur) scripts.push(cur);
+      cur = {
+        id: 'script-' + Date.now() + '-' + (scripts.length + 1),
+        number: parseInt(numMatch[1], 10),
+        ideaGanadora: (numMatch[2] || '').replace(/^[=:\-\s]+|[=:\-\s]+$/g, '').trim() || ('Guión #' + numMatch[1]),
+        client: activeClient,
+        formato: 'Hablando a cámara',
+        status: 'Por Grabar',
+        objetivo: 'VENTA',
+        gancho: '',
+        historia: '',
+        moraleja: '',
+        cta: '',
+        espacio: '',
+        contextoAdicional: '',
+        actor: activeClient
+      };
+      currentField = null;
+      continue;
+    }
+
+    if (!cur && (rHook.test(line) || rStory.test(line))) {
+      cur = {
+        id: 'script-' + Date.now() + '-' + (scripts.length + 1),
+        number: scripts.length + 1,
+        ideaGanadora: 'Guión #' + (scripts.length + 1),
+        client: activeClient,
+        formato: 'Hablando a cámara',
+        status: 'Por Grabar',
+        objetivo: 'VENTA',
+        gancho: '',
+        historia: '',
+        moraleja: '',
+        cta: '',
+        espacio: '',
+        contextoAdicional: '',
+        actor: activeClient
+      };
+    }
+
+    if (!cur) continue;
+
+    // Check client / format / objective in line
+    if (line.toLowerCase().includes('cliente:') || line.toLowerCase().includes('formato:') || line.toLowerCase().includes('objetivo:')) {
+      const cMatch = line.match(/cliente:\s*([^|,\n]+)/i);
+      if (cMatch) cur.client = cMatch[1].trim();
+      const fMatch = line.match(/formato:\s*([^|,\n]+)/i);
+      if (fMatch) cur.formato = normalizeScriptFormat(fMatch[1].trim());
+      const oMatch = line.match(/objetivo:\s*([^|,\n]+)/i);
+      if (oMatch) cur.objetivo = oMatch[1].trim();
+      continue;
+    }
+
+    if (rHook.test(line)) {
+      currentField = 'gancho';
+      const clean = line.replace(rHook, '').trim();
+      if (clean) cur.gancho += (cur.gancho ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rStory.test(line)) {
+      currentField = 'historia';
+      const clean = line.replace(rStory, '').trim();
+      if (clean) cur.historia += (cur.historia ? '\n' : '') + clean;
+      continue;
+    }
+
+    if (rMoral.test(line)) {
+      currentField = 'moraleja';
+      const clean = line.replace(rMoral, '').trim();
+      if (clean) cur.moraleja += (cur.moraleja ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rCta.test(line)) {
+      currentField = 'cta';
+      const clean = line.replace(rCta, '').trim();
+      if (clean) cur.cta += (cur.cta ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rSpace.test(line)) {
+      currentField = 'espacio';
+      const clean = line.replace(rSpace, '').trim();
+      if (clean) cur.espacio += (cur.espacio ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (line.startsWith('===') || line.startsWith('---')) {
+      currentField = null;
+      continue;
+    }
+
+    if (currentField === 'gancho') {
+      cur.gancho += (cur.gancho ? ' ' : '') + line;
+    } else if (currentField === 'historia') {
+      cur.historia += (cur.historia ? '\n' : '') + line;
+    } else if (currentField === 'moraleja') {
+      cur.moraleja += (cur.moraleja ? ' ' : '') + line;
+    } else if (currentField === 'cta') {
+      cur.cta += (cur.cta ? ' ' : '') + line;
+    } else if (currentField === 'espacio') {
+      cur.espacio += (cur.espacio ? ' ' : '') + line;
+    } else {
+      if (!cur.ideaGanadora || cur.ideaGanadora.startsWith('Guión #')) {
+        const titleMatch = line.match(/(?:💡|Idea Ganadora|Título|TEMA|Tema)[:\-\]]?\s*(.*)/i);
+        if (titleMatch && titleMatch[1]) {
+          cur.ideaGanadora = titleMatch[1].trim();
+        }
+      }
+    }
+  }
+
+  if (cur) scripts.push(cur);
+
+  // If no structured scripts detected, split paragraphs
+  if (scripts.length === 0 && text.trim().length > 10) {
+    const single = parseSingleScriptFallbackFromText(text);
+    if (single) scripts.push(single);
+  }
+
+  scripts.forEach(s => {
+    s.contextoAdicional = s.espacio || '';
+    s.guionLibre = [
+      s.gancho ? '[GANCHO]\n' + s.gancho : '',
+      s.historia ? '[HISTORIA]\n' + s.historia : '',
+      s.moraleja ? '[MORALEJA]\n' + s.moraleja : '',
+      s.cta ? '[CTA]\n' + s.cta : ''
+    ].filter(Boolean).join('\n\n');
+  });
+
+  return { module: targetModule || 'matrix', data: scripts };
+}
+
+function parseSingleScriptFallbackFromText(text) {
+  if (!text) return null;
+
+  let gancho = '';
+  let historia = '';
+  let moraleja = '';
+  let cta = '';
+  let ideaGanadora = '';
+  let espacio = '';
+
+  const rHook = /^(?:\[|\d+[\.\-\)]|\s*|[🎣🪝])*?(?:GANCHO|HOOK|Gancho|Hook)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rStory = /^(?:\[|\d+[\.\-\)]|\s*|[📖📜])*?(?:HISTORIA|STORY|DESARROLLO|CONTEXTO|Historia|Story|Desarrollo|Contexto)(?:\s*[\/\-]\s*(?:CONTEXTO|DESARROLLO|HISTORIA|STORY|AN[EÉ]CDOTA))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rMoral = /^(?:\[|\d+[\.\-\)]|\s*|[💡🧠])*?(?:MORALEJA|MORAL|VALOR|ENSEÑANZA|INSIGHT|Moraleja|Moral|Valor|Enseñanza|Insight)(?:\s*[\/\-]\s*(?:VALOR|MORAL|MORALEJA|ENSEÑANZA|INSIGHT|LECCI[OÓ]N))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rCta = /^(?:\[|\d+[\.\-\)]|\s*|[📣🚀])*?(?:CTA|CALL TO ACTION|LLAMADO A LA ACCI[OÓ]N|Llamado a la acci[oó]n)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+  const rSpace = /^(?:\[|\d+[\.\-\)]|\s*|[📍📸🎬])*?(?:ESPACIO|SET|LUGAR|AMBIENTE|VESTIMENTA|NOTAS|Espacio|Set|Lugar|Vestimenta|Notas)(?:\s*[\/\-]\s*(?:SET|ESPACIO|LUGAR|AMBIENTE|VESTIMENTA|NOTAS))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
+
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  let currentSection = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (rHook.test(line)) {
+      currentSection = 'gancho';
+      const clean = line.replace(rHook, '').trim();
+      if (clean) gancho += (gancho ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rStory.test(line)) {
+      currentSection = 'historia';
+      const clean = line.replace(rStory, '').trim();
+      if (clean) historia += (historia ? '\n' : '') + clean;
+      continue;
+    }
+
+    if (rMoral.test(line)) {
+      currentSection = 'moraleja';
+      const clean = line.replace(rMoral, '').trim();
+      if (clean) moraleja += (moraleja ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rCta.test(line)) {
+      currentSection = 'cta';
+      const clean = line.replace(rCta, '').trim();
+      if (clean) cta += (cta ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (rSpace.test(line)) {
+      currentSection = 'espacio';
+      const clean = line.replace(rSpace, '').trim();
+      if (clean) espacio += (espacio ? ' ' : '') + clean;
+      continue;
+    }
+
+    if (currentSection === 'gancho') {
+      gancho += (gancho ? ' ' : '') + line;
+    } else if (currentSection === 'historia') {
+      historia += (historia ? '\n' : '') + line;
+    } else if (currentSection === 'moraleja') {
+      moraleja += (moraleja ? ' ' : '') + line;
+    } else if (currentSection === 'cta') {
+      cta += (cta ? ' ' : '') + line;
+    } else if (currentSection === 'espacio') {
+      espacio += (espacio ? ' ' : '') + line;
+    } else {
+      if (!ideaGanadora && (line.includes('Idea') || line.includes('Tema') || line.includes('#'))) {
+        ideaGanadora = line.replace(/^.*?[:\-\]]\s*/, '').trim();
+      }
+    }
+  }
+
+  // If no sections were explicitly marked, split by paragraphs
+  if (!gancho && !historia) {
+    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+    if (paragraphs.length >= 4) {
+      gancho = paragraphs[0];
+      historia = paragraphs[1];
+      moraleja = paragraphs[2];
+      cta = paragraphs[3];
+    } else if (paragraphs.length >= 2) {
+      gancho = paragraphs[0];
+      historia = paragraphs.slice(1).join('\n\n');
+    } else {
+      gancho = text.slice(0, 120);
+      historia = text;
+    }
+  }
+
+  if (!ideaGanadora) {
+    ideaGanadora = gancho ? (gancho.length > 50 ? gancho.slice(0, 47) + '...' : gancho) : 'Guión Importado';
+  }
+
+  return {
+    id: 'script-' + Date.now(),
+    number: (typeof getNextScriptNumber === 'function') ? getNextScriptNumber() : 1,
+    client: (typeof state !== 'undefined' && state && state.activeClient !== 'ALL') ? state.activeClient : 'Jennil',
+    ideaGanadora: ideaGanadora,
+    formato: 'Hablando a cámara',
+    status: 'Por Grabar',
+    objetivo: 'VENTA',
+    gancho: gancho,
+    historia: historia,
+    moraleja: moraleja,
+    cta: cta,
+    espacio: espacio,
+    contextoAdicional: espacio,
+    guionLibre: text
+  };
+}
+
+// 4. Script Modal PDF Handler
+async function handleModalScriptPdfSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  const file = files[0];
+
+  const statusBox = document.getElementById('modalPdfImportStatusBox');
+  const statusText = document.getElementById('modalPdfStatusText');
+  const statusSubtext = document.getElementById('modalPdfStatusSubtext');
+
+  if (statusBox) statusBox.classList.remove('hidden');
+  if (statusText) statusText.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Analizando y extrayendo ' + escapeHtml(file.name) + '...';
+  if (statusSubtext) statusSubtext.textContent = 'Transcribiendo texto y clasificando gancho, historia, moraleja y CTA...';
+  showToastNotification('⏳ Analizando ' + file.name + '...', 'clock');
+
+  try {
+    let fileText = '';
+    let extractedPayload = null;
+
+    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      fileText = await extractTextFromPdfFile(file);
+    } else {
+      fileText = await file.text();
+    }
+
+    // 1. Check for Embedded BLEX Payload
+    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
+    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
+    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
+
+    if (match && match[1]) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(match[1])));
+        extractedPayload = JSON.parse(decoded);
+      } catch(e) {}
+    }
+
+    // Direct JSON support
+    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{') || fileText.trim().startsWith('['))) {
+      try {
+        const parsed = JSON.parse(fileText);
+        if (Array.isArray(parsed)) {
+          extractedPayload = { module: 'matrix', data: parsed };
+        } else if (parsed.scripts || Array.isArray(parsed.scripts)) {
+          extractedPayload = { module: 'matrix', data: parsed.scripts };
+        } else if (parsed.data) {
+          extractedPayload = parsed;
+        } else if (parsed.ideaGanadora || parsed.gancho || parsed.title) {
+          extractedPayload = { module: 'matrix', data: [parsed] };
+        }
+      } catch(e) {}
+    }
+
+    let items = [];
+
+    if (extractedPayload && extractedPayload.data) {
+      items = Array.isArray(extractedPayload.data) ? extractedPayload.data : [extractedPayload.data];
+    }
+
+    // 2. AI Script Transcription
+    if (items.length === 0 && fileText.trim().length > 15) {
+      if (statusText) statusText.innerHTML = '<span class="inline-block animate-spin mr-1">🧠</span> Transcribiendo y redactando con IA...';
+      const aiScripts = await transcribePdfScriptsWithAi(fileText, state.activeClient);
+      if (aiScripts && aiScripts.length > 0) {
+        items = aiScripts;
+      }
+    }
+
+    // 3. Deterministic Pattern Fallback
+    if (items.length === 0) {
+      const parsedData = parseTextIntoSmartData(fileText, 'matrix');
+      items = parsedData ? (Array.isArray(parsedData.data) ? parsedData.data : [parsedData.data]) : [];
+    }
+
+    if (items.length === 0) {
+      showToastNotification('⚠️ No se detectaron guiones claros en el archivo.', 'alert-triangle');
+      if (statusText) statusText.textContent = 'No se reconocieron datos claros';
+      if (statusSubtext) statusSubtext.textContent = 'Verifica que el PDF contenga guiones o texto legible.';
+      return;
+    }
+
+    // Sanitize all items
+    const sanitizedItems = items.map(s => sanitizeScriptData({ ...s }));
+    const firstScript = sanitizedItems[0];
+
+    // Fill current open script modal with firstScript
+    populateScriptModalWithData(firstScript);
+
+    // If there are multiple scripts (e.g. 5 or 10)
+    if (sanitizedItems.length > 1) {
+      let addedCount = 0;
+      for (let i = 1; i < sanitizedItems.length; i++) {
+        const item = sanitizedItems[i];
+        const nextNum = getNextScriptNumber();
+        const newScript = {
+          id: 'script-' + Date.now() + '-' + i,
+          number: item.number || nextNum,
+          client: item.client || (state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil')),
+          status: item.status || 'Por Grabar',
+          formato: normalizeScriptFormat(item.formato || 'Hablando a cámara'),
+          objetivo: item.objetivo || 'VENTA',
+          actor: item.actor || item.client || 'Jennil',
+          ideaGanadora: item.ideaGanadora || item.title || ('Guión #' + (item.number || nextNum)),
+          linkReferencia: item.linkReferencia || '',
+          scriptType: item.scriptType || (item.guionLibre ? 'libre' : 'structured'),
+          guionLibre: item.guionLibre || '',
+          gancho: item.gancho || '',
+          historia: item.historia || '',
+          moraleja: item.moraleja || '',
+          cta: item.cta || '',
+          contextoAdicional: item.contextoAdicional || item.espacio || '',
+          attachments: item.attachments || [],
+          views: item.views || 0,
+          comments: item.comments || 0,
+          rating: item.rating || 0,
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        state.scripts.push(newScript);
+        addedCount++;
+      }
+
+      saveState();
+      renderAll();
+
+      showToastNotification(`✨ ¡PDF incorporado! Se identificaron ${sanitizedItems.length} guiones. Cargado #${firstScript.number || 1} en el formulario y ${addedCount} agregados a tu Matriz.`, 'check-circle');
+    } else {
+      showToastNotification('✨ ¡Guión extraído e incorporado con éxito en el formulario!', 'check-circle');
+    }
+
+    // Show visual indicator in modal
+    if (statusText) statusText.textContent = 'Archivo incorporado: ' + file.name;
+    if (statusSubtext) statusSubtext.textContent = sanitizedItems.length > 1 
+      ? `Se transcribieron ${sanitizedItems.length} guiones con éxito. Guión #${firstScript.number || 1} listo para editar.`
+      : `Estructura transcrita y redactada en todos los campos con exactitud.`;
+
+    refreshLucideIcons();
+
+  } catch(err) {
+    console.error('Error incorporating script PDF:', err);
+    showToastNotification('⚠️ Error al incorporar PDF: ' + (err.message || 'Formato no soportado'), 'alert-triangle');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+// 5. Universal Smart Document Processing (Enhanced with AI)
+async function processSmartDocFile(file) {
+  const statusBox = document.getElementById('smartDocStatusBox');
+  const statusTitle = document.getElementById('smartDocStatusTitle');
+  const statusDesc = document.getElementById('smartDocStatusDesc');
+  const previewContainer = document.getElementById('smartDocPreviewContainer');
+  const previewList = document.getElementById('smartDocPreviewList');
+  const itemsCountBadge = document.getElementById('smartDocItemsCount');
+  const detectedModuleBadge = document.getElementById('smartDocDetectedModuleBadge');
+  const applyBtn = document.getElementById('btnApplySmartDocImport');
+
+  if (statusBox) statusBox.classList.remove('hidden');
+  if (statusTitle) statusTitle.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-cyan-400"></i> <span>Analizando ${escapeHtml(file.name)}...</span>`;
+  if (statusDesc) statusDesc.textContent = 'Extrayendo datos estructurados, numeraciones, ganchos, historias y CTA...';
+  if (previewContainer) previewContainer.classList.add('hidden');
+  refreshLucideIcons();
+
+  try {
+    let fileText = '';
+    let extractedPayload = null;
+
+    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      fileText = await extractTextFromPdfFile(file);
+    } else {
+      fileText = await file.text();
+    }
+
+    // 1. Check for Embedded BLEX Payload
+    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
+    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
+    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
+
+    if (match && match[1]) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(match[1])));
+        extractedPayload = JSON.parse(decoded);
+      } catch(e) {}
+    }
+
+    // Direct JSON backup support
+    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{'))) {
+      try {
+        const parsed = JSON.parse(fileText);
+        if (parsed.scripts || Array.isArray(parsed)) {
+          extractedPayload = { module: 'matrix', data: Array.isArray(parsed) ? parsed : (parsed.scripts || []) };
+        } else if (parsed.module && parsed.data) {
+          extractedPayload = parsed;
+        }
+      } catch(e) {}
+    }
+
+    let items = [];
+    let finalModule = smartDocSelectedTarget !== 'auto' ? smartDocSelectedTarget : 'matrix';
+
+    if (extractedPayload && extractedPayload.data) {
+      items = Array.isArray(extractedPayload.data) ? extractedPayload.data : [extractedPayload.data];
+      finalModule = extractedPayload.module || finalModule;
+    }
+
+    // 2. AI Script Transcription
+    if (items.length === 0 && fileText.trim().length > 15) {
+      if (statusDesc) statusDesc.textContent = '🧠 Transcribiendo y estructurando con Inteligencia Artificial...';
+      const aiScripts = await transcribePdfScriptsWithAi(fileText, state.activeClient);
+      if (aiScripts && aiScripts.length > 0) {
+        items = aiScripts;
+        finalModule = smartDocSelectedTarget !== 'auto' ? smartDocSelectedTarget : 'matrix';
+      }
+    }
+
+    // 3. Deterministic Pattern Fallback
+    if (items.length === 0) {
+      const parsedData = parseTextIntoSmartData(fileText, smartDocSelectedTarget);
+      items = parsedData ? (Array.isArray(parsedData.data) ? parsedData.data : [parsedData.data]) : [];
+      finalModule = smartDocSelectedTarget !== 'auto' ? smartDocSelectedTarget : (parsedData.module || 'cards');
+    }
+
+    smartDocPendingItems = items;
+    smartDocSelectedTarget = finalModule;
+
+    if (items.length === 0) {
+      if (statusTitle) statusTitle.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> <span class="text-amber-300">No se reconocieron elementos claros</span>`;
+      if (statusDesc) statusDesc.textContent = 'Verifica que el PDF o archivo contenga guiones o texto legible.';
+      refreshLucideIcons();
+      return;
+    }
+
+    // Render Preview
+    if (statusBox) statusBox.classList.remove('hidden');
+    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span class="text-emerald-300">¡Extracción Exitosa!</span>`;
+    if (statusDesc) statusDesc.textContent = `Se transcribieron ${items.length} elemento(s) listos para sincronizar en ${finalModule.toUpperCase()}.`;
+
+    if (detectedModuleBadge) {
+      const labels = {
+        'cards': '🎴 Tarjetas Visuales',
+        'set': '🎬 Set de Grabación',
+        'matrix': '📊 Matriz de Guiones',
+        'viral': '🔥 Calculadora Viral',
+        'calendar': '📅 Calendario',
+        'ideas': '💡 Ideas & Notas'
+      };
+      detectedModuleBadge.textContent = labels[finalModule] || finalModule.toUpperCase();
+    }
+
+    if (itemsCountBadge) itemsCountBadge.textContent = items.length;
+
+    if (previewList) {
+      previewList.innerHTML = items.map((item, idx) => {
+        const title = item.ideaGanadora || item.title || item.name || `Elemento #${idx + 1}`;
+        const num = item.number || idx + 1;
+        const hook = item.gancho || item.hook || '';
+        const story = item.historia || item.story || item.notes || '';
+        const client = item.client || state.activeClient || 'General';
+
+        return `
+          <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-mono font-bold text-cyan-400 shrink-0">#${num}</span>
+                <span class="font-bold text-white truncate">${escapeHtml(title)}</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 shrink-0">${escapeHtml(client)}</span>
+            </div>
+            ${hook ? `<p class="text-[11px] text-slate-300 line-clamp-1"><strong class="text-red-400 font-semibold">Gancho:</strong> ${escapeHtml(hook)}</p>` : ''}
+            ${story ? `<p class="text-[11px] text-slate-400 line-clamp-1"><strong class="text-sky-400 font-semibold">Historia:</strong> ${escapeHtml(story)}</p>` : ''}
+            ${item.espacio ? `<p class="text-[10px] text-indigo-300 line-clamp-1">📍 ${escapeHtml(item.espacio)}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (previewContainer) previewContainer.classList.remove('hidden');
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+    }
+
+    refreshLucideIcons();
+
+  } catch(err) {
+    console.error('Smart Doc Import Error:', err);
+    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i> <span class="text-rose-300">Error al procesar el archivo</span>`;
+    if (statusDesc) statusDesc.textContent = err.message || 'No se pudo leer el PDF o documento.';
+    refreshLucideIcons();
+  }
+}
 
 function viewVisualCardForScript(scriptId = null) {
   let targetId = scriptId;
@@ -12754,253 +13182,5 @@ function populateScriptModalWithData(script) {
     setScriptModalMode('libre');
   } else {
     setScriptModalMode('structured');
-  }
-}
-
-function parseSingleScriptFallbackFromText(text) {
-  if (!text) return null;
-
-  let gancho = '';
-  let historia = '';
-  let moraleja = '';
-  let cta = '';
-  let ideaGanadora = '';
-  let espacio = '';
-
-  const rHook = /^(?:\[|\d+[\.\-\)]|\s*|[🎣🪝])*?(?:GANCHO|HOOK|Gancho|Hook)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
-  const rStory = /^(?:\[|\d+[\.\-\)]|\s*|[📖📜])*?(?:HISTORIA|STORY|DESARROLLO|CONTEXTO|Historia|Story|Desarrollo|Contexto)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
-  const rMoral = /^(?:\[|\d+[\.\-\)]|\s*|[💡🧠])*?(?:MORALEJA|MORAL|VALOR|ENSEÑANZA|INSIGHT|Moraleja|Moral|Valor|Enseñanza|Insight)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
-  const rCta = /^(?:\[|\d+[\.\-\)]|\s*|[📣🚀])*?(?:CTA|CALL TO ACTION|LLAMADO A LA ACCI[OÓ]N|Llamado a la acci[oó]n)(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
-  const rSpace = /^(?:\[|\d+[\.\-\)]|\s*|[📍📸🎬])*?(?:ESPACIO|SET|LUGAR|AMBIENTE|VESTIMENTA|NOTAS|Espacio|Set|Lugar|Vestimenta|Notas)(?:\s*[\/\-]\s*(?:SET|ESPACIO|LUGAR|AMBIENTE|VESTIMENTA|NOTAS))?(?:\s*\([^)]*\))?[\]:\-\)]*\s*/i;
-
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-  let currentSection = null;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (rHook.test(line)) {
-      currentSection = 'gancho';
-      const clean = line.replace(rHook, '').trim();
-      if (clean) gancho += (gancho ? ' ' : '') + clean;
-      continue;
-    }
-
-    if (rStory.test(line)) {
-      currentSection = 'historia';
-      const clean = line.replace(rStory, '').trim();
-      if (clean) historia += (historia ? '\n' : '') + clean;
-      continue;
-    }
-
-    if (rMoral.test(line)) {
-      currentSection = 'moraleja';
-      const clean = line.replace(rMoral, '').trim();
-      if (clean) moraleja += (moraleja ? ' ' : '') + clean;
-      continue;
-    }
-
-    if (rCta.test(line)) {
-      currentSection = 'cta';
-      const clean = line.replace(rCta, '').trim();
-      if (clean) cta += (cta ? ' ' : '') + clean;
-      continue;
-    }
-
-    if (rSpace.test(line)) {
-      currentSection = 'espacio';
-      const clean = line.replace(rSpace, '').trim();
-      if (clean) espacio += (espacio ? ' ' : '') + clean;
-      continue;
-    }
-
-    if (currentSection === 'gancho') {
-      gancho += (gancho ? ' ' : '') + line;
-    } else if (currentSection === 'historia') {
-      historia += (historia ? '\n' : '') + line;
-    } else if (currentSection === 'moraleja') {
-      moraleja += (moraleja ? ' ' : '') + line;
-    } else if (currentSection === 'cta') {
-      cta += (cta ? ' ' : '') + line;
-    } else if (currentSection === 'espacio') {
-      espacio += (espacio ? ' ' : '') + line;
-    } else {
-      if (!ideaGanadora && (line.includes('Idea') || line.includes('Tema') || line.includes('#'))) {
-        ideaGanadora = line.replace(/^.*?[:\-\]]\s*/, '').trim();
-      }
-    }
-  }
-
-  // If no sections were explicitly marked, split by paragraphs
-  if (!gancho && !historia) {
-    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
-    if (paragraphs.length >= 4) {
-      gancho = paragraphs[0];
-      historia = paragraphs[1];
-      moraleja = paragraphs[2];
-      cta = paragraphs[3];
-    } else if (paragraphs.length >= 2) {
-      gancho = paragraphs[0];
-      historia = paragraphs.slice(1).join('\n\n');
-    } else {
-      gancho = text.slice(0, 120);
-      historia = text;
-    }
-  }
-
-  if (!ideaGanadora) {
-    ideaGanadora = gancho ? (gancho.length > 50 ? gancho.slice(0, 47) + '...' : gancho) : 'Guión Importado';
-  }
-
-  return {
-    id: 'script-' + Date.now(),
-    number: getNextScriptNumber(),
-    client: state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil'),
-    ideaGanadora: ideaGanadora,
-    formato: 'Hablando a cámara',
-    status: 'Por Grabar',
-    objetivo: 'VENTA',
-    gancho: gancho,
-    historia: historia,
-    moraleja: moraleja,
-    cta: cta,
-    espacio: espacio,
-    contextoAdicional: espacio,
-    guionLibre: text
-  };
-}
-
-async function handleModalScriptPdfSelect(event) {
-  const files = event.target.files;
-  if (!files || files.length === 0) return;
-  const file = files[0];
-
-  showToastNotification('⏳ Analizando ' + file.name + ' para incorporar guión...', 'clock');
-
-  try {
-    let fileText = '';
-    let extractedPayload = null;
-
-    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
-      fileText = await extractTextFromPdfFile(file);
-    } else {
-      fileText = await file.text();
-    }
-
-    // 1. Check for Embedded BLEX Payload
-    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
-    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
-    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
-
-    if (match && match[1]) {
-      try {
-        const decoded = decodeURIComponent(escape(atob(match[1])));
-        extractedPayload = JSON.parse(decoded);
-      } catch(e) {
-        console.warn('Base64 payload parse failed:', e);
-      }
-    }
-
-    // Direct JSON support
-    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{') || fileText.trim().startsWith('['))) {
-      try {
-        const parsed = JSON.parse(fileText);
-        if (Array.isArray(parsed)) {
-          extractedPayload = { module: 'matrix', data: parsed };
-        } else if (parsed.scripts || Array.isArray(parsed.scripts)) {
-          extractedPayload = { module: 'matrix', data: parsed.scripts };
-        } else if (parsed.data) {
-          extractedPayload = parsed;
-        } else if (parsed.ideaGanadora || parsed.gancho || parsed.title) {
-          extractedPayload = { module: 'matrix', data: [parsed] };
-        }
-      } catch(e) {}
-    }
-
-    // 2. Intelligent pattern extraction from text
-    if (!extractedPayload) {
-      extractedPayload = parseTextIntoSmartData(fileText, 'matrix');
-    }
-
-    let items = extractedPayload ? extractedPayload.data : [];
-    if (!Array.isArray(items)) items = items ? [items] : [];
-
-    // Fallback if no items detected: try splitting raw text into structured parts
-    if (items.length === 0 && fileText.trim().length > 10) {
-      const fallbackScript = parseSingleScriptFallbackFromText(fileText);
-      if (fallbackScript) items = [fallbackScript];
-    }
-
-    if (items.length === 0) {
-      showToastNotification('⚠️ No se detectaron guiones o estructura en el archivo.', 'alert-triangle');
-      return;
-    }
-
-    // Sanitize all items
-    const sanitizedItems = items.map(s => sanitizeScriptData({ ...s }));
-    const firstScript = sanitizedItems[0];
-
-    // Fill current open script modal with firstScript
-    populateScriptModalWithData(firstScript);
-
-    // If there are multiple scripts (e.g. 5 or 10)
-    if (sanitizedItems.length > 1) {
-      let addedCount = 0;
-      for (let i = 1; i < sanitizedItems.length; i++) {
-        const item = sanitizedItems[i];
-        const nextNum = getNextScriptNumber();
-        const newScript = {
-          id: 'script-' + Date.now() + '-' + i,
-          number: item.number || nextNum,
-          client: item.client || (state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil')),
-          status: item.status || 'Por Grabar',
-          formato: normalizeScriptFormat(item.formato || 'Hablando a cámara'),
-          objetivo: item.objetivo || 'VENTA',
-          actor: item.actor || item.client || 'Jennil',
-          ideaGanadora: item.ideaGanadora || item.title || ('Guión #' + (item.number || nextNum)),
-          linkReferencia: item.linkReferencia || '',
-          scriptType: item.scriptType || (item.guionLibre ? 'libre' : 'structured'),
-          guionLibre: item.guionLibre || '',
-          gancho: item.gancho || '',
-          historia: item.historia || '',
-          moraleja: item.moraleja || '',
-          cta: item.cta || '',
-          contextoAdicional: item.contextoAdicional || item.espacio || '',
-          attachments: item.attachments || [],
-          views: item.views || 0,
-          comments: item.comments || 0,
-          rating: item.rating || 0,
-          createdAt: item.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        state.scripts.push(newScript);
-        addedCount++;
-      }
-
-      saveState();
-      renderAll();
-
-      showToastNotification('✨ ¡PDF incorporado! Se identificaron ' + sanitizedItems.length + ' guiones. Cargado #' + (firstScript.number || 1) + ' en el formulario y ' + addedCount + ' agregados a tu Matriz.', 'check-circle');
-    } else {
-      showToastNotification('✨ ¡Guión extraído e incorporado con éxito en el formulario!', 'check-circle');
-    }
-
-    // Show visual indicator in modal
-    const statusBox = document.getElementById('modalPdfImportStatusBox');
-    const statusText = document.getElementById('modalPdfStatusText');
-    const statusSubtext = document.getElementById('modalPdfStatusSubtext');
-    if (statusBox) statusBox.classList.remove('hidden');
-    if (statusText) statusText.textContent = 'Archivo incorporado: ' + file.name;
-    if (statusSubtext) statusSubtext.textContent = sanitizedItems.length > 1 
-      ? 'Se detectaron ' + sanitizedItems.length + ' guiones. Guión #' + (firstScript.number || 1) + ' listo para editar.'
-      : 'Estructura redactada y distribuida en todos los campos.';
-
-    refreshLucideIcons();
-
-  } catch(err) {
-    console.error('Error incorporating script PDF:', err);
-    showToastNotification('⚠️ Error al incorporar PDF: ' + (err.message || 'Formato no soportado'), 'alert-triangle');
-  } finally {
-    event.target.value = '';
   }
 }
