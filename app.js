@@ -9161,82 +9161,51 @@ async function startWizardProcess() {
 async function generateWizardStep0Strategy() {
   const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '');
   const link = wizardState.link;
-  const niche = wizardState.niche || getEffectiveNiche();
+  const niche = wizardState.niche || (typeof getEffectiveNiche === 'function' ? getEffectiveNiche() : 'DINERO Y FINANZAS');
+  const client = wizardState.client || (document.getElementById('wizClientSelect') ? document.getElementById('wizClientSelect').value : 'Jennil');
 
   const container = document.getElementById('wizStrategyCardContainer');
   if (container) {
-    container.innerHTML = '<div class="p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Analizando estrategia y ángulo viral...</p><p class="text-xs text-slate-400">' + (link ? 'Analizando el contenido de referencia y estructurando cómo darle la vuelta hacia ' + niche + '.' : 'Diagnosticando la psicología de la audiencia y alineando el mensaje clave.') + '</p></div>';
+    container.innerHTML = '<div class="p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Analizando estrategia de impacto y diferenciación...</p><p class="text-xs text-slate-400">Estructurando cómo darle la vuelta a tu idea para ' + niche + '.</p></div>';
   }
 
-  // Build high-context prompt
-  const videoContentDesc = topic ? topic : (link ? 'un video viral de redes sociales (' + link + ')' : 'crecimiento y finanzas');
+  const videoContentDesc = topic ? topic : 'crecimiento y finanzas';
 
   const prompt = [
-    'Actúa como el estratega creativo y director de contenido viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL.',
+    'Actúa como el estratega creativo y director de contenido viral #1 en redes sociales especializado en transformar cualquier idea o video hacia DINERO, FINANZAS Y DESARROLLO PERSONAL.',
     '',
-    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
-    '',
-    (typeof get64HooksKnowledgeContext === 'function' ? get64HooksKnowledgeContext() : ''),
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(client) : ''),
     '',
     'INFORMACIÓN DEL CREADOR Y ENCARGO:',
-    '- Contenido real de referencia o idea: "' + videoContentDesc + '"',
-    (link ? '- Enlace del video: ' + link : ''),
-    '- Nicho al que debemos adaptarlo: ' + niche,
-    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '- Contenido o idea: "' + videoContentDesc + '"',
+    '- Nicho objetivo: ' + niche,
     '',
-    'TU TAREA DE DIAGNÓSTICO (Paso 0):',
-    '1. En "overview": Explica con precisión sobre qué trata el contenido de referencia ("' + videoContentDesc + '") y cuál es su mecánica de enganche o valor.',
-    '2. En "howToFlip": Explica EXACTAMENTE CÓMO DARLE LA VUELTA a ese tema ("' + videoContentDesc + '") para convertirlo en un guión de alto impacto enfocado en ' + niche + ' (ej: si habla de edición/guiones, cómo usar los guiones y la retención para monetizar y multiplicar ingresos; si habla de hábitos, cómo aplicarlo a las finanzas).',
-    '3. En "keyQuestion": Plantea una pregunta clave para que el creador defina su intención.',
-    '4. En "angles": Proporciona 3 ángulos estratégicos de adaptación para este tema.',
+    'TU TAREA DE ESTRATEGIA (Paso 0):',
+    '1. En "overview": Explica brevemente sobre qué trata el tema ("' + videoContentDesc + '").',
+    '2. En "howToFlip": Redacta una ESTRATEGIA DE IMPACTO Y DIFERENCIACIÓN clara, contundente y detallada sobre cómo abordar este tema para el creador ' + client + ' en ' + niche + ' (este texto será editable por el usuario y servirá de guía maestra para todo el guión).',
     '',
-    'Responde ÚNICAMENTE con un objeto JSON válido con este formato exacto:',
+    'Responde ÚNICAMENTE con un objeto JSON válido:',
     '{',
-    '  "overview": "Explicación precisa de qué trata la referencia (' + videoContentDesc.replace(/"/g, '') + ')",',
-    '  "howToFlip": "Estrategia concreta de cómo darle la vuelta para ' + niche + ' manteniendo la esencia del tema",',
-    '  "keyQuestion": "Pregunta de enfoque",',
-    '  "angles": [',
-    '    {',
-    '      "title": "Ángulo 1 (ej: Aplicación Práctica a ' + niche + ')",',
-    '      "desc": "Cómo se abordará el tema en el guión",',
-    '      "hookIdea": "Idea de arranque"',
-    '    },',
-    '    {',
-    '      "title": "Ángulo 2 (ej: El Error del 99% vs La Regla del 1%)",',
-    '      "desc": "Perspectiva de shock",',
-    '      "hookIdea": "Idea de arranque"',
-    '    },',
-    '    {',
-    '      "title": "Ángulo 3 (ej: Storytelling y Transformación)",',
-    '      "desc": "Perspectiva de historia personal y monetización",',
-    '      "hookIdea": "Idea de arranque"',
-    '    }',
-    '  ]',
+    '  "overview": "Diagnóstico breve del tema (' + videoContentDesc.replace(/"/g, '') + ')",',
+    '  "howToFlip": "Estrategia de impacto y diferenciación concreta para ' + niche + '"',
     '}'
   ].join('\n');
 
   try {
     const raw = await callOllama(prompt, 0.7);
     let parsed = null;
-
     try {
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-      }
-    } catch (pe) {
-      console.warn('Could not parse JSON directly from Ollama response, trying cleanup:', pe);
-    }
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+    } catch (pe) {}
 
-    if (parsed && parsed.angles && Array.isArray(parsed.angles) && parsed.angles.length > 0) {
+    if (parsed && (parsed.howToFlip || parsed.overview)) {
       wizardState.strategy = parsed;
       renderWizardStep0Strategy(parsed);
     } else {
-      console.warn('Incomplete parsed strategy, using fallback strategy:', raw);
       wizardState.strategy = getFallbackStrategy(topic, link, niche);
       renderWizardStep0Strategy(wizardState.strategy);
     }
-
   } catch (err) {
     console.warn('Ollama Step 0 error, using high-quality fallback strategy:', err);
     wizardState.strategy = getFallbackStrategy(topic, link, niche);
@@ -9249,87 +9218,57 @@ function renderWizardStep0Strategy(strat) {
   if (!container) return;
 
   const isLink = Boolean(wizardState.link);
+  const howToFlipContent = strat.howToFlip || `Para adaptar este tema al nicho de ${wizardState.niche || 'Finanzas'}, desmitificaremos las falsas creencias y nos enfocaremos en aportar una solución práctica y directa basada en sistemas y activos.`;
 
-  let html = '<div class="space-y-4">';
-  
-  // Overview Card
-  html += '<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">' +
-    '<div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">' +
-      '<i data-lucide="' + (isLink ? 'video' : 'compass') + '" class="w-4 h-4"></i>' +
-      '<span>' + (isLink ? '1. Diagnóstico del Video de Referencia' : '1. Diagnóstico de la Idea & Audiencia') + '</span>' +
-    '</div>' +
-    '<p class="text-xs sm:text-sm text-slate-200 leading-relaxed">' + (strat.overview || 'Análisis del concepto y enfoque del contenido.') + '</p>' +
-  '</div>';
+  container.innerHTML = `
+    <div class="space-y-4">
+      <!-- 1. Overview Card -->
+      <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+        <div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+          <i data-lucide="${isLink ? 'video' : 'compass'}" class="w-4 h-4"></i>
+          <span>1. Diagnóstico de la Idea & Audiencia</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+          ${strat.overview || 'Análisis del concepto y enfoque del contenido.'}
+        </p>
+      </div>
 
-  // How to Flip / Adaptation Card
-  html += '<div class="bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 border border-purple-500/40 p-4 rounded-xl space-y-2">' +
-    '<div class="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">' +
-      '<i data-lucide="refresh-cw" class="w-4 h-4"></i>' +
-      '<span>' + (isLink ? '2. Cómo darle la vuelta para tu nicho (' + wizardState.niche + ')' : '2. Estrategia de Impacto & Diferenciación') + '</span>' +
-    '</div>' +
-    '<p class="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium">' + (strat.howToFlip || 'Transformaremos el concepto desafiando la creencia tradicional y aportando valor práctico.') + '</p>' +
-  '</div>';
+      <!-- 2. Editable Impact & Differentiation Strategy Card -->
+      <div class="bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 border border-purple-500/40 p-4.5 rounded-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>2. Estrategia de Impacto & Diferenciación (Editable)</span>
+          </div>
+          <span class="text-[10px] font-bold text-amber-300/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Guía Maestra del Guión</span>
+        </div>
+        <textarea 
+          id="wizStrategyImpactText" 
+          rows="4" 
+          class="w-full bg-slate-950/90 border border-purple-500/40 focus:border-amber-400 rounded-xl p-3.5 text-xs sm:text-sm text-slate-100 font-medium leading-relaxed outline-none transition resize-y"
+          placeholder="Escribe o afina aquí la estrategia de impacto sobre la que la IA debe construir el guión..."
+        >${howToFlipContent}</textarea>
+        <p class="text-[11px] text-slate-400 leading-snug">
+          💡 <em>Puedes editar este texto directamente para orientar a la IA si necesitas ajustar el enfoque antes de generar los ganchos.</em>
+        </p>
+      </div>
+    </div>
+  `;
 
-  // 3 Strategic Angles Selector
-  html += '<div class="space-y-2">' +
-    '<label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">' +
-      '<i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i>' +
-      '<span>3. Selecciona el Ángulo que deseas para este Reel:</span>' +
-    '</label>' +
-    '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">';
-
-  strat.angles.forEach((ang, idx) => {
-    const letters = ['A', 'B', 'C'];
-    const letter = letters[idx] || (idx + 1);
-    const isSelected = wizardState.selectedAngle === ang.title || (!wizardState.selectedAngle && idx === 0);
-    if (isSelected && !wizardState.selectedAngle) wizardState.selectedAngle = ang.title;
-
-    html += '<div onclick="selectWizardStrategyAngle(' + idx + ')" id="wizStratAngleCard_' + idx + '" class="p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 ' + (isSelected ? 'bg-purple-950/50 border-purple-400 shadow-lg shadow-purple-950/60' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60') + '">' +
-      '<div class="space-y-1.5">' +
-        '<div class="flex items-center justify-between">' +
-          '<span class="w-5 h-5 rounded-md bg-purple-500/20 text-purple-300 font-black text-xs flex items-center justify-center border border-purple-500/30">' + letter + '</span>' +
-          '<span class="text-[10px] font-bold ' + (isSelected ? 'text-purple-300' : 'text-slate-400') + '">' + (isSelected ? '✓ Seleccionado' : 'Elegir') + '</span>' +
-        '</div>' +
-        '<h5 class="text-xs font-bold text-white">' + ang.title + '</h5>' +
-        '<p class="text-[11px] text-slate-300 leading-snug">' + ang.desc + '</p>' +
-      '</div>' +
-      (ang.hookIdea ? '<div class="pt-2 border-t border-slate-900 text-[10px] text-slate-400 italic">💡 ' + ang.hookIdea + '</div>' : '') +
-    '</div>';
-  });
-
-  html += '</div></div></div>';
-
-  container.innerHTML = html;
-  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
-}
-
-function selectWizardStrategyAngle(idx) {
-  if (!wizardState.strategy || !wizardState.strategy.angles) return;
-  const ang = wizardState.strategy.angles[idx];
-  if (!ang) return;
-
-  wizardState.selectedAngle = ang.title;
-
-  wizardState.strategy.angles.forEach((_, i) => {
-    const card = document.getElementById('wizStratAngleCard_' + i);
-    if (card) {
-      if (i === idx) {
-        card.className = 'p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 bg-purple-950/50 border-purple-400 shadow-lg shadow-purple-950/60';
-      } else {
-        card.className = 'p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60';
-      }
-    }
-  });
+  refreshLucideIcons();
 }
 
 function confirmStrategyAndAdvanceToStep1() {
+  const impactInput = document.getElementById('wizStrategyImpactText');
   const intentInput = document.getElementById('wizStrategyUserIntent');
+
+  const strategyText = impactInput ? impactInput.value.trim() : (wizardState.strategy?.howToFlip || '');
+  wizardState.strategyText = strategyText;
   if (intentInput) wizardState.userIntent = intentInput.value.trim();
 
-  const chosenAngle = wizardState.selectedAngle || 'Estrategia Viral Optimizada';
   const badge = document.getElementById('wizBadgeChosenAngle');
   if (badge) {
-    badge.innerText = chosenAngle + (wizardState.userIntent ? ' · (' + wizardState.userIntent.slice(0, 30) + '...)' : '');
+    badge.innerText = strategyText ? strategyText.slice(0, 90) + '...' : 'Estrategia Viral Alineada';
   }
 
   goToWizardStep(1);
@@ -9338,15 +9277,18 @@ function confirmStrategyAndAdvanceToStep1() {
 
 // STEP 1: Generate 5 Hooks
 async function generateWizardStep1Hooks() {
-  const topic = wizardState.topic;
-  const niche = wizardState.niche;
-  const angle = wizardState.selectedAngle || 'Contraintuitivo & Alto Impacto';
+  const topic = wizardState.topic || '';
+  const niche = wizardState.niche || 'Finanzas y Dinero';
+  const strategy = wizardState.strategyText || (wizardState.strategy?.howToFlip) || 'Enfoque de alto valor y diferenciación';
   const intent = wizardState.userIntent || '';
-  const shortTheme = getCleanCoreTheme(topic);
+  const selectedHook = wizardState.selectedCatalogHook || null;
+  
+  const manualInput = document.getElementById('wizHookManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
 
   const grid = document.getElementById('wizCardsGrid1');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales cortos (0-3s)...</p><p class="text-xs text-slate-400">Optimizando frases de impacto de máximo 8 a 12 palabras para detener el scroll de inmediato.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales cortos (0-3s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Adaptando las opciones a tu idea manual: "' + manualContext + '"' : 'Optimizando 5 fórmulas psicológicas de alto impacto.') + '</p></div>';
   }
 
   const prompt = [
@@ -9354,27 +9296,25 @@ async function generateWizardStep1Hooks() {
     '',
     (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
     '',
-    (typeof get64HooksKnowledgeContext === 'function' ? get64HooksKnowledgeContext() : ''),
-    '',
     'CONTEXTO DEL CONTENIDO:',
-    '- Idea/Transcripción original: "' + topic + '"',
-    (selectedHook ? '- FÓRMULA DE GANCHO OBLIGATORIA DEL CATÁLOGO #' + selectedHook.id + ' (' + selectedHook.name + '): "' + selectedHook.formula + '" (Ejemplo: "' + selectedHook.example + '")' : ''),
+    '- Tema central: "' + topic + '"',
+    '- Estrategia de impacto a seguir: "' + strategy + '"',
+    (manualContext ? '- GUÍA O ENFOQUE MANUAL DEL USUARIO PARA EL GANCHO: "' + manualContext + '"' : ''),
+    (selectedHook ? '- FÓRMULA SELECCIONADA #' + selectedHook.id + ' (' + selectedHook.name + '): "' + selectedHook.formula + '"' : ''),
     '- Nicho objetivo: ' + niche,
-    '- Ángulo estratégico: "' + angle + '"',
     (intent ? '- Intención: "' + intent + '"' : ''),
     '',
     'REGLAS CRÍTICAS PARA EL GANCHO (Paso 1):',
-    '1. TIEMPO EXACTO: El gancho debe durar exactamente 0 a 3 segundos (máximo 8 a 12 palabras).',
-    '2. BASE DE CONOCIMIENTO DE 64 GANCHOS: Selecciona y aplica 5 fórmulas DISTINTAS del catálogo de 64 ganchos (ej: #1 Contra corriente, #2 Número específico, #3 Error, #6 Secreto, #18 Open loop, etc.). En el campo "formula", indica siempre el "# y Nombre del Gancho" del catálogo.',
-    '3. LENGUAJE Y TONO: Debe cumplir estrictamente el ADN de la marca aprendido en el Cerebro de la IA.',
-    (selectedHook ? '4. FÓRMULA OBLIGATORIA: Las 5 opciones deben ser variaciones de la fórmula #' + selectedHook.id + ' ("' + selectedHook.formula + '") aplicadas a ' + niche + '.' : ''),
+    '1. TIEMPO EXACTO: El gancho debe durar 0 a 3 segundos (máximo 8 a 12 palabras).',
+    '2. FÓRMULAS: Selecciona 5 fórmulas psicológicas distintas (ej: Contra corriente, Alerta/Error, Secreto, Número específico, Open Loop).',
+    (manualContext ? '3. ALINEACIÓN MANUAL: Cada una de las 5 opciones debe aplicar tu enfoque manual: "' + manualContext + '".' : ''),
     '',
-    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 ganchos cortos:',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 ganchos:',
     '[',
     '  {',
-    '    "formula": "Nombre de la Fórmula (ej: Alerta y Error / Mito Contraintuitivo)",',
-    '    "hook": "Frase exacta de máximo 8-12 palabras (ej: Si quieres tener éxito, jamás le cuentes esto a nadie.)",',
-    '    "reason": "Por qué detiene el scroll en 2 segundos"',
+    '    "formula": "#1 Gancho Contra Corriente",',
+    '    "hook": "Frase de 8-12 palabras",',
+    '    "reason": "Por qué detiene el scroll"',
     '  }',
     ']'
   ].join('\n');
@@ -9388,9 +9328,8 @@ async function generateWizardStep1Hooks() {
     } catch (e) {}
 
     if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
-      // Clean hooks so none exceed 15 words
       wizardState.generatedHooks = parsed.slice(0, 5).map(h => {
-        let hookText = (h.hook || '').trim().replace(/^["']|["']$/g, '');
+        let hookText = (h.hook || '').trim().replace(/^[\"']|[\"']$/g, '');
         return {
           formula: h.formula || 'Gancho Viral',
           hook: hookText,
@@ -9399,13 +9338,12 @@ async function generateWizardStep1Hooks() {
       });
       renderWizardStep1Cards(wizardState.generatedHooks);
     } else {
-      console.warn('Using calibrated fallback hooks');
-      wizardState.generatedHooks = getFallbackHooks(topic, niche, angle);
+      wizardState.generatedHooks = getFallbackHooks(topic, niche, manualContext);
       renderWizardStep1Cards(wizardState.generatedHooks);
     }
   } catch (err) {
     console.warn('Step 1 hook error, using fallback:', err);
-    wizardState.generatedHooks = getFallbackHooks(topic, niche, angle);
+    wizardState.generatedHooks = getFallbackHooks(topic, niche, manualContext);
     renderWizardStep1Cards(wizardState.generatedHooks);
   }
 }
@@ -9485,37 +9423,42 @@ function advanceWizardToStep2() {
 // STEP 2: Generate 5 Stories
 async function generateWizardStep2Stories() {
   const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '');
-  const topic = wizardState.topic;
-  const niche = wizardState.niche;
-  const angle = wizardState.selectedAngle;
-  const intent = wizardState.userIntent;
+  const topic = wizardState.topic || '';
+  const niche = wizardState.niche || 'Finanzas y Dinero';
+  const strategy = wizardState.strategyText || '';
+  const intent = wizardState.userIntent || '';
+
+  const manualInput = document.getElementById('wizStoryManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
 
   const grid = document.getElementById('wizCardsGrid2');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 desarrollos de historia / contexto (3-30s)...</p><p class="text-xs text-slate-400">Estructurando el cuerpo del Reel en 40 a 55 palabras ágiles y directas.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 opciones de historia y contexto (3-30s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Desarrollando la anécdota y guía que proporcionaste...' : 'Conectando con el gancho para mantener la retención alta.') + '</p></div>';
   }
 
   const prompt = [
-    'Actúa como el guionista viral #1 en Reels y TikTok para DINERO Y DESARROLLO PERSONAL.',
+    'Actúa como el guionista y storyteller #1 en videos cortos de alta retención para DINERO, FINANZAS Y DESARROLLO PERSONAL.',
     '',
-    'CONTEXTO:',
-    '- Gancho elegido: "' + hook + '"',
-    '- Idea/Transcripción base: "' + topic + '"',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    'CONTEXTO DEL REEL:',
+    '- Gancho de apertura seleccionado (0-3s): "' + hook + '"',
+    '- Estrategia de impacto: "' + strategy + '"',
+    (manualContext ? '- GUÍA / ANÉCDOTA MANUAL DEL USUARIO PARA LA HISTORIA: "' + manualContext + '"' : ''),
     '- Nicho: ' + niche,
-    '- Ángulo: "' + angle + '"',
     (intent ? '- Intención: "' + intent + '"' : ''),
     '',
-    'REGLAS CRÍTICAS PARA LA HISTORIA / CONTEXTO (Paso 2):',
-    '1. TIEMPO EXACTO: Debe cubrir del segundo 3 al segundo 30.',
-    '2. LONGITUD ESTRICTA: Entre 40 y 55 PALABRAS (alrededor de 25 segundos de habla fluida).',
-    '3. Debe conectar inmediatamente con el gancho y desarrollar los puntos clave de forma dinámica, sin rodeos ni explicaciones académicas aburridas.',
+    'REGLAS DE LA HISTORIA (Paso 2):',
+    '1. TIEMPO: Duración de 3 a 30 segundos (40 a 60 palabras).',
+    '2. ESTRUCTURA: Cero rodeos, desarrollo ágil, datos concretos, anécdota de alto valor o contraste.',
+    (manualContext ? '3. ANÉCDOTA: Basa la historia en la guía manual del usuario: "' + manualContext + '".' : ''),
     '',
-    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 opciones de historia:',
     '[',
     '  {',
-    '    "angle": "Estilo (ej: Los 4 Puntos Directos / Comparación 1% vs 99% / Historia)",',
-    '    "story": "Texto completo del cuerpo del reel listo para hablar (40-55 palabras)",',
-    '    "highlight": "Giro o punto clave"',
+    '    "type": "Contraste & Aprendizaje Rápido",',
+    '    "story": "Texto completo de la historia (40-60 palabras)",',
+    '    "focus": "Enfoque de valor"',
     '  }',
     ']'
   ].join('\n');
@@ -9529,15 +9472,19 @@ async function generateWizardStep2Stories() {
     } catch (e) {}
 
     if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
-      wizardState.generatedStories = parsed.slice(0, 5);
+      wizardState.generatedStories = parsed.slice(0, 5).map(s => ({
+        type: s.type || 'Historia de Alto Valor',
+        story: (s.story || '').trim().replace(/^[\"']|[\"']$/g, ''),
+        focus: s.focus || 'Retención fluida'
+      }));
       renderWizardStep2Cards(wizardState.generatedStories);
     } else {
-      wizardState.generatedStories = getFallbackStories(hook, topic, niche);
+      wizardState.generatedStories = getFallbackStories(hook, topic, manualContext);
       renderWizardStep2Cards(wizardState.generatedStories);
     }
   } catch (err) {
     console.warn('Step 2 story error, using fallback:', err);
-    wizardState.generatedStories = getFallbackStories(hook, topic, niche);
+    wizardState.generatedStories = getFallbackStories(hook, topic, manualContext);
     renderWizardStep2Cards(wizardState.generatedStories);
   }
 }
@@ -9612,35 +9559,41 @@ function advanceWizardToStep3() {
 
 // STEP 3: Generate 5 Morals / Lessons
 async function generateWizardStep3Morals() {
-  const hook = wizardState.selectedHook;
-  const story = wizardState.selectedStory;
-  const topic = wizardState.topic;
-  const niche = wizardState.niche;
+  const hook = wizardState.selectedHook || '';
+  const story = wizardState.selectedStory || '';
+  const topic = wizardState.topic || '';
+  const niche = wizardState.niche || 'Finanzas y Dinero';
+
+  const manualInput = document.getElementById('wizMoralManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
 
   const grid = document.getElementById('wizCardsGrid3');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 moralejas y lecciones de valor (30-40s)...</p><p class="text-xs text-slate-400">Frases memorables de 18 a 26 palabras que la gente quiera guardar o compartir.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 moralejas y lecciones clave (30-40s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Estructurando la lección que indicaste...' : 'Extrayendo el principio contundente para que guarden el video.') + '</p></div>';
   }
 
   const prompt = [
-    'Actúa como el estratega viral #1 en Reels y TikTok para DINERO Y DESARROLLO PERSONAL.',
+    'Actúa como el estratega de contenido #1 en redes sociales especializado en crear MORALEJAS Y VALOR MEMORABLE en videos cortos.',
     '',
-    'CONTEXTO ACTUAL:',
-    '- Gancho: "' + hook + '"',
-    '- Historia: "' + story + '"',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    'CONTEXTO DEL REEL HASTA AHORA:',
+    '- Gancho (0-3s): "' + hook + '"',
+    '- Historia (3-30s): "' + story + '"',
+    (manualContext ? '- LECCIÓN / GUÍA MANUAL DEL USUARIO PARA LA MORALEJA: "' + manualContext + '"' : ''),
     '- Nicho: ' + niche,
     '',
-    'REGLAS CRÍTICAS PARA LA MORALEJA / VALOR (Paso 3):',
-    '1. TIEMPO EXACTO: Debe cubrir del segundo 30 al segundo 40.',
-    '2. LONGITUD ESTRICTA: Entre 18 y 26 PALABRAS (unos 10 segundos de habla).',
-    '3. Debe ser una regla de oro o aprendizaje contundente que resuma el valor del Reel.',
+    'REGLAS DE LA MORALEJA (Paso 3):',
+    '1. TIEMPO: Duración de 30 a 40 segundos (15 a 25 palabras).',
+    '2. FORMATO: 1 o 2 frases contundentes, memorables y fáciles de recordar.',
+    (manualContext ? '3. LECCIÓN: Plasma exactamente la lección indicada: "' + manualContext + '".' : ''),
     '',
-    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 moralejas:',
     '[',
     '  {',
-    '    "type": "Tipo de Moraleja (ej: Regla del 1% / Principio de Crecimiento)",',
-    '    "moral": "Texto de la moraleja listo para hablar (18-26 palabras)",',
-    '    "takeaway": "Aprendizaje clave"',
+    '    "type": "Regla de Oro",',
+    '    "moral": "Frase memorable de 15-25 palabras",',
+    '    "takeaway": "Insight clave"',
     '  }',
     ']'
   ].join('\n');
@@ -9654,15 +9607,19 @@ async function generateWizardStep3Morals() {
     } catch (e) {}
 
     if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
-      wizardState.generatedMorals = parsed.slice(0, 5);
+      wizardState.generatedMorals = parsed.slice(0, 5).map(m => ({
+        type: m.type || 'Lección Maestra',
+        moral: (m.moral || '').trim().replace(/^[\"']|[\"']$/g, ''),
+        takeaway: m.takeaway || 'Alto valor para guardar'
+      }));
       renderWizardStep3Cards(wizardState.generatedMorals);
     } else {
-      wizardState.generatedMorals = getFallbackMorals(hook, story, niche);
+      wizardState.generatedMorals = getFallbackMorals(story, topic, manualContext);
       renderWizardStep3Cards(wizardState.generatedMorals);
     }
   } catch (err) {
     console.warn('Step 3 moral error, using fallback:', err);
-    wizardState.generatedMorals = getFallbackMorals(hook, story, niche);
+    wizardState.generatedMorals = getFallbackMorals(story, topic, manualContext);
     renderWizardStep3Cards(wizardState.generatedMorals);
   }
 }
@@ -9737,32 +9694,38 @@ function advanceWizardToStep4() {
 
 // STEP 4: Generate 5 CTAs
 async function generateWizardStep4CTAs() {
-  const hook = wizardState.selectedHook;
-  const niche = wizardState.niche;
+  const hook = wizardState.selectedHook || '';
+  const niche = wizardState.niche || 'Finanzas y Dinero';
+
+  const manualInput = document.getElementById('wizCtaManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
 
   const grid = document.getElementById('wizCardsGrid4');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 llamados a la acción de alta conversión (40-50s)...</p><p class="text-xs text-slate-400">Frases cortas de 10 a 16 palabras con palabra clave para disparar comentarios y guardados.</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 opciones de llamado a la acción (40-50s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Adaptando a tu palabra clave y llamado...' : 'Fórmulas de baja fricción para disparar comentarios y guardados.') + '</p></div>';
   }
 
   const prompt = [
-    'Actúa como el estratega viral #1 en conversión de Instagram Reels y TikTok.',
+    'Actúa como el estratega de conversión y retención #1 en Instagram Reels y TikTok.',
     '',
-    'CONTEXTO:',
-    '- Gancho: "' + hook + '"',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    'CONTEXTO DEL REEL:',
+    '- Gancho de apertura: "' + hook + '"',
+    (manualContext ? '- CTA / PALABRA CLAVE MANUAL INDICADA POR EL USUARIO: "' + manualContext + '"' : ''),
     '- Nicho: ' + niche,
     '',
-    'REGLAS CRÍTICAS PARA EL CTA (Paso 4):',
-    '1. TIEMPO EXACTO: Segundos 40 al 50.',
-    '2. LONGITUD ESTRICTA: Entre 10 y 16 PALABRAS.',
-    '3. Debe pedir una acción directa: comentar una palabra clave específica, guardar o seguir.',
+    'REGLAS DEL CTA (Paso 4):',
+    '1. TIEMPO: Duración de 40 a 50 segundos (10 a 15 palabras).',
+    '2. CONVERSIÓN: Palabra clave de 1 sola palabra o acción inmediata.',
+    (manualContext ? '3. ALINEACIÓN: Usa exactamente la palabra o llamado indicado: "' + manualContext + '".' : ''),
     '',
-    'Responde ÚNICAMENTE con un arreglo JSON válido con 5 opciones:',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 CTAs:',
     '[',
     '  {',
-    '    "action": "Tipo de Conversión (ej: Comentarios / Guardado / Seguir)",',
-    '    "cta": "Llamado a la acción exacto (10-16 palabras)",',
-    '    "triggerWord": "PALABRA_CLAVE"',
+    '    "type": "Comentario con Palabra Clave",',
+    '    "cta": "Frase de 10-15 palabras",',
+    '    "benefit": "Dispara interacción"',
     '  }',
     ']'
   ].join('\n');
@@ -9776,15 +9739,19 @@ async function generateWizardStep4CTAs() {
     } catch (e) {}
 
     if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
-      wizardState.generatedCTAs = parsed.slice(0, 5);
+      wizardState.generatedCTAs = parsed.slice(0, 5).map(c => ({
+        type: c.type || 'Llamado a la Acción',
+        cta: (c.cta || '').trim().replace(/^[\"']|[\"']$/g, ''),
+        benefit: c.benefit || 'Fácil conversión'
+      }));
       renderWizardStep4Cards(wizardState.generatedCTAs);
     } else {
-      wizardState.generatedCTAs = getFallbackCTAs(hook, niche);
+      wizardState.generatedCTAs = getFallbackCTAs(niche, manualContext);
       renderWizardStep4Cards(wizardState.generatedCTAs);
     }
   } catch (err) {
     console.warn('Step 4 CTA error, using fallback:', err);
-    wizardState.generatedCTAs = getFallbackCTAs(hook, niche);
+    wizardState.generatedCTAs = getFallbackCTAs(niche, manualContext);
     renderWizardStep4Cards(wizardState.generatedCTAs);
   }
 }
