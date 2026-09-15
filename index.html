@@ -2607,18 +2607,18 @@
               <label class="block text-xs font-semibold text-slate-300 mb-1">Dirección URL de Ollama / IA</label>
               <input type="text" id="aiConfigServerUrl" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500 font-mono" placeholder="http://192.168.1.10:3000/api/ollama">
               <div class="flex flex-wrap gap-1.5 mt-2">
+                <button type="button" onclick="setServerUrlPreset('https://blex-studio-ia.loca.lt/api/ollama')" class="text-[11px] bg-gradient-to-r from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 border border-purple-400/60 text-white font-bold px-3 py-1.5 rounded-lg transition cursor-pointer shadow-sm flex items-center gap-1">
+                  <span>🔒 Túnel Seguro iPad/Vercel (HTTPS)</span>
+                </button>
                 <button type="button" onclick="setServerUrlPreset('http://192.168.1.10:3000/api/ollama')" class="text-[11px] bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/60 text-cyan-300 font-bold px-3 py-1.5 rounded-lg transition cursor-pointer shadow-sm">
-                  📱 En iPad / Celular (192.168.1.10:3000)
+                  📱 Red Wi-Fi Local (192.168.1.10:3000)
                 </button>
-                <button type="button" onclick="setServerUrlPreset('http://192.168.1.10:11434')" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
-                  ⚡ Puerto Directo (192.168.1.10:11434)
-                </button>
-                <button type="button" onclick="setServerUrlPreset('http://localhost:11434')" class="text-[11px] bg-purple-950/60 hover:bg-purple-900 border border-purple-800 text-purple-300 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                <button type="button" onclick="setServerUrlPreset('http://localhost:11434')" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg transition cursor-pointer">
                   🏠 En PC (localhost:11434)
                 </button>
               </div>
               <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                💡 <b class="text-white">Para usar en iPad:</b> Abre Safari y entra a <code class="text-cyan-300 font-bold">http://192.168.1.10:3000</code>. ¡Se conecta automáticamente a la IA de tu PC!
+                ✨ <b class="text-white">Para conectar en iPad sin bloqueos:</b> Selecciona el botón morado <code class="text-purple-300 font-bold">Túnel Seguro iPad/Vercel (HTTPS)</code> para conectar directamente con tu PC desde Vercel sin bloqueo de Apple. O en tu Wi-Fi entra a <code class="text-cyan-300 font-bold">http://192.168.1.10:3000</code>.
               </p>
             </div>
 

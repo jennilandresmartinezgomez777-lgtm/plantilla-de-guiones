@@ -1650,16 +1650,13 @@ function renderMatrixView(scripts) {
       <!-- Actions (Mirar Tarjeta, Ampliar, Print single, Edit, Delete) -->
       <td class="py-3.5 px-4 text-right print:hidden">
         <div class="flex items-center justify-end gap-1">
-          <button onclick="openTransportScriptModal('${script.id}')" title="⚡ Transportar a BLEX Studio (IA)" class="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition">
-            <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
+          <button onclick="openTransportScriptModal('${script.id}')" title="✨ Transportar a BLEX Studio (IA)" class="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition">
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
           </button>
           <button onclick="viewVisualCardForScript('${script.id}')" title="Mirar Tarjeta Visual" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition">
             <i data-lucide="layout-grid" class="w-4 h-4"></i>
           </button>
-          <button onclick="openTransportScriptModal('${script.id}')" title="⚡ Transportar a BLEX Studio (IA)" class="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition">
-                <i data-lucide="zap" class="w-4 h-4 text-purple-400"></i>
-              </button>
-              <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
+          <button onclick="openFocusScriptModal('${script.id}')" title="Ampliar guión (Modo Enfoque)" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition">
             <i data-lucide="maximize-2" class="w-4 h-4"></i>
           </button>
           <button onclick="printSingleScript('${script.id}')" title="Imprimir este guión" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-400 hover:bg-slate-800 transition">
@@ -3123,7 +3120,7 @@ async function saveStateToCloud(isSilent = false) {
 
     const res = await fetch(syncEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
       body: JSON.stringify(payloadObj),
       signal: controller.signal
     });
@@ -7979,7 +7976,7 @@ Para que cualquier guión o gancho alcance millones de reproducciones y máxima 
 `;
 
 const aiState = {
-  serverUrl: localStorage.getItem('ai_server_url') || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'http://192.168.1.10:3000/api/ollama' : 'http://localhost:11434'),
+  serverUrl: localStorage.getItem('ai_server_url') || (typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https://blex-studio-ia.loca.lt/api/ollama' : (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'http://192.168.1.10:3000/api/ollama' : 'http://localhost:11434')),
   model: localStorage.getItem('ai_model') || 'qwen2.5:7b',
   isConnected: false,
   isGenerating: false,
@@ -8051,7 +8048,8 @@ function openAiServerConfigModal() {
   const modelInput = document.getElementById('aiConfigModelName');
   const resultDiv = document.getElementById('aiConfigTestResult');
 
-  const savedUrl = localStorage.getItem('ai_server_url') || aiState.serverUrl || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:11434' : 'http://192.168.1.10:11434');
+  const defaultPreset = window.location.protocol === 'https:' ? 'https://blex-studio-ia.loca.lt/api/ollama' : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:11434' : 'http://192.168.1.10:3000/api/ollama');
+  const savedUrl = localStorage.getItem('ai_server_url') || defaultPreset;
   const savedModel = localStorage.getItem('ai_model') || aiState.model || 'qwen2.5:7b';
 
   if (urlInput) {
@@ -8104,7 +8102,7 @@ async function testAiServerConnection() {
     const targetUrl = getAiApiEndpoint(testUrl, 'tags');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(targetUrl, { signal: controller.signal });
+    const res = await fetch(targetUrl, { signal: controller.signal, headers: { 'Bypass-Tunnel-Reminder': 'true' } });
     clearTimeout(timeoutId);
 
     if (res.ok) {
@@ -8197,7 +8195,7 @@ async function checkAiServerHealth() {
     const targetUrl = getAiApiEndpoint(aiState.serverUrl, 'tags');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(targetUrl, { signal: controller.signal });
+    const res = await fetch(targetUrl, { signal: controller.signal, headers: { 'Bypass-Tunnel-Reminder': 'true' } });
     clearTimeout(timeoutId);
     if (res.ok) {
       aiUpdateConnectionBadge(true);
