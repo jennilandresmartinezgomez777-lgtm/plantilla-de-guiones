@@ -3330,11 +3330,11 @@
       }
 
       // Check if trying localhost from mobile device
-      var isMobileHostname = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      if (isMobileHostname && testUrl.includes('localhost')) {
+      var isMobileDevice = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      if (isMobileDevice && testUrl.includes('localhost')) {
         if (resultDiv) {
           resultDiv.className = 'p-3 rounded-xl bg-amber-950/50 border border-amber-500/50 text-xs text-amber-200 space-y-1';
-          resultDiv.innerHTML = '<strong>⚠️ Estás en iPad/Celular</strong><br>En tu iPad no uses <code>localhost</code> (porque busca la IA dentro del iPad). Toca el botón <b>📱 En iPad / Celular</b> arriba para usar la IP de tu PC: <code>http://192.168.1.10:3000/api/ollama</code>.';
+          resultDiv.innerHTML = '<strong>⚠️ Estás en iPad / Celular</strong><br>En tu dispositivo móvil no uses <code>localhost</code> (porque buscaría la IA dentro del celular/iPad). Usa el botón <b>📱 En iPad / Celular (192.168.1.10:3000)</b> para conectar a la IA de tu PC.';
         }
         if (btn) {
           btn.disabled = false;
@@ -3366,7 +3366,7 @@
           if (typeof aiUpdateConnectionBadge === 'function') aiUpdateConnectionBadge(true);
           if (resultDiv) {
             resultDiv.className = 'p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-300 space-y-1';
-            resultDiv.innerHTML = '<strong>✅ ¡Conexión exitosa con tu PC!</strong><br><span class="text-[11px] text-slate-300">Servidor IA detectado. Modelos disponibles: <b>' + (modelNames || testModel) + '</b></span>';
+            resultDiv.innerHTML = '<strong>✅ ¡Conexión exitosa con tu Servidor IA!</strong><br><span class="text-[11px] text-slate-300">GPU RTX 5060 lista. Modelos activos: <b>' + (modelNames || testModel) + '</b></span>';
           }
           if (typeof showToast === 'function') showToast('✅ ¡Conexión con servidor IA exitosa!', 'success');
         } else {
@@ -3378,11 +3378,11 @@
           var isHttps = window.location.protocol === 'https:';
           resultDiv.className = 'p-3 rounded-xl bg-rose-950/40 border border-rose-500/50 text-xs text-rose-300 space-y-1.5';
           if (isHttps) {
-            resultDiv.innerHTML = '<strong>❌ Safari bloqueó la conexión (Modo HTTPS)</strong><br>' +
-              '<span class="text-[11px] text-slate-300">Safari no permite conectar enlaces HTTPS con IPs locales HTTP directamente. <b>Solución:</b> En tu iPad entra en Safari a: <code class="text-cyan-300 font-bold">http://192.168.1.10:3000</code>.</span>';
+            resultDiv.innerHTML = '<strong>⚠️ Navegador bloqueó la conexión local (Modo HTTPS)</strong><br>' +
+              '<span class="text-[11px] text-slate-300 leading-relaxed">Al abrir la versión de la nube (HTTPS), los navegadores bloquean llamadas a IPs locales HTTP directas por seguridad.<br><b class="text-white">Solución rápida:</b> En tu PC entra a: <code class="text-cyan-300 font-bold">http://localhost:3000</code> y en tu iPad/celular a: <code class="text-cyan-300 font-bold">http://192.168.1.10:3000</code>.</span>';
           } else {
             resultDiv.innerHTML = '<strong>❌ No se pudo conectar al servidor IA</strong><br>' +
-              '<span class="text-[11px] text-slate-300">Verifica que tu PC esté encendido con Ollama o el servidor abierto. Prueba el botón <b>📱 En iPad / Celular (192.168.1.10:3000)</b>.</span>';
+              '<span class="text-[11px] text-slate-300">Verifica que Ollama esté iniciado en tu PC (ejecuta <code>iniciar_servidor_ia.bat</code>). Si estás en iPad, usa: <code class="text-cyan-300 font-bold">http://192.168.1.10:3000/api/ollama</code>.</span>';
           }
         }
         if (typeof showToast === 'function') showToast('No se pudo conectar al servidor IA', 'warning');
