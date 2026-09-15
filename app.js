@@ -8520,6 +8520,7 @@ function initAiStudio() {
   checkAiServerHealth();
   populateAiClientDropdowns();
   renderAiCatalog();
+  populateGlobalHookDropdown();
 }
 
 function populateAiClientDropdowns() {
@@ -8994,6 +8995,14 @@ function goToWizardStep(stepNum) {
     if (view) {
       if (i === stepNum) view.classList.remove('hidden');
       else view.classList.add('hidden');
+    }
+  }
+
+  // If switching to step 1 (Ganchos), ensure 64 hooks dropdown is populated and auto-generate if empty
+  if (stepNum === 1) {
+    populateGlobalHookDropdown();
+    if (!wizardState.generatedHooks || wizardState.generatedHooks.length === 0) {
+      generateWizardStep1Hooks();
     }
   }
 
@@ -10190,20 +10199,41 @@ function adaptHookFormulaToContext(hook, rawTopic, manualContext, niche, variant
   }).replace(/\.\.\.$/, '').trim();
 }
 
+function buildHookOptionsHtml(currentSelectedId, includeCustom = false) {
+  const allHooks = (typeof getHooksData === 'function') ? getHooksData() : [];
+  let html = '';
+  if (includeCustom) {
+    const isCustom = (!currentSelectedId || currentSelectedId === 'custom') ? 'selected' : '';
+    html += '<option value="custom" ' + isCustom + '>🎲 Ganchos variados / personalizados por tarjeta</option>';
+  }
+
+  // Group hooks by category
+  const categories = {};
+  allHooks.forEach(h => {
+    const cat = h.category || 'Otros Ganchos';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(h);
+  });
+
+  Object.keys(categories).forEach(catName => {
+    html += '<optgroup label="📂 ' + escapeHtml(catName) + '">';
+    categories[catName].forEach(h => {
+      const isSel = String(currentSelectedId) === String(h.id) ? 'selected' : '';
+      const exampleSnippet = h.example ? ' - "' + (h.example.length > 38 ? h.example.slice(0, 35) + '...' : h.example) + '"' : '';
+      html += '<option value="' + h.id + '" ' + isSel + '>#' + h.id + ': ' + escapeHtml(h.name) + escapeHtml(exampleSnippet) + '</option>';
+    });
+    html += '</optgroup>';
+  });
+
+  return html;
+}
+
 function populateGlobalHookDropdown() {
   const globalSelect = document.getElementById('wizGlobalHookSelect');
   if (!globalSelect) return;
 
-  const allHooks = getHooksData();
   const currentVal = wizardState.globalHookId || 'custom';
-
-  let optionsHtml = '<option value="custom" ' + (currentVal === 'custom' ? 'selected' : '') + '>🎲 Ganchos variados / personalizados por tarjeta</option>';
-  optionsHtml += allHooks.map(h => {
-    const isSel = String(currentVal) === String(h.id) ? 'selected' : '';
-    return '<option value="' + h.id + '" ' + isSel + '>🎯 Gancho #' + h.id + ': ' + h.name + ' (' + h.category + ')</option>';
-  }).join('');
-
-  globalSelect.innerHTML = optionsHtml;
+  globalSelect.innerHTML = buildHookOptionsHtml(currentVal, true);
 }
 
 function onWizardGlobalHookChange(val) {
@@ -10450,10 +10480,7 @@ function renderWizardStep1Cards(hooks) {
     const currentHookId = item.hookId || (wizardState.slotHookIds ? wizardState.slotHookIds[idx] : 1);
     const hookDef = allHooks.find(h => String(h.id) === String(currentHookId)) || allHooks[0];
 
-    const optionsHtml = allHooks.map(h => {
-      const isSel = String(h.id) === String(currentHookId) ? 'selected' : '';
-      return '<option value="' + h.id + '" ' + isSel + '>#' + h.id + ' ' + h.name + ' (' + h.category + ')</option>';
-    }).join('');
+    const optionsHtml = buildHookOptionsHtml(currentHookId, false);
 
     return '<div id="wizHookCard_' + idx + '" class="p-4 rounded-xl border transition flex flex-col justify-between space-y-3 ' + (isSelected ? 'bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60') + '">' +
       '<div class="space-y-2.5">' +
