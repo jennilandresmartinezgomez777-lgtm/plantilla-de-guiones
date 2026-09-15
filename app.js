@@ -2554,65 +2554,180 @@ async function fetchLatestCloudData() {
   return null;
 }
 
-async function forceSyncAllNow() {
-  const btn = document.getElementById('btnForceSyncNow');
+
+// =========================================================================
+// UNIVERSAL DEEP-MERGE ENGINE (ZERO DATA LOSS ACROSS PC, IPAD & PHONES)
+// =========================================================================
+
+function mergeFullAppData(local, remote) {
+  if (!remote || typeof remote !== 'object') return local || {};
+  if (!local || typeof local !== 'object') return remote || {};
+
+  // 1. Merge Scripts by ID (preserve all scripts from all devices)
+  const scriptsMap = new Map();
+  (remote.scripts || []).forEach(s => { if (s && s.id) scriptsMap.set(String(s.id), s); });
+  (local.scripts || []).forEach(s => {
+    if (s && s.id) {
+      const existing = scriptsMap.get(String(s.id));
+      if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
+        scriptsMap.set(String(s.id), s);
+      }
+    }
+  });
+  const mergedScripts = Array.from(scriptsMap.values());
+
+  // 2. Merge Calendar Events by ID or date+title (ensures NO event from PC or mobile is lost)
+  const calMap = new Map();
+  (remote.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+  (local.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+  const mergedCalendar = Array.from(calMap.values());
+
+  // 3. Merge Clients
+  const mergedClients = Array.from(new Set([
+    ...(local.clients || []),
+    ...(remote.clients || []),
+    'Jennil', 'Natalia'
+  ]));
+
+  // 4. Merge Notes per Client
+  const mergedNotes = {};
+  mergedClients.forEach(c => {
+    const lNotes = (local.notes && Array.isArray(local.notes[c])) ? local.notes[c] : [];
+    const rNotes = (remote.notes && Array.isArray(remote.notes[c])) ? remote.notes[c] : [];
+    const notesMap = new Map();
+    rNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    lNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    mergedNotes[c] = Array.from(notesMap.values());
+  });
+
+  // 5. Merge Emails
+  const mergedEmails = {
+    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || localStorage.getItem('blex_user_email') || '',
+    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || localStorage.getItem('blex_partner_email') || ''
+  };
+
+  // 6. Merge Viral Evaluations
+  const evalMap = new Map();
+  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+
+  return {
+    clients: mergedClients,
+    scripts: mergedScripts,
+    notes: mergedNotes,
+    calendarEvents: mergedCalendar,
+    viralEvaluations: Array.from(evalMap.values()),
+    notificationEmails: mergedEmails,
+    aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
+    challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function uploadAndMergeToCloud() {
+  const btn = document.getElementById('btnUploadCloud');
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Sincronizando Todo...</span>';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Subiendo a Vercel...</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  try {
+    const remoteData = await fetchLatestCloudData();
+    const localData = JSON.parse(getFullAppStateJSON());
+    const merged = mergeFullAppData(localData, remoteData);
+    merged.updatedAt = new Date().toISOString();
+
+    // Apply locally
+    applyCloudData(merged, null, true);
+
+    // Save to server/cloud
+    await saveStateToCloud(true);
+
+    updateSyncModalDetails();
+    showToastNotification('☁️ ¡Datos subidos y unificados en Vercel! (' + merged.scripts.length + ' guiones, ' + (merged.calendarEvents || []).length + ' eventos)', 'check-circle');
+  } catch (err) {
+    console.warn('uploadAndMergeToCloud error:', err);
+    showToastNotification('⚠️ Error al subir datos: ' + err.message, 'alert-circle');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }
+}
+
+async function downloadAndApplyFromCloud() {
+  const btn = document.getElementById('btnDownloadCloud');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Descargando de Vercel...</span>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   try {
     const remoteData = await fetchLatestCloudData();
     if (remoteData && Array.isArray(remoteData.scripts)) {
-      // Merge Scripts by ID (latest updated wins)
-      const mergedMap = new Map();
-      (remoteData.scripts || []).forEach(s => mergedMap.set(s.id, s));
-      (state.scripts || []).forEach(s => mergedMap.set(s.id, s));
-      const mergedScripts = Array.from(mergedMap.values());
-
-      // Merge Calendar Events by ID
-      const calMap = new Map();
-      (remoteData.calendarEvents || []).forEach(c => calMap.set(c.id, c));
-      (state.calendarEvents || []).forEach(c => calMap.set(c.id, c));
-      const mergedCal = Array.from(calMap.values());
-
-      // Merge Clients
-      const mergedClients = Array.from(new Set([...(remoteData.clients || ['Jennil', 'Natalia']), ...(state.clients || ['Jennil', 'Natalia'])]));
+      const localData = JSON.parse(getFullAppStateJSON());
+      const merged = mergeFullAppData(localData, remoteData);
       
-      // Merge Notes
-      const mergedNotes = { ...(remoteData.notes || {}), ...(state.notes || {}) };
-      
-      // Merge Evals
-      const mergedEvals = [...(remoteData.viralEvaluations || []), ...(state.viralEvaluations || [])];
-
-      // Merge Emails
-      const mergedEmails = {
-        primary: (state.notificationEmails && state.notificationEmails.primary) || (remoteData.notificationEmails && remoteData.notificationEmails.primary) || localStorage.getItem('blex_user_email') || '',
-        secondary: (state.notificationEmails && state.notificationEmails.secondary) || (remoteData.notificationEmails && remoteData.notificationEmails.secondary) || localStorage.getItem('blex_partner_email') || ''
-      };
-
-      const mergedPayload = {
-        clients: mergedClients,
-        scripts: mergedScripts,
-        notes: mergedNotes,
-        viralEvaluations: mergedEvals,
-        calendarEvents: mergedCal,
-        notificationEmails: mergedEmails,
-        aiBrain: { ...(remoteData.aiBrain || {}), ...(state.aiBrain || {}) },
-        challengeStartDate: state.challengeStartDate || remoteData.challengeStartDate || '2026-09-13',
-        updatedAt: new Date().toISOString()
-      };
-
-      applyCloudData(mergedPayload, null, false);
-      await saveStateToCloud(true);
+      applyCloudData(merged, null, false);
+      updateSyncModalDetails();
+      showToastNotification('📥 ¡Última versión descargada y aplicada! (' + merged.scripts.length + ' guiones, ' + (merged.calendarEvents || []).length + ' eventos)', 'download');
     } else {
-      await saveStateToCloud(false);
+      showToastNotification('ℹ️ No se encontraron datos remotos nuevos en la nube.', 'info');
     }
+  } catch (err) {
+    console.warn('downloadAndApplyFromCloud error:', err);
+    showToastNotification('⚠️ Error al descargar datos de la nube.', 'alert-circle');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }
+}
+
+async function forceSyncAllNow() {
+  const btn = document.getElementById('btnForceSyncNow');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Sincronizando 360°...</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  try {
+    const remoteData = await fetchLatestCloudData();
+    const localData = JSON.parse(getFullAppStateJSON());
+    const merged = mergeFullAppData(localData, remoteData);
+    merged.updatedAt = new Date().toISOString();
+
+    applyCloudData(merged, null, false);
+    await saveStateToCloud(true);
 
     updateSyncModalDetails();
-    showToastNotification('⚡ ¡Sincronización total completada entre todos los dispositivos!');
+    showToastNotification('⚡ ¡Sincronización 360° completada! (' + merged.scripts.length + ' guiones, ' + (merged.calendarEvents || []).length + ' eventos)', 'refresh-cw');
   } catch (e) {
     console.warn('forceSyncAllNow error:', e);
     showToastNotification('⚠️ Sincronizado localmente', 'warning');

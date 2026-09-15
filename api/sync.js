@@ -1,7 +1,125 @@
 const fs = require('fs');
 const path = require('path');
 
+const CLOUD_STORE_URL = 'https://api.restful-api.dev/objects/ff808181a09d98f701a0a5fc4ad312ed';
 let channelsState = {};
+
+function mergeAppData(local, remote) {
+  if (!remote || typeof remote !== 'object') return local || {};
+  if (!local || typeof local !== 'object') return remote || {};
+
+  // 1. Merge Scripts by ID (keep latest)
+  const scriptsMap = new Map();
+  (remote.scripts || []).forEach(s => { if (s && s.id) scriptsMap.set(String(s.id), s); });
+  (local.scripts || []).forEach(s => {
+    if (s && s.id) {
+      const existing = scriptsMap.get(String(s.id));
+      if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
+        scriptsMap.set(String(s.id), s);
+      }
+    }
+  });
+  const mergedScripts = Array.from(scriptsMap.values());
+
+  // 2. Merge Calendar Events by ID or date+title (NEVER delete events from other devices)
+  const calMap = new Map();
+  (remote.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+  (local.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+  const mergedCalendar = Array.from(calMap.values());
+
+  // 3. Merge Clients
+  const mergedClients = Array.from(new Set([
+    ...(local.clients || []),
+    ...(remote.clients || []),
+    'Jennil', 'Natalia'
+  ]));
+
+  // 4. Merge Notes per Client
+  const mergedNotes = {};
+  mergedClients.forEach(c => {
+    const lNotes = (local.notes && Array.isArray(local.notes[c])) ? local.notes[c] : [];
+    const rNotes = (remote.notes && Array.isArray(remote.notes[c])) ? remote.notes[c] : [];
+    const notesMap = new Map();
+    rNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    lNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    mergedNotes[c] = Array.from(notesMap.values());
+  });
+
+  // 5. Merge Emails
+  const mergedEmails = {
+    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || '',
+    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || ''
+  };
+
+  // 6. Merge Viral Evaluations
+  const evalMap = new Map();
+  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+
+  return {
+    clients: mergedClients,
+    scripts: mergedScripts,
+    notes: mergedNotes,
+    calendarEvents: mergedCalendar,
+    viralEvaluations: Array.from(evalMap.values()),
+    notificationEmails: mergedEmails,
+    aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
+    challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function fetchFromPersistentCloud() {
+  try {
+    const res = await fetch(CLOUD_STORE_URL, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.data) {
+        return json.data;
+      }
+    }
+  } catch (e) {
+    console.warn('fetchFromPersistentCloud warning:', e.message);
+  }
+  return null;
+}
+
+async function saveToPersistentCloud(data) {
+  try {
+    const payload = JSON.stringify({
+      name: 'BLEX_STUDIO_SYNC_DATA',
+      data: data
+    });
+    const res = await fetch(CLOUD_STORE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('saveToPersistentCloud warning:', e.message);
+    return false;
+  }
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -33,23 +151,24 @@ module.exports = async (req, res) => {
       if (typeof body === 'string') {
         body = JSON.parse(body);
       }
+
       if (body && Array.isArray(body.scripts)) {
+        // Fetch current cloud state to perform deep merge
+        const existingCloudData = (channel === 'default') ? await fetchFromPersistentCloud() : null;
+        const mergedData = mergeAppData(body, existingCloudData);
+        mergedData.updatedAt = body.updatedAt || new Date().toISOString();
+
         const syncObj = {
-          data: {
-            clients: Array.isArray(body.clients) ? body.clients : ['Jennil', 'Natalia'],
-            scripts: body.scripts,
-            notes: body.notes || { Jennil: [], Natalia: [] },
-            viralEvaluations: body.viralEvaluations || [],
-            calendarEvents: body.calendarEvents || [],
-            notificationEmails: body.notificationEmails || {},
-            aiBrain: body.aiBrain || {},
-            challengeStartDate: body.challengeStartDate || '2026-09-13',
-            updatedAt: body.updatedAt || new Date().toISOString()
-          },
+          data: mergedData,
           channel: channel,
-          updatedAt: body.updatedAt || new Date().toISOString()
+          updatedAt: mergedData.updatedAt
         };
         channelsState[channel] = syncObj;
+
+        // Persist to Cloud Store
+        if (channel === 'default') {
+          await saveToPersistentCloud(mergedData);
+        }
 
         // Attempt persistent temp cache
         try {
@@ -59,8 +178,9 @@ module.exports = async (req, res) => {
         return res.status(200).json({ 
           success: true, 
           channel: channel,
-          count: body.scripts.length, 
-          calendarCount: (body.calendarEvents || []).length,
+          count: mergedData.scripts.length, 
+          calendarCount: (mergedData.calendarEvents || []).length,
+          data: mergedData,
           updatedAt: syncObj.updatedAt 
         });
       }
@@ -71,12 +191,21 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    // 1. In-memory channel cache
+    // 1. Persistent Cloud Store for default channel
+    if (channel === 'default') {
+      const cloudData = await fetchFromPersistentCloud();
+      if (cloudData && Array.isArray(cloudData.scripts)) {
+        channelsState['default'] = { data: cloudData, updatedAt: cloudData.updatedAt };
+        return res.status(200).json(cloudData);
+      }
+    }
+
+    // 2. In-memory channel cache
     if (channelsState[channel] && channelsState[channel].data) {
       return res.status(200).json(channelsState[channel].data);
     }
 
-    // 2. Temp file cache for channel
+    // 3. Temp file cache for channel
     try {
       if (fs.existsSync(tmpFilePath)) {
         const tmpRaw = fs.readFileSync(tmpFilePath, 'utf8');
@@ -88,7 +217,7 @@ module.exports = async (req, res) => {
       }
     } catch (e) {}
 
-    // 3. Static fallback for default channel
+    // 4. Static fallback for default channel
     if (channel === 'default') {
       try {
         const syncPath = path.join(process.cwd(), 'sync-data.json');

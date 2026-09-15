@@ -1,3 +1,77 @@
+
+function mergeAppData(local, remote) {
+  if (!remote || typeof remote !== 'object') return local || {};
+  if (!local || typeof local !== 'object') return remote || {};
+
+  const scriptsMap = new Map();
+  (remote.scripts || []).forEach(s => { if (s && s.id) scriptsMap.set(String(s.id), s); });
+  (local.scripts || []).forEach(s => {
+    if (s && s.id) {
+      const existing = scriptsMap.get(String(s.id));
+      if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
+        scriptsMap.set(String(s.id), s);
+      }
+    }
+  });
+
+  const calMap = new Map();
+  (remote.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+  (local.calendarEvents || []).forEach(c => {
+    if (c) {
+      const key = String(c.id || (c.date + '_' + c.title));
+      calMap.set(key, c);
+    }
+  });
+
+  const mergedClients = Array.from(new Set([
+    ...(local.clients || []),
+    ...(remote.clients || []),
+    'Jennil', 'Natalia'
+  ]));
+
+  const mergedNotes = {};
+  mergedClients.forEach(c => {
+    const lNotes = (local.notes && Array.isArray(local.notes[c])) ? local.notes[c] : [];
+    const rNotes = (remote.notes && Array.isArray(remote.notes[c])) ? remote.notes[c] : [];
+    const notesMap = new Map();
+    rNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    lNotes.forEach(n => {
+      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
+      notesMap.set(k, n);
+    });
+    mergedNotes[c] = Array.from(notesMap.values());
+  });
+
+  const mergedEmails = {
+    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || '',
+    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || ''
+  };
+
+  const evalMap = new Map();
+  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
+
+  return {
+    clients: mergedClients,
+    scripts: Array.from(scriptsMap.values()),
+    notes: mergedNotes,
+    calendarEvents: Array.from(calMap.values()),
+    viralEvaluations: Array.from(evalMap.values()),
+    notificationEmails: mergedEmails,
+    aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
+    challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
+    updatedAt: new Date().toISOString()
+  };
+}
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -134,8 +208,15 @@ const server = http.createServer(async (req, res) => {
 
         const parsed = JSON.parse(body || '{}');
         if (parsed) {
-          parsed.updatedAt = new Date().toISOString();
-          fs.writeFileSync(syncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
+          let existing = {};
+          try {
+            if (fs.existsSync(syncFilePath)) {
+              existing = JSON.parse(fs.readFileSync(syncFilePath, 'utf8') || '{}');
+            }
+          } catch(e) {}
+          const mergedData = mergeAppData(parsed, existing);
+          mergedData.updatedAt = new Date().toISOString();
+          fs.writeFileSync(syncFilePath, JSON.stringify(mergedData, null, 2), 'utf8');
 
           // Relay to Vercel cloud so mobile/iPad devices stay synchronized in real-time
           fetch('https://content-script-studio.vercel.app/api/sync', {

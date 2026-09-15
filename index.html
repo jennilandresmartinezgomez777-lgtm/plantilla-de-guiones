@@ -3162,36 +3162,57 @@
           <div class="flex items-center justify-between">
             <span class="font-bold text-white text-xs flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Sincronización en Tiempo Real</span>
+              <span>Sincronización en la Nube (Vercel & Multidispositivo)</span>
             </span>
-            <span id="modalCloudStatusBadge" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">🟢 Activa 24/7</span>
+            <span id="modalCloudStatusBadge" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">🟢 Nube Activa 24/7</span>
           </div>
           
           <p class="text-xs text-slate-300 leading-relaxed">
-            Todos tus guiones, ideas, notas y evaluaciones se sincronizan automáticamente entre tu <strong>PC, iPad, tu celular y el de tu esposa</strong>.
+            Unifica y respalda tus <strong>guiones, eventos del calendario, notas y correos</strong> entre tu PC, iPad, y los dos celulares.
           </p>
 
           <div class="grid grid-cols-2 gap-2 text-xs text-slate-300 pt-1">
             <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">Estado del Servidor</span>
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">Estado de la Nube</span>
               <span id="syncModalServerStatus" class="font-semibold text-emerald-400 flex items-center gap-1 mt-0.5">
-                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Conectado
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Vercel Conectado
               </span>
             </div>
             <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">Último Guardado</span>
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">Última Unificación</span>
               <span id="syncModalLastTime" class="font-semibold text-slate-200 block mt-0.5">Automático</span>
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex gap-2 pt-1">
-            <button id="btnForceSyncNow" onclick="forceSyncAllNow()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span>Sincronizar Ahora</span>
+          <!-- Two Main Prominent Sync Buttons -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+            <!-- Button 1: Upload and Merge to Vercel -->
+            <button id="btnUploadCloud" onclick="uploadAndMergeToCloud()" class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 text-xs cursor-pointer shadow-lg shadow-blue-950/50 group active:scale-95" title="Sube todo lo de este dispositivo a la nube de Vercel sin borrar nada">
+              <i data-lucide="cloud-upload" class="w-4 h-4 text-blue-300 group-hover:-translate-y-0.5 transition-transform"></i>
+              <div class="text-left">
+                <div class="font-extrabold leading-tight">☁️ Subir a la Nube</div>
+                <div class="text-[10px] font-normal text-blue-200">Unificar a Vercel</div>
+              </div>
             </button>
-            <button onclick="copyCleanAppUrl()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold py-2.5 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer shadow-md" title="Copiar enlace para abrir en iPad o celular">
-              <i data-lucide="copy" class="w-4 h-4 text-cyan-400"></i>
+
+            <!-- Button 2: Download and Apply from Vercel -->
+            <button id="btnDownloadCloud" onclick="downloadAndApplyFromCloud()" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-black py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 text-xs cursor-pointer shadow-lg shadow-emerald-950/50 group active:scale-95" title="Descarga la última versión unificada de la nube a este dispositivo">
+              <i data-lucide="cloud-download" class="w-4 h-4 text-emerald-300 group-hover:translate-y-0.5 transition-transform"></i>
+              <div class="text-left">
+                <div class="font-extrabold leading-tight">📥 Bajar de la Nube</div>
+                <div class="text-[10px] font-normal text-emerald-200">Actualizar este equipo</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Quick 360 Full Sync & Copy Link Bar -->
+          <div class="flex gap-2 pt-1">
+            <button id="btnForceSyncNow" onclick="forceSyncAllNow()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold py-2 rounded-xl border border-emerald-500/30 transition flex items-center justify-center gap-1.5 text-xs cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>⚡ Sincronización Rápida 360°</span>
+            </button>
+            <button onclick="copyCleanAppUrl()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer" title="Copiar enlace para abrir en iPad o celular">
+              <i data-lucide="copy" class="w-3.5 h-3.5 text-cyan-400"></i>
               <span>Copiar Enlace App</span>
             </button>
           </div>
