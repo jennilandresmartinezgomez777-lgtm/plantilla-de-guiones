@@ -1019,6 +1019,9 @@ const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date')
 const rawSavedCalendarEvents = localStorage.getItem('css_calendar_events');
 const savedCalendarEvents = rawSavedCalendarEvents !== null ? JSON.parse(rawSavedCalendarEvents) : null;
 
+const rawSavedDeletedScripts = localStorage.getItem('css_deleted_scripts');
+const savedDeletedScripts = rawSavedDeletedScripts !== null ? JSON.parse(rawSavedDeletedScripts) : [];
+
 
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
