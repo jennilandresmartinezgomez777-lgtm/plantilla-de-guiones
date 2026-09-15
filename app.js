@@ -1259,14 +1259,18 @@ function populateViralClientSelect() {
 }
 
 function renderClientSelect() {
-  clientFilterSelect.innerHTML = `<option value="ALL">🏢 Todos los Clientes</option>`;
-  state.clients.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = `🏢 ${c}`;
-    clientFilterSelect.appendChild(opt);
-  });
-  clientFilterSelect.value = state.clients.includes(state.activeClient) ? state.activeClient : 'ALL';
+  const optionsHtml = `<option value="ALL">🏢 Todos los Clientes</option>` + 
+    state.clients.map(c => `<option value="${c}">🏢 ${c}</option>`).join('');
+  
+  if (clientFilterSelect) {
+    clientFilterSelect.innerHTML = optionsHtml;
+    clientFilterSelect.value = state.clients.includes(state.activeClient) ? state.activeClient : 'ALL';
+  }
+  const clientFilterMobile = document.getElementById('clientFilterMobile');
+  if (clientFilterMobile) {
+    clientFilterMobile.innerHTML = optionsHtml;
+    clientFilterMobile.value = state.clients.includes(state.activeClient) ? state.activeClient : 'ALL';
+  }
   populateActorOptions();
   populateViralClientSelect();
 }
@@ -2356,15 +2360,15 @@ function setupEventListeners() {
     });
   }
 
-  // Tab Switching
+  // Tab & View Switching (Guarded)
   const tabAiStudio = document.getElementById('tabAiStudio');
   if (tabAiStudio) tabAiStudio.addEventListener('click', () => switchView('ai_studio'));
   const btnAiStudioHeader = document.getElementById('btnAiStudioHeader');
   if (btnAiStudioHeader) btnAiStudioHeader.addEventListener('click', () => switchView('ai_studio'));
   if (tabViralCalc) tabViralCalc.addEventListener('click', () => switchView('viral_calc'));
-  tabMatrix.addEventListener('click', () => switchView('matrix'));
-  tabCards.addEventListener('click', () => switchView('cards'));
-  tabTeleprompter.addEventListener('click', () => switchView('teleprompter'));
+  if (tabMatrix) tabMatrix.addEventListener('click', () => switchView('matrix'));
+  if (tabCards) tabCards.addEventListener('click', () => switchView('cards'));
+  if (tabTeleprompter) tabTeleprompter.addEventListener('click', () => switchView('teleprompter'));
   const tabTeleprompterPro = document.getElementById('tabTeleprompterPro');
   if (tabTeleprompterPro) tabTeleprompterPro.addEventListener('click', () => switchView('teleprompter_pro'));
 
@@ -2984,6 +2988,80 @@ function toggleFullScreen() {
   }
 }
 
+
+// MASTER DROPDOWN MENU ENGINE
+function toggleMasterMenu(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('masterDropdownMenu');
+  const chevron = document.getElementById('masterMenuChevron');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-180');
+    refreshLucideIcons();
+  } else {
+    menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function closeMasterMenu() {
+  const menu = document.getElementById('masterDropdownMenu');
+  const chevron = document.getElementById('masterMenuChevron');
+  if (menu && !menu.classList.contains('hidden')) {
+    menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function selectMasterMenuOption(type, value) {
+  closeMasterMenu();
+  if (type === 'view') {
+    switchView(value);
+  } else if (type === 'action') {
+    if (value === 'new_script') {
+      openNewScriptModal();
+    } else if (value === 'quick_idea') {
+      openQuickIdeaModal();
+    } else if (value === 'notes') {
+      openNotesModal();
+    } else if (value === 'clients') {
+      openClientManagerModal();
+    } else if (value === 'sync') {
+      openSyncModal();
+    } else if (value === 'print') {
+      openPrintModal();
+    } else if (value === 'export') {
+      handleExportJSON();
+    } else if (value === 'import') {
+      const input = document.getElementById('importFileInput');
+      if (input) input.click();
+    } else if (value === 'fullscreen') {
+      toggleFullScreen();
+    }
+  }
+}
+
+function syncMobileClientFilter(val) {
+  state.activeClient = val;
+  if (clientFilterSelect) clientFilterSelect.value = val;
+  const clientFilterMobile = document.getElementById('clientFilterMobile');
+  if (clientFilterMobile) clientFilterMobile.value = val;
+  renderAll();
+}
+
+// Global outside click listener for Master Dropdown
+document.addEventListener('click', (e) => {
+  const masterMenu = document.getElementById('masterDropdownMenu');
+  const btnMaster = document.getElementById('btnMasterMenu');
+  if (masterMenu && !masterMenu.classList.contains('hidden')) {
+    if (!masterMenu.contains(e.target) && (!btnMaster || !btnMaster.contains(e.target))) {
+      closeMasterMenu();
+    }
+  }
+});
+
 function switchView(viewName) {
   state.currentView = viewName;
 
@@ -2994,13 +3072,6 @@ function switchView(viewName) {
   const vTelePro = document.getElementById('viewTeleprompterPro');
   const vAi = document.getElementById('viewAiStudio');
   const emptyState = document.getElementById('emptyState');
-
-  const tViral = document.getElementById('tabViralCalc');
-  const tMatrix = document.getElementById('tabMatrix');
-  const tCards = document.getElementById('tabCards');
-  const tTele = document.getElementById('tabTeleprompter');
-  const tTelePro = document.getElementById('tabTeleprompterPro');
-  const tAi = document.getElementById('tabAiStudio');
 
   const statsContainer = document.getElementById('statsBarContainer');
 
@@ -3023,47 +3094,68 @@ function switchView(viewName) {
     }
   }
 
-  const inactiveBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition text-slate-400 hover:text-white whitespace-nowrap cursor-pointer";
-  const activeBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-brand-600 text-white shadow-md whitespace-nowrap cursor-pointer";
-  const activeViralBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md shadow-amber-950/40 whitespace-nowrap cursor-pointer";
-  const activeProBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md whitespace-nowrap cursor-pointer";
-  const activeAiBtnClass = "flex-1 lg:flex-none px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 text-white shadow-md shadow-purple-950/50 whitespace-nowrap cursor-pointer";
+  // Update Master Dropdown Button & Breadcrumb Info
+  const masterLabel = document.getElementById('masterMenuCurrentLabel');
+  const masterIcon = document.getElementById('masterMenuCurrentIcon');
+  const activeViewTitle = document.getElementById('activeViewTitle');
+  const activeViewIcon = document.getElementById('activeViewIcon');
 
-  if (tViral) tViral.className = inactiveBtnClass;
-  if (tMatrix) tMatrix.className = inactiveBtnClass;
-  if (tCards) tCards.className = inactiveBtnClass;
-  if (tTele) tTele.className = inactiveBtnClass;
-  if (tTelePro) tTelePro.className = inactiveBtnClass;
-  if (tAi) tAi.className = inactiveBtnClass;
+  const viewMeta = {
+    'matrix': { label: 'Matriz de Guiones', icon: 'table', iconColor: 'text-brand-400', badgeId: 'masterBadgeMatrix', itemId: 'masterItemMatrix' },
+    'ai_studio': { label: 'Herramientas de IA', icon: 'sparkles', iconColor: 'text-purple-400', badgeId: 'masterBadgeAiStudio', itemId: 'masterItemAiStudio' },
+    'viral_calc': { label: 'Calculadora de Viralidad', icon: 'flame', iconColor: 'text-amber-400', badgeId: 'masterBadgeViralCalc', itemId: 'masterItemViralCalc' },
+    'cards': { label: 'Tarjetas Visuales', icon: 'layout-grid', iconColor: 'text-cyan-400', badgeId: 'masterBadgeCards', itemId: 'masterItemCards' },
+    'teleprompter': { label: 'Set / Grabación', icon: 'clapperboard', iconColor: 'text-indigo-400', badgeId: 'masterBadgeTeleprompter', itemId: 'masterItemTeleprompter' },
+    'teleprompter_pro': { label: 'Teleprónter iPad Pro', icon: 'tv', iconColor: 'text-emerald-400', badgeId: 'masterBadgeTeleprompterPro', itemId: 'masterItemTeleprompterPro' }
+  };
+
+  const meta = viewMeta[viewName] || viewMeta['matrix'];
+
+  if (masterLabel) masterLabel.textContent = meta.label;
+  if (masterIcon) masterIcon.innerHTML = `<i data-lucide="${meta.icon}" class="w-4 h-4 ${meta.iconColor}"></i>`;
+  if (activeViewTitle) activeViewTitle.textContent = meta.label;
+  if (activeViewIcon) activeViewIcon.innerHTML = `<i data-lucide="${meta.icon}" class="w-3.5 h-3.5 ${meta.iconColor}"></i>`;
+
+  // Update Active Indicators inside Master Menu Dropdown
+  Object.keys(viewMeta).forEach(vKey => {
+    const itemInfo = viewMeta[vKey];
+    const itemBtn = document.getElementById(itemInfo.itemId);
+    const itemBadge = document.getElementById(itemInfo.badgeId);
+    if (vKey === viewName) {
+      if (itemBtn) {
+        itemBtn.className = "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-purple-950/60 border border-purple-500/50 transition text-left cursor-pointer";
+      }
+      if (itemBadge) itemBadge.classList.remove('hidden');
+    } else {
+      if (itemBtn) {
+        itemBtn.className = "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 hover:text-white hover:bg-purple-950/50 border border-transparent hover:border-purple-500/30 transition text-left cursor-pointer";
+      }
+      if (itemBadge) itemBadge.classList.add('hidden');
+    }
+  });
 
   if (viewName === 'viral_calc') {
     if (vViral) vViral.classList.remove('hidden');
-    if (tViral) tViral.className = activeViralBtnClass;
     if (statsContainer) statsContainer.classList.add('hidden');
     calculateViralScore();
     renderViralHistoryTable();
   } else if (viewName === 'matrix') {
     if (vMatrix) vMatrix.classList.remove('hidden');
-    if (tMatrix) tMatrix.className = activeBtnClass;
     if (statsContainer) statsContainer.classList.remove('hidden');
   } else if (viewName === 'cards') {
     if (vCards) vCards.classList.remove('hidden');
-    if (tCards) tCards.className = activeBtnClass;
     if (statsContainer) statsContainer.classList.remove('hidden');
   } else if (viewName === 'teleprompter') {
     if (vTele) vTele.classList.remove('hidden');
-    if (tTele) tTele.className = activeBtnClass;
     if (statsContainer) statsContainer.classList.remove('hidden');
   } else if (viewName === 'teleprompter_pro') {
     if (vTelePro) vTelePro.classList.remove('hidden');
-    if (tTelePro) tTelePro.className = activeProBtnClass;
     if (statsContainer) statsContainer.classList.add('hidden');
     setTimeout(() => {
       if (typeof tpRecalculateWordPositions === 'function') tpRecalculateWordPositions();
     }, 100);
   } else if (viewName === 'ai_studio') {
     if (vAi) vAi.classList.remove('hidden');
-    if (tAi) tAi.className = activeAiBtnClass;
     if (statsContainer) statsContainer.classList.add('hidden');
     if (typeof initAiStudio === 'function') initAiStudio();
   }
@@ -3082,6 +3174,7 @@ function switchView(viewName) {
     }
   }
 
+  closeMasterMenu();
   refreshLucideIcons();
 }
 
@@ -5126,6 +5219,7 @@ function handleImportJSON(e) {
 function updateNotesHeaderBadge() {
   const badgeNav = document.getElementById('notesCountBadge');
   const badgeModal = document.getElementById('notesModalHeaderBadge');
+  const badgeMaster = document.getElementById('masterNotesBadge');
 
   let totalNotes = 0;
   if (state.notes && typeof state.notes === 'object') {
@@ -5136,6 +5230,9 @@ function updateNotesHeaderBadge() {
 
   if (badgeNav) {
     badgeNav.textContent = totalNotes;
+  }
+  if (badgeMaster) {
+    badgeMaster.textContent = totalNotes;
   }
   if (badgeModal) {
     badgeModal.textContent = `${totalNotes} nota${totalNotes === 1 ? '' : 's'}`;
