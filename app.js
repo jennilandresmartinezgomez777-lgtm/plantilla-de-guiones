@@ -2486,6 +2486,28 @@ function savePersonalSyncCode() {
   }
 }
 
+async function fetchLatestCloudData() {
+  try {
+    const baseUrl = getEffectiveServerUrl();
+    let syncCode = localStorage.getItem('blex_cloud_sync_code');
+    let syncEndpoint = baseUrl + '/api/sync?t=' + Date.now();
+    if (syncCode) {
+      syncEndpoint += '&channel=' + encodeURIComponent(syncCode);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(syncEndpoint, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("fetchLatestCloudData error:", e);
+  }
+  return null;
+}
 
 async function forceSyncAllNow() {
   const btn = document.getElementById('btnForceSyncNow');
@@ -2497,12 +2519,37 @@ async function forceSyncAllNow() {
   }
 
   try {
-    await saveStateToCloud(true);
-    await loadStateFromCloud(true);
+    const remoteData = await fetchLatestCloudData();
+    if (remoteData && Array.isArray(remoteData.scripts)) {
+      const mergedMap = new Map();
+      (remoteData.scripts || []).forEach(s => mergedMap.set(s.id, s));
+      (state.scripts || []).forEach(s => mergedMap.set(s.id, s));
+      
+      const mergedScripts = Array.from(mergedMap.values());
+      const mergedClients = Array.from(new Set([...(remoteData.clients || ['Jennil']), ...(state.clients || ['Jennil'])]));
+      const mergedNotes = { ...(remoteData.notes || {}), ...(state.notes || {}) };
+      const mergedEvals = [...(remoteData.viralEvaluations || []), ...(state.viralEvaluations || [])];
+
+      const mergedPayload = {
+        clients: mergedClients,
+        scripts: mergedScripts,
+        notes: mergedNotes,
+        viralEvaluations: mergedEvals,
+        challengeStartDate: state.challengeStartDate || remoteData.challengeStartDate || '2026-09-13',
+        updatedAt: new Date().toISOString()
+      };
+
+      applyCloudData(mergedPayload, null, false);
+      await saveStateToCloud(true);
+    } else {
+      await saveStateToCloud(true);
+    }
+
     updateSyncModalDetails();
-    showToastNotification('⚡ ¡Sincronización inmediata completada con éxito!');
+    showToastNotification('⚡ ¡Sincronización en tiempo real completada!');
   } catch (e) {
-    showToastNotification('⚠️ No se pudo completar la sincronización en este momento.', 'warning');
+    console.warn('forceSyncAllNow error:', e);
+    showToastNotification('⚠️ Sincronizado localmente', 'warning');
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2513,12 +2560,16 @@ async function forceSyncAllNow() {
 }
 
 function copyCleanAppUrl() {
-  const url = window.location.origin + window.location.pathname;
-  navigator.clipboard.writeText(url).then(() => {
-    showToastNotification('📋 Enlace de la plataforma copiado. Ábrelo en tu iPad o celular.');
-  }).catch(() => {
+  const url = 'https://content-script-studio.vercel.app';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToastNotification('📋 Enlace oficial copiado: ' + url);
+    }).catch(() => {
+      prompt('Copia este enlace para abrirlo en tu iPad o celular:', url);
+    });
+  } else {
     prompt('Copia este enlace para abrirlo en tu iPad o celular:', url);
-  });
+  }
 }
 
 function updateSyncModalDetails() {
@@ -2557,6 +2608,46 @@ function openSyncModal() {
 function closeSyncModal() {
   const modal = document.getElementById('syncModal');
   if (modal) modal.classList.add('hidden');
+}
+
+async function loadStateFromCloud(isSilent = false) {
+  const btn = document.getElementById('btnLoadCloud');
+  const originalHTML = btn ? btn.innerHTML : '';
+
+  if (btn && !isSilent) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>☁️ Cargando...</span>';
+  }
+
+  try {
+    const data = await fetchLatestCloudData();
+    if (data && Array.isArray(data.scripts)) {
+      updateSyncStatus(true);
+      const localUpdatedAt = localStorage.getItem('css_updated_at') || '0';
+      const cloudUpdatedAt = data.updatedAt || '0';
+
+      const shouldApply = !isSilent || 
+                          (cloudUpdatedAt >= localUpdatedAt) || 
+                          (state.scripts.length === 0 && data.scripts.length > 0) ||
+                          (data.scripts.length > state.scripts.length);
+
+      if (shouldApply) {
+        applyCloudData(data, null, isSilent);
+      } else if (localUpdatedAt > cloudUpdatedAt && state.scripts.length > data.scripts.length) {
+        saveStateToCloud(true);
+      }
+    } else {
+      updateSyncStatus(true);
+    }
+  } catch (err) {
+    updateSyncStatus(false);
+    console.warn("loadStateFromCloud note:", err);
+  } finally {
+    if (btn && !isSilent) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
 }
 
 function getFullAppStateJSON() {
@@ -2779,65 +2870,7 @@ async function saveStateToCloud(isSilent = false) {
   return false;
 }
 
-async function loadStateFromCloud(isSilent = false) {
-  const btn = document.getElementById('btnLoadCloud');
-  const originalHTML = btn ? btn.innerHTML : '';
-
-  if (btn && !isSilent) {
-    btn.disabled = true;
-    btn.innerHTML = '<span>☁️ Cargando...</span>';
-  }
-
-  try {
-    const baseUrl = getEffectiveServerUrl();
-    let syncCode = localStorage.getItem('blex_cloud_sync_code');
-    let syncEndpoint = baseUrl + '/api/sync?t=' + Date.now();
-    if (syncCode) {
-      syncEndpoint += '&channel=' + encodeURIComponent(syncCode);
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-    let res = await fetch(syncEndpoint, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      updateSyncStatus(false);
-      if (!isSilent) {
-        alert("No se encontró ninguna copia previa en el servidor.");
-      }
-      return;
-    }
-
-    const data = await res.json();
-    if (data && Array.isArray(data.scripts)) {
-      updateSyncStatus(true);
-      const localUpdatedAt = localStorage.getItem('css_updated_at') || '0';
-      const cloudUpdatedAt = data.updatedAt || '0';
-
-      // If remote has data and is equal/newer, or local is empty, apply it
-      if (!isSilent || cloudUpdatedAt >= localUpdatedAt || (state.scripts.length === 0 && data.scripts.length > 0)) {
-        applyCloudData(data, null, isSilent);
-      } else if (localUpdatedAt > cloudUpdatedAt && state.scripts.length > 0) {
-        // If local has newer edits, push them to server silently so server catches up
-        saveStateToCloud(true);
-      }
-    } else {
-      updateSyncStatus(true);
-    }
-  } catch (err) {
-    updateSyncStatus(false);
-    if (!isSilent) {
-      alert("Error al conectar con el Servidor: " + err.message + "\n\nVerifica que la PC tenga el servidor encendido.");
-    }
-  } finally {
-    if (btn && !isSilent) {
-      btn.disabled = false;
-      btn.innerHTML = originalHTML;
-    }
-  }
-}
+// (loadStateFromCloud defined above)
 
 function startAutoSyncEngine() {
   if (syncPollingTimer) clearInterval(syncPollingTimer);

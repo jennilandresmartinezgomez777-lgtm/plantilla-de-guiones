@@ -24,14 +24,31 @@
       "rating": 0,
       "updatedAt": "2026-09-15T03:31:24.089Z",
       "createdAt": "2026-09-15T03:31:24.089Z"
+    },
+    {
+      "id": "script-1789481120131",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Idea",
+      "ideaGanadora": "estar pendiente",
+      "linkReferencia": "",
+      "gancho": "estar pendiente",
+      "historia": "Pendiente de redactar historia...",
+      "moraleja": "Pendiente de redactar moraleja...",
+      "cta": "Pendiente de redactar CTA...",
+      "formato": "Hablando a cámara",
+      "objetivo": "VIRAL",
+      "actor": "Jennil",
+      "contextoAdicional": "",
+      "attachments": [],
+      "completed": false,
+      "createdAt": "2026-09-15T14:05:20.131Z",
+      "updatedAt": "2026-09-15T14:05:20.132Z"
     }
   ],
   "notes": {
     "Jennil": []
   },
   "viralEvaluations": [],
-  "challengeStartDate": "2026-09-13",
-  "tpStateScripts": null,
-  "exportedAt": "2026-09-15T03:59:41.503Z",
-  "updatedAt": "2026-09-15T03:59:41.563Z"
+  "updatedAt": "2026-09-15T14:15:46.136Z"
 }
