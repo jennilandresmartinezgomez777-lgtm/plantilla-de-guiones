@@ -1,6 +1,7 @@
 {
   "clients": [
-    "Jennil"
+    "Jennil",
+    "Natalia"
   ],
   "scripts": [
     {
@@ -47,8 +48,9 @@
     }
   ],
   "notes": {
-    "Jennil": []
+    "Jennil": [],
+    "Natalia": []
   },
   "viralEvaluations": [],
-  "updatedAt": "2026-09-15T14:15:46.136Z"
+  "updatedAt": "2026-09-15T14:26:00.135Z"
 }

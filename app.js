@@ -889,15 +889,11 @@ function previewScriptAttachment(scriptId, attId) {
 
 // Content & Script Studio - Core Application Logic
 
-const INITIAL_CLIENTS = [
-  "Jennil"
-];
+const INITIAL_CLIENTS = ["Jennil", "Natalia"];
 
 const INITIAL_SCRIPTS = [];
 
-const INITIAL_NOTES = {
-  "Jennil": []
-};
+const INITIAL_NOTES = { "Jennil": [], "Natalia": [] };
 
 const INITIAL_VIRAL_EVALUATIONS = [];
 
@@ -943,6 +939,14 @@ const rawSavedViralEvals = localStorage.getItem('css_viral_evaluations');
 const savedViralEvals = rawSavedViralEvals !== null ? JSON.parse(rawSavedViralEvals) : null;
 
 const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
+
+
+// Ensure Jennil and Natalia are ALWAYS default clients
+if (!state.clients.includes("Jennil")) state.clients.unshift("Jennil");
+if (!state.clients.includes("Natalia")) state.clients.push("Natalia");
+if (!state.notes) state.notes = {};
+if (!state.notes["Jennil"]) state.notes["Jennil"] = [];
+if (!state.notes["Natalia"]) state.notes["Natalia"] = [];
 
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
@@ -1078,6 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderViralHistoryTable();
   setupEventListeners();
   renderChallengeCountdown();
+  updateIdeasHeaderBadge();
   setInterval(renderChallengeCountdown, 60000);
   initTeleprompterProEngine();
   
@@ -2373,7 +2378,7 @@ function setupEventListeners() {
   if (tabTeleprompterPro) tabTeleprompterPro.addEventListener('click', () => switchView('teleprompter_pro'));
 
   // Filters
-  clientFilterSelect.addEventListener('change', (e) => {
+  if (clientFilterSelect) clientFilterSelect.addEventListener('change', (e) => {
     state.activeClient = e.target.value;
     renderAll();
   });
@@ -2398,13 +2403,13 @@ function setupEventListeners() {
   }
 
   // Script Modal open/close
-  btnNewScript.addEventListener('click', () => openNewScriptModal());
+  if (btnNewScript) btnNewScript.addEventListener('click', () => openNewScriptModal());
   btnCloseModal.addEventListener('click', closeModal);
   btnCancelModal.addEventListener('click', closeModal);
   scriptForm.addEventListener('submit', handleScriptSubmit);
 
   // Client Modal
-  btnNewClient.addEventListener('click', openClientManagerModal);
+  if (btnNewClient) btnNewClient.addEventListener('click', openClientManagerModal);
   btnCancelClientModal.addEventListener('click', closeClientManagerModal);
   if (btnCloseClientModal) btnCloseClientModal.addEventListener('click', closeClientManagerModal);
   btnSaveClient.addEventListener('click', handleSaveNewClient);
@@ -5057,6 +5062,20 @@ function handleImportJSON(e) {
 }
 
 // CLIENT NOTES MODULE
+
+function updateIdeasHeaderBadge() {
+  const badgeNav = document.getElementById('ideasCountBadge');
+  const badgeMaster = document.getElementById('masterIdeasBadge');
+
+  let totalIdeas = 0;
+  if (state.scripts && Array.isArray(state.scripts)) {
+    totalIdeas = state.scripts.filter(s => s.status === 'Idea').length;
+  }
+
+  if (badgeNav) badgeNav.textContent = totalIdeas;
+  if (badgeMaster) badgeMaster.textContent = totalIdeas;
+}
+
 function updateNotesHeaderBadge() {
   const badgeNav = document.getElementById('notesCountBadge');
   const badgeModal = document.getElementById('notesModalHeaderBadge');
