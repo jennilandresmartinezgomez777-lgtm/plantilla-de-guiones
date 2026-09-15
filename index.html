@@ -214,6 +214,20 @@
                   </div>
                   <span id="masterBadgeTeleprompterPro" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Activo</span>
                 </button>
+
+                <!-- 7. Calendario de Contenidos -->
+                <button onclick="selectMasterMenuOption('view', 'calendar')" id="masterItemCalendar" class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 hover:text-white hover:bg-purple-950/50 border border-transparent hover:border-purple-500/30 transition text-left cursor-pointer">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="calendar" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <p class="font-bold text-slate-100 leading-tight">Calendario de Contenidos</p>
+                      <p class="text-[10px] text-slate-400">Rodajes, publicación y alarmas 2026–2028</p>
+                    </div>
+                  </div>
+                  <span id="masterBadgeCalendar" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Activo</span>
+                </button>
               </div>
             </div>
 
@@ -2221,7 +2235,185 @@
       </section>
 
       
-    </main>
+    
+      <!-- VIEW 7: CALENDARIO EDITORIAL & MONITOREO DE CONTENIDOS (2026 - 2028) -->
+      <section id="viewCalendar" class="hidden space-y-5">
+        
+        <!-- Top Header & Navigation Banner -->
+        <div class="bg-gradient-to-r from-purple-950/40 via-slate-900 to-cyan-950/40 border border-purple-500/30 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          <!-- Title and Info -->
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h2 class="text-lg sm:text-xl font-black text-white tracking-tight">Calendario de Contenidos & Rodajes</h2>
+                <p class="text-xs text-slate-400">Planificación de grabaciones, publicaciones y notificaciones programadas (2026 – 2028)</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions & Fast Navigation -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- View Mode Switcher -->
+            <div class="flex items-center p-1 bg-slate-950/80 border border-slate-800 rounded-xl shadow-inner">
+              <button type="button" id="btnCalViewMonth" onclick="setCalendarDisplayMode('month')" class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-purple-600 text-white shadow-sm cursor-pointer">
+                <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i>
+                <span>Mes</span>
+              </button>
+              <button type="button" id="btnCalViewList" onclick="setCalendarDisplayMode('list')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white cursor-pointer">
+                <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i>
+                <span>Cronograma</span>
+                <span id="calEventsCountBadge" class="text-[10px] font-bold px-1.5 rounded-full bg-slate-800 text-cyan-300">0</span>
+              </button>
+            </div>
+
+            <!-- Export to iPhone / iCal -->
+            <button type="button" onclick="exportAllCalendarToICalendar()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 hover:border-cyan-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Descargar archivo de calendario para sincronizar alarmas en iPhone / iPad / Google">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+              <span class="hidden sm:inline">Alarmas en iPhone / Google (.ics)</span>
+              <span class="sm:hidden">.ICS</span>
+            </button>
+
+            <!-- Add Event Button -->
+            <button type="button" onclick="openNewCalendarEventModal()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-brand-900/50 cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>+ Programar Actividad</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Month Navigation & Filter Controls Bar -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
+          
+          <!-- Month & Year Selector Controls -->
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 shadow-inner">
+              <button onclick="navigateCalendarMonth(-1)" title="Mes Anterior" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span id="calCurrentMonthLabel" class="text-sm font-black text-white px-3 min-w-[140px] text-center capitalize select-none">
+                Septiembre 2026
+              </span>
+              <button onclick="navigateCalendarMonth(1)" title="Mes Siguiente" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Quick Year Dropdown -->
+            <select id="calYearSelect" onchange="setCalendarYear(this.value)" class="bg-slate-950 border border-slate-800 text-xs font-bold rounded-xl px-2.5 py-2 text-slate-200 outline-none cursor-pointer">
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+
+            <!-- Today Button -->
+            <button onclick="goToCurrentMonth()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition cursor-pointer">
+              Hoy
+            </button>
+          </div>
+
+          <!-- Filters: Client, Activity Type & Status -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Client Filter -->
+            <select id="calFilterClient" onchange="renderCalendarView()" class="bg-slate-950 border border-slate-800 text-xs font-medium rounded-xl px-2.5 py-2 text-slate-300 outline-none cursor-pointer">
+              <option value="ALL">👥 Todos los Clientes</option>
+              <!-- Populated dynamically -->
+            </select>
+
+            <!-- Type Filter -->
+            <select id="calFilterType" onchange="renderCalendarView()" class="bg-slate-950 border border-slate-800 text-xs font-medium rounded-xl px-2.5 py-2 text-slate-300 outline-none cursor-pointer">
+              <option value="ALL">🎯 Todas las Actividades</option>
+              <option value="PUBLICACION">🚀 Publicación / Montaje</option>
+              <option value="RODAJE">🎬 Día de Rodaje / Grabación</option>
+              <option value="CREACION">💡 Creación de Guiones</option>
+              <option value="EDICION">💻 Entrega de Edición</option>
+            </select>
+
+            <!-- Status Filter -->
+            <select id="calFilterStatus" onchange="renderCalendarView()" class="bg-slate-950 border border-slate-800 text-xs font-medium rounded-xl px-2.5 py-2 text-slate-300 outline-none cursor-pointer">
+              <option value="ALL">📌 Todos los Estados</option>
+              <option value="PROGRAMADO">⏳ Programado</option>
+              <option value="LISTO">🎬 Listo para Grabar</option>
+              <option value="COMPLETADO">✅ Publicado / Hecho</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Monthly KPI Summary Bar -->
+        <div id="calKpiSummaryBar" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-semibold text-slate-400">Total Programado</p>
+              <p id="calStatTotalMonth" class="text-xl font-bold text-white mt-0.5">0</p>
+            </div>
+            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-semibold text-orange-400">🎬 Días de Rodaje</p>
+              <p id="calStatRodajeMonth" class="text-xl font-bold text-orange-300 mt-0.5">0</p>
+            </div>
+            <div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400">
+              <i data-lucide="clapperboard" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-semibold text-cyan-400">🚀 Por Publicar</p>
+              <p id="calStatPorPublicarMonth" class="text-xl font-bold text-cyan-300 mt-0.5">0</p>
+            </div>
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-semibold text-emerald-400">✅ Publicados</p>
+              <p id="calStatPublicadosMonth" class="text-xl font-bold text-emerald-300 mt-0.5">0</p>
+            </div>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- MONTH GRID CONTAINER -->
+        <div id="calMonthViewContainer" class="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-5 shadow-2xl space-y-2">
+          
+          <!-- Days of Week Header (Lun a Dom) -->
+          <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-extrabold uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mié</div>
+            <div>Jue</div>
+            <div>Vie</div>
+            <div class="text-amber-400/80">Sáb</div>
+            <div class="text-rose-400/80">Dom</div>
+          </div>
+
+          <!-- Calendar Days Grid (Populated dynamically) -->
+          <div id="calMonthGrid" class="grid grid-cols-7 gap-1 sm:gap-2 min-h-[450px]">
+            <!-- Injected via JS -->
+          </div>
+
+        </div>
+
+        <!-- LIST / CHRONOGRAM VIEW CONTAINER (Alternative Mode) -->
+        <div id="calListViewContainer" class="hidden space-y-3">
+          <div id="calListEventsContainer" class="space-y-3">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+      </section>
+</main>
 
   </div>
 
@@ -3043,8 +3235,8 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=1789484000&t=1789484000"></script>
-  <script src="app.js?v=1789484000&t=1789484000"></script>
+  <script src="ai-hooks-data.js?v=1789485000&t=1789485000"></script>
+  <script src="app.js?v=1789485000&t=1789485000"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)
@@ -3238,7 +3430,141 @@
   </script>
 
 
-  <!-- MODAL: ATTACHMENT PREVIEW (LIGHTBOX / PDF VIEWER) -->
+    <!-- MODAL: CREATE / EDIT CALENDAR EVENT -->
+  <div id="calendarEventModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <h3 id="calModalTitle" class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-5 h-5 text-purple-400"></i>
+          Programar Actividad de Contenido
+        </h3>
+        <button onclick="closeCalendarEventModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Form) -->
+      <form id="calendarEventForm" onsubmit="event.preventDefault(); saveCalendarEvent();" class="p-6 space-y-4 overflow-y-auto flex-1 text-sm">
+        <input type="hidden" id="calEventId">
+
+        <!-- Row 1: Client & Activity Type -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Cliente / Marca *</label>
+            <select id="calEventClient" onchange="onCalendarClientChange()" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Actividad *</label>
+            <select id="calEventType" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <option value="PUBLICACION">🚀 Publicación / Montaje en Redes</option>
+              <option value="RODAJE">🎬 Día de Rodaje / Grabación de Video</option>
+              <option value="CREACION">💡 Sesión de Creación de Guiones</option>
+              <option value="EDICION">💻 Entrega y Revisión de Edición</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 2: Link with Existing Script (Smart Integration) -->
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-purple-400 flex items-center gap-1.5">
+              <i data-lucide="link" class="w-3.5 h-3.5"></i>
+              <span>Vincular con Guión Existente (Opcional)</span>
+            </label>
+            <span class="text-[10px] text-slate-400">Autocompleta título y detalles</span>
+          </div>
+          <select id="calEventScriptSelect" onchange="onCalendarScriptSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none cursor-pointer focus:ring-1 focus:ring-purple-500">
+            <option value="">-- Ninguno (Actividad libre o nuevo video) --</option>
+            <!-- Populated dynamically per client -->
+          </select>
+        </div>
+
+        <!-- Title of Activity -->
+        <div>
+          <label class="block text-xs font-semibold text-amber-400 mb-1">Título de la Actividad / Video *</label>
+          <input type="text" id="calEventTitle" required placeholder="Ej: Publicar Reel #1 '3 Trampas del Ahorro' / Rodaje de 4 videos..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+
+        <!-- Row 3: Date, Time & Social Platform -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Fecha Exacta *</label>
+            <input type="date" id="calEventDate" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Hora Exacta *</label>
+            <input type="time" id="calEventTime" required value="19:00" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Red Social / Destino</label>
+            <select id="calEventPlatform" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <option value="Instagram">📸 Instagram Reels</option>
+              <option value="TikTok">🎵 TikTok</option>
+              <option value="YouTube">🔴 YouTube Shorts</option>
+              <option value="Facebook">👥 Facebook</option>
+              <option value="LinkedIn">💼 LinkedIn</option>
+              <option value="General">🌐 Todas las Redes</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Row 4: Status & Notification Reminder -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Estado</label>
+            <select id="calEventStatus" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+              <option value="PROGRAMADO">⏳ Programado</option>
+              <option value="LISTO">🎬 Listo para Grabar / Montar</option>
+              <option value="COMPLETADO">✅ Publicado / Completado</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-emerald-400 mb-1">🔔 Recordatorio / Alarma</label>
+            <select id="calEventReminder" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer">
+              <option value="exact">A la hora exacta</option>
+              <option value="15min">15 minutos antes</option>
+              <option value="1hour">1 hora antes</option>
+              <option value="1day">1 día antes</option>
+              <option value="none">Sin recordatorio</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes / Observations -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Notas / Instrucciones del Contenido</label>
+          <textarea id="calEventNotes" rows="3" placeholder="Detalles de locación, vestuario, links de referencia o hashtags..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+
+      </form>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between gap-3">
+        <div>
+          <button type="button" id="btnDeleteCalEvent" onclick="deleteCurrentCalendarEvent()" class="hidden px-3 py-2 rounded-lg text-rose-400 hover:text-white hover:bg-rose-950/50 border border-rose-500/30 transition text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Eliminar</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeCalendarEventModal()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition font-medium text-xs cursor-pointer">
+            Cancelar
+          </button>
+          <button type="button" onclick="saveCalendarEvent()" class="bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl transition shadow-md shadow-brand-900/50 flex items-center gap-2 cursor-pointer text-xs">
+            <i data-lucide="check" class="w-4 h-4"></i> Guardar en Calendario
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<!-- MODAL: ATTACHMENT PREVIEW (LIGHTBOX / PDF VIEWER) -->
   <div id="attachmentPreviewModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex items-center justify-center p-3 sm:p-6 hidden" onclick="closeAttachmentPreviewModal(event)">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
       <!-- Header -->

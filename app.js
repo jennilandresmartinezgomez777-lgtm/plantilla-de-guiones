@@ -940,12 +940,17 @@ const savedViralEvals = rawSavedViralEvals !== null ? JSON.parse(rawSavedViralEv
 
 const savedChallengeStartDate = localStorage.getItem('css_challenge_start_date');
 
+const rawSavedCalendarEvents = localStorage.getItem('css_calendar_events');
+const savedCalendarEvents = rawSavedCalendarEvents !== null ? JSON.parse(rawSavedCalendarEvents) : null;
+
+
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
   scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   viralEvaluations: Array.isArray(savedViralEvals) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
   challengeStartDate: savedChallengeStartDate || '2026-09-13',
+  calendarEvents: Array.isArray(savedCalendarEvents) ? savedCalendarEvents : [],
   activeClient: 'ALL',
   activeStatus: 'ALL',
   searchQuery: '',
@@ -1130,6 +1135,7 @@ function saveState() {
     localStorage.setItem('css_updated_at', nowISO);
     if (state.challengeStartDate) {
       localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+    localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
     }
   } catch (err) {
     console.warn("Local storage quota exceeded, optimizing storage:", err);
@@ -2683,12 +2689,33 @@ async function loadStateFromCloud(isSilent = false) {
   }
 }
 
+function applyCloudData(data, channel = null, isSilent = false) {
+  if (!data) return;
+  if (Array.isArray(data.scripts)) state.scripts = data.scripts;
+  if (Array.isArray(data.clients)) state.clients = data.clients;
+  if (data.notes && typeof data.notes === 'object') state.notes = data.notes;
+  if (Array.isArray(data.viralEvaluations)) state.viralEvaluations = data.viralEvaluations;
+  if (Array.isArray(data.calendarEvents)) state.calendarEvents = data.calendarEvents;
+  if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
+  
+  // Ensure default clients Jennil and Natalia
+  if (!state.clients.includes("Jennil")) state.clients.unshift("Jennil");
+  if (!state.clients.includes("Natalia")) state.clients.push("Natalia");
+
+  saveState();
+  renderAll();
+  if (!isSilent) {
+    showToastNotification(`🎉 ¡${state.scripts.length} guiones y calendario sincronizados!`);
+  }
+}
+
 function getFullAppStateJSON() {
   return JSON.stringify({
     clients: state.clients,
     scripts: state.scripts,
     notes: state.notes,
     viralEvaluations: state.viralEvaluations,
+    calendarEvents: state.calendarEvents,
     challengeStartDate: state.challengeStartDate,
     tpStateScripts: (typeof tpState !== 'undefined' && tpState && tpState.scripts) ? tpState.scripts : null,
     exportedAt: new Date().toISOString()
@@ -3145,6 +3172,7 @@ function switchView(viewName) {
   const vTele = document.getElementById('viewTeleprompter');
   const vTelePro = document.getElementById('viewTeleprompterPro');
   const vAi = document.getElementById('viewAiStudio');
+  const vCal = document.getElementById('viewCalendar');
   const emptyState = document.getElementById('emptyState');
 
   const statsContainer = document.getElementById('statsBarContainer');
@@ -3155,6 +3183,7 @@ function switchView(viewName) {
   if (vTele) vTele.classList.add('hidden');
   if (vTelePro) vTelePro.classList.add('hidden');
   if (vAi) vAi.classList.add('hidden');
+  if (vCal) vCal.classList.add('hidden');
   if (emptyState && viewName !== 'matrix' && viewName !== 'cards') {
     emptyState.classList.add('hidden');
   }
@@ -3180,7 +3209,8 @@ function switchView(viewName) {
     'viral_calc': { label: 'Calculadora de Viralidad', icon: 'flame', iconColor: 'text-amber-400', badgeId: 'masterBadgeViralCalc', itemId: 'masterItemViralCalc' },
     'cards': { label: 'Tarjetas Visuales', icon: 'layout-grid', iconColor: 'text-cyan-400', badgeId: 'masterBadgeCards', itemId: 'masterItemCards' },
     'teleprompter': { label: 'Set / Grabación', icon: 'clapperboard', iconColor: 'text-indigo-400', badgeId: 'masterBadgeTeleprompter', itemId: 'masterItemTeleprompter' },
-    'teleprompter_pro': { label: 'Teleprónter iPad Pro', icon: 'tv', iconColor: 'text-emerald-400', badgeId: 'masterBadgeTeleprompterPro', itemId: 'masterItemTeleprompterPro' }
+    'teleprompter_pro': { label: 'Teleprónter iPad Pro', icon: 'tv', iconColor: 'text-emerald-400', badgeId: 'masterBadgeTeleprompterPro', itemId: 'masterItemTeleprompterPro' },
+    'calendar': { label: 'Calendario de Contenidos', icon: 'calendar', iconColor: 'text-purple-400', badgeId: 'masterBadgeCalendar', itemId: 'masterItemCalendar' }
   };
 
   const meta = viewMeta[viewName] || viewMeta['matrix'];
@@ -3232,6 +3262,10 @@ function switchView(viewName) {
     if (vAi) vAi.classList.remove('hidden');
     if (statsContainer) statsContainer.classList.add('hidden');
     if (typeof initAiStudio === 'function') initAiStudio();
+  } else if (viewName === 'calendar') {
+    if (vCal) vCal.classList.remove('hidden');
+    if (statsContainer) statsContainer.classList.add('hidden');
+    renderCalendarView();
   }
 
   // Handle emptyState visibility strictly per view
@@ -10606,3 +10640,728 @@ function getFallbackCTAs(hook, niche) {
     }
   ];
 }
+
+// =========================================================================
+// CALENDARIO EDITORIAL & MONITOREO DE CONTENIDOS (2026 - 2028)
+// =========================================================================
+
+let calCurrentDate = new Date();
+let calDisplayMode = 'month'; // 'month' or 'list'
+let activeEditingCalEventId = null;
+
+const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+function setCalendarDisplayMode(mode) {
+  calDisplayMode = mode;
+  const btnMonth = document.getElementById('btnCalViewMonth');
+  const btnList = document.getElementById('btnCalViewList');
+  const monthContainer = document.getElementById('calMonthViewContainer');
+  const listContainer = document.getElementById('calListViewContainer');
+
+  if (mode === 'month') {
+    if (btnMonth) btnMonth.className = 'px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-purple-600 text-white shadow-sm cursor-pointer';
+    if (btnList) btnList.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white cursor-pointer';
+    if (monthContainer) monthContainer.classList.remove('hidden');
+    if (listContainer) listContainer.classList.add('hidden');
+  } else {
+    if (btnList) btnList.className = 'px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-purple-600 text-white shadow-sm cursor-pointer';
+    if (btnMonth) btnMonth.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white cursor-pointer';
+    if (monthContainer) monthContainer.classList.add('hidden');
+    if (listContainer) listContainer.classList.remove('hidden');
+  }
+  renderCalendarView();
+  refreshLucideIcons();
+}
+
+function navigateCalendarMonth(delta) {
+  calCurrentDate.setMonth(calCurrentDate.getMonth() + delta);
+  renderCalendarView();
+}
+
+function setCalendarYear(year) {
+  const y = parseInt(year, 10);
+  if (!isNaN(y)) {
+    calCurrentDate.setFullYear(y);
+    renderCalendarView();
+  }
+}
+
+function goToCurrentMonth() {
+  calCurrentDate = new Date();
+  renderCalendarView();
+}
+
+function getFilteredCalendarEvents() {
+  const events = state.calendarEvents || [];
+  const clientFilter = document.getElementById('calFilterClient') ? document.getElementById('calFilterClient').value : 'ALL';
+  const typeFilter = document.getElementById('calFilterType') ? document.getElementById('calFilterType').value : 'ALL';
+  const statusFilter = document.getElementById('calFilterStatus') ? document.getElementById('calFilterStatus').value : 'ALL';
+
+  return events.filter(e => {
+    if (clientFilter !== 'ALL' && e.client !== clientFilter) return false;
+    if (typeFilter !== 'ALL' && e.type !== typeFilter) return false;
+    if (statusFilter !== 'ALL' && e.status !== statusFilter) return false;
+    return true;
+  });
+}
+
+function renderCalendarView() {
+  // Update Month & Year header label
+  const label = document.getElementById('calCurrentMonthLabel');
+  const yearSelect = document.getElementById('calYearSelect');
+  const currentYear = calCurrentDate.getFullYear();
+  const currentMonthIdx = calCurrentDate.getMonth();
+
+  if (label) {
+    label.textContent = `${MONTH_NAMES_ES[currentMonthIdx]} ${currentYear}`;
+  }
+  if (yearSelect && yearSelect.value !== String(currentYear)) {
+    yearSelect.value = String(currentYear);
+  }
+
+  // Populate client filter options
+  populateCalendarClientFilter();
+
+  // Render KPIs for the active month
+  renderCalendarKpis();
+
+  // Render Grid or List
+  if (calDisplayMode === 'month') {
+    renderCalendarMonthGrid();
+  } else {
+    renderCalendarListView();
+  }
+
+  // Update total badge count
+  const badge = document.getElementById('calEventsCountBadge');
+  if (badge) {
+    badge.textContent = (state.calendarEvents || []).length;
+  }
+
+  refreshLucideIcons();
+}
+
+function populateCalendarClientFilter() {
+  const select = document.getElementById('calFilterClient');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '<option value="ALL">👥 Todos los Clientes</option>';
+  (state.clients || ['Jennil', 'Natalia']).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = `👤 ${c}`;
+    select.appendChild(opt);
+  });
+  if (currentVal && (currentVal === 'ALL' || state.clients.includes(currentVal))) {
+    select.value = currentVal;
+  }
+}
+
+function renderCalendarKpis() {
+  const currentYear = calCurrentDate.getFullYear();
+  const currentMonthIdx = calCurrentDate.getMonth();
+  const monthStr = String(currentMonthIdx + 1).padStart(2, '0');
+  const prefix = `${currentYear}-${monthStr}`;
+
+  const allFiltered = getFilteredCalendarEvents();
+  const monthEvents = allFiltered.filter(e => (e.date || '').startsWith(prefix));
+
+  const total = monthEvents.length;
+  const rodaje = monthEvents.filter(e => e.type === 'RODAJE').length;
+  const porPublicar = monthEvents.filter(e => e.type === 'PUBLICACION' && e.status !== 'COMPLETADO').length;
+  const publicados = monthEvents.filter(e => e.status === 'COMPLETADO').length;
+
+  const elTotal = document.getElementById('calStatTotalMonth');
+  const elRodaje = document.getElementById('calStatRodajeMonth');
+  const elPorPub = document.getElementById('calStatPorPublicarMonth');
+  const elPub = document.getElementById('calStatPublicadosMonth');
+
+  if (elTotal) elTotal.textContent = total;
+  if (elRodaje) elRodaje.textContent = rodaje;
+  if (elPorPub) elPorPub.textContent = porPublicar;
+  if (elPub) elPub.textContent = publicados;
+}
+
+function renderCalendarMonthGrid() {
+  const grid = document.getElementById('calMonthGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const year = calCurrentDate.getFullYear();
+  const month = calCurrentDate.getMonth();
+
+  // First day of month (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const firstDay = new Date(year, month, 1);
+  let startDayOfWeek = firstDay.getDay(); // 0 is Sunday
+  // Convert so 0 = Monday, 6 = Sunday
+  startDayOfWeek = (startDayOfWeek + 6) % 7;
+
+  // Number of days in current month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Number of days in previous month
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  const events = getFilteredCalendarEvents();
+
+  // 1. Previous month trailing days
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
+    const dayNum = daysInPrevMonth - i;
+    const cell = document.createElement('div');
+    cell.className = 'min-h-[85px] sm:min-h-[105px] p-1.5 sm:p-2 rounded-xl bg-slate-950/30 border border-slate-900/60 opacity-35 text-slate-600 flex flex-col justify-between';
+    cell.innerHTML = `<span class="text-xs font-semibold">${dayNum}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // 2. Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayStr = String(day).padStart(2, '0');
+    const fullDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${dayStr}`;
+    const isToday = fullDateStr === todayStr;
+
+    const dayEvents = events.filter(e => e.date === fullDateStr);
+
+    const cell = document.createElement('div');
+    cell.className = `min-h-[85px] sm:min-h-[105px] p-1.5 sm:p-2 rounded-xl border transition flex flex-col justify-between group cursor-pointer ${
+      isToday 
+        ? 'bg-purple-950/30 border-purple-500/70 shadow-lg shadow-purple-950/50' 
+        : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950'
+    }`;
+
+    cell.onclick = (e) => {
+      // If clicked on an event pill, event handles it, otherwise open new event modal for this date
+      if (e.target.closest('.cal-event-pill')) return;
+      openNewCalendarEventModal(fullDateStr);
+    };
+
+    // Header of the day cell: day number + add button on hover
+    let cellHeaderHtml = `
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold ${isToday ? 'text-cyan-300 bg-purple-500/30 px-1.5 py-0.2 rounded-full border border-purple-400/50' : 'text-slate-300'}">
+          ${day} ${isToday ? '<span class="text-[9px] uppercase tracking-wider font-mono">HOY</span>' : ''}
+        </span>
+        <button onclick="openNewCalendarEventModal('${fullDateStr}')" title="Programar en este día" class="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-white bg-slate-800 transition">
+          <i data-lucide="plus" class="w-3 h-3"></i>
+        </button>
+      </div>
+    `;
+
+    // Event pills inside the day cell
+    let eventsHtml = '<div class="space-y-1 mt-1 overflow-hidden">';
+    dayEvents.slice(0, 3).forEach(ev => {
+      const typeInfo = getCalendarEventTypeInfo(ev.type);
+      const isCompleted = ev.status === 'COMPLETADO';
+      eventsHtml += `
+        <div onclick="openEditCalendarEventModal('${ev.id}')" title="${escapeHtml(ev.time || '')} - ${escapeHtml(ev.title)} (${escapeHtml(ev.client)})" class="cal-event-pill flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold truncate border ${
+          isCompleted 
+            ? 'bg-slate-900 text-slate-400 border-slate-800 line-through' 
+            : `${typeInfo.bg} ${typeInfo.text} ${typeInfo.border}`
+        } hover:scale-[1.02] transition cursor-pointer">
+          <span>${typeInfo.icon}</span>
+          <span class="font-mono text-[9px] opacity-80">${escapeHtml(ev.time || '')}</span>
+          <span class="truncate">${escapeHtml(ev.title)}</span>
+        </div>
+      `;
+    });
+
+    if (dayEvents.length > 3) {
+      eventsHtml += `
+        <div class="text-[9px] font-bold text-slate-400 pl-1">
+          +${dayEvents.length - 3} más...
+        </div>
+      `;
+    }
+    eventsHtml += '</div>';
+
+    cell.innerHTML = cellHeaderHtml + eventsHtml;
+    grid.appendChild(cell);
+  }
+
+  // 3. Next month trailing days to complete 35 or 42 cells grid
+  const totalCellsSoFar = startDayOfWeek + daysInMonth;
+  const targetTotal = totalCellsSoFar > 35 ? 42 : 35;
+  const remainingCells = targetTotal - totalCellsSoFar;
+
+  for (let nextDay = 1; nextDay <= remainingCells; nextDay++) {
+    const cell = document.createElement('div');
+    cell.className = 'min-h-[85px] sm:min-h-[105px] p-1.5 sm:p-2 rounded-xl bg-slate-950/30 border border-slate-900/60 opacity-35 text-slate-600 flex flex-col justify-between';
+    cell.innerHTML = `<span class="text-xs font-semibold">${nextDay}</span>`;
+    grid.appendChild(cell);
+  }
+}
+
+function renderCalendarListView() {
+  const container = document.getElementById('calListEventsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const events = getFilteredCalendarEvents().slice().sort((a, b) => {
+    const dtA = (a.date || '') + ' ' + (a.time || '00:00');
+    const dtB = (b.date || '') + ' ' + (b.time || '00:00');
+    return dtA.localeCompare(dtB);
+  });
+
+  if (events.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/40 p-6 space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto">
+          <i data-lucide="calendar" class="w-6 h-6"></i>
+        </div>
+        <h4 class="text-base font-bold text-white">No hay actividades programadas</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">Comienza programando una jornada de rodaje, creación de guiones o publicación en redes.</p>
+        <button onclick="openNewCalendarEventModal()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer">
+          + Programar Actividad
+        </button>
+      </div>
+    `;
+    refreshLucideIcons();
+    return;
+  }
+
+  events.forEach(ev => {
+    const typeInfo = getCalendarEventTypeInfo(ev.type);
+    const isCompleted = ev.status === 'COMPLETADO';
+    const scriptLinked = ev.scriptId ? state.scripts.find(s => s.id === ev.scriptId) : null;
+
+    const card = document.createElement('div');
+    card.className = `bg-slate-900 border ${isCompleted ? 'border-emerald-500/30 bg-slate-950/60' : 'border-slate-800'} rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:border-slate-700`;
+
+    card.innerHTML = `
+      <div class="flex items-start gap-3.5 min-w-0 flex-1">
+        <div class="w-10 h-10 rounded-xl ${typeInfo.bg} ${typeInfo.text} border ${typeInfo.border} flex items-center justify-center text-lg shrink-0 mt-0.5">
+          ${typeInfo.icon}
+        </div>
+        <div class="space-y-1 min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-200">${escapeHtml(ev.client)}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-md ${typeInfo.bg} ${typeInfo.text} border ${typeInfo.border}">${typeInfo.label}</span>
+            <span class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+              📅 ${escapeHtml(ev.date || '')} · ⏰ ${escapeHtml(ev.time || '19:00')}
+            </span>
+            ${ev.platform ? `<span class="text-[11px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">${escapeHtml(ev.platform)}</span>` : ''}
+          </div>
+
+          <h4 class="text-base font-bold ${isCompleted ? 'text-slate-400 line-through' : 'text-white'} leading-snug">
+            ${escapeHtml(ev.title)}
+          </h4>
+
+          ${scriptLinked ? `
+            <div class="text-xs text-purple-300 flex items-center gap-1 font-medium">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Guión vinculado: <strong>#${scriptLinked.number} - ${escapeHtml(scriptLinked.ideaGanadora)}</strong></span>
+            </div>
+          ` : ''}
+
+          ${ev.notes ? `
+            <p class="text-xs text-slate-400 line-clamp-2">${escapeHtml(ev.notes)}</p>
+          ` : ''}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        <!-- Toggle Completed button -->
+        <button onclick="toggleCalendarEventStatus('${ev.id}')" class="p-2 rounded-xl border ${
+          isCompleted 
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30' 
+            : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-emerald-300 hover:border-emerald-500/40'
+        } transition cursor-pointer text-xs font-semibold flex items-center gap-1.5" title="Marcar como Completado / Publicado">
+          <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+          <span>${isCompleted ? 'Completado' : 'Marcar Hecho'}</span>
+        </button>
+
+        <!-- Download iCal / Alarm for iPhone -->
+        <button onclick="exportEventToICalendar('${ev.id}')" title="Descargar recordatorio para iPhone / Apple Calendar / Google" class="p-2 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Edit -->
+        <button onclick="openEditCalendarEventModal('${ev.id}')" title="Editar Actividad" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
+          <i data-lucide="edit-3" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Delete -->
+        <button onclick="deleteCalendarEvent('${ev.id}')" title="Eliminar Actividad" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  refreshLucideIcons();
+}
+
+function getCalendarEventTypeInfo(type) {
+  switch(type) {
+    case 'RODAJE':
+      return { label: 'Rodaje / Grabación', icon: '🎬', bg: 'bg-orange-500/15', text: 'text-orange-300', border: 'border-orange-500/30' };
+    case 'CREACION':
+      return { label: 'Creación de Guiones', icon: '💡', bg: 'bg-amber-500/15', text: 'text-amber-300', border: 'border-amber-500/30' };
+    case 'EDICION':
+      return { label: 'Entrega Edición', icon: '💻', bg: 'bg-purple-500/15', text: 'text-purple-300', border: 'border-purple-500/30' };
+    case 'PUBLICACION':
+    default:
+      return { label: 'Publicación', icon: '🚀', bg: 'bg-cyan-500/15', text: 'text-cyan-300', border: 'border-cyan-500/30' };
+  }
+}
+
+// CALENDAR MODAL CRUD
+function openNewCalendarEventModal(dateStr = null) {
+  activeEditingCalEventId = null;
+  const modal = document.getElementById('calendarEventModal');
+  const title = document.getElementById('calModalTitle');
+  const btnDelete = document.getElementById('btnDeleteCalEvent');
+  const form = document.getElementById('calendarEventForm');
+
+  if (!modal) return;
+  if (form) form.reset();
+
+  if (title) title.innerHTML = `<i data-lucide="calendar-plus" class="w-5 h-5 text-purple-400"></i> Programar Actividad de Contenido`;
+  if (btnDelete) btnDelete.classList.add('hidden');
+
+  // Populate client selector
+  populateCalendarModalClientSelect();
+
+  // Set default date and time
+  const defaultDate = dateStr || new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('calEventDate');
+  const timeInput = document.getElementById('calEventTime');
+  const idInput = document.getElementById('calEventId');
+
+  if (idInput) idInput.value = '';
+  if (dateInput) dateInput.value = defaultDate;
+  if (timeInput) timeInput.value = '19:00';
+
+  // Populate scripts dropdown for active client
+  const clientSelect = document.getElementById('calEventClient');
+  const client = clientSelect ? clientSelect.value : (state.clients[0] || 'Jennil');
+  populateCalendarScriptSelect(client);
+
+  modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function openEditCalendarEventModal(eventId) {
+  const ev = (state.calendarEvents || []).find(e => e.id === eventId);
+  if (!ev) return;
+
+  activeEditingCalEventId = eventId;
+  const modal = document.getElementById('calendarEventModal');
+  const title = document.getElementById('calModalTitle');
+  const btnDelete = document.getElementById('btnDeleteCalEvent');
+
+  if (!modal) return;
+  if (title) title.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-purple-400"></i> Editar Actividad Programada`;
+  if (btnDelete) btnDelete.classList.remove('hidden');
+
+  populateCalendarModalClientSelect(ev.client);
+
+  document.getElementById('calEventId').value = ev.id;
+  document.getElementById('calEventClient').value = ev.client;
+  document.getElementById('calEventType').value = ev.type || 'PUBLICACION';
+  document.getElementById('calEventTitle').value = ev.title || '';
+  document.getElementById('calEventDate').value = ev.date || '';
+  document.getElementById('calEventTime').value = ev.time || '19:00';
+  document.getElementById('calEventPlatform').value = ev.platform || 'Instagram';
+  document.getElementById('calEventStatus').value = ev.status || 'PROGRAMADO';
+  document.getElementById('calEventReminder').value = ev.reminder || 'exact';
+  document.getElementById('calEventNotes').value = ev.notes || '';
+
+  populateCalendarScriptSelect(ev.client, ev.scriptId);
+
+  modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeCalendarEventModal() {
+  const modal = document.getElementById('calendarEventModal');
+  if (modal) modal.classList.add('hidden');
+  activeEditingCalEventId = null;
+}
+
+function populateCalendarModalClientSelect(selectedClient = null) {
+  const select = document.getElementById('calEventClient');
+  if (!select) return;
+  select.innerHTML = '';
+  (state.clients || ['Jennil', 'Natalia']).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = `👤 ${c}`;
+    select.appendChild(opt);
+  });
+  if (selectedClient && state.clients.includes(selectedClient)) {
+    select.value = selectedClient;
+  }
+}
+
+function onCalendarClientChange() {
+  const clientSelect = document.getElementById('calEventClient');
+  const client = clientSelect ? clientSelect.value : (state.clients[0] || 'Jennil');
+  populateCalendarScriptSelect(client);
+}
+
+function populateCalendarScriptSelect(clientName, selectedScriptId = null) {
+  const select = document.getElementById('calEventScriptSelect');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Ninguno (Actividad libre o nuevo video) --</option>';
+
+  const clientScripts = (state.scripts || []).filter(s => s.client === clientName);
+  clientScripts.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `#${s.number || '?'} - ${s.ideaGanadora} (${s.status || 'Idea'})`;
+    select.appendChild(opt);
+  });
+
+  if (selectedScriptId) {
+    select.value = selectedScriptId;
+  }
+}
+
+function onCalendarScriptSelectChange() {
+  const select = document.getElementById('calEventScriptSelect');
+  const titleInput = document.getElementById('calEventTitle');
+  if (!select || !titleInput) return;
+
+  const scriptId = select.value;
+  if (scriptId) {
+    const script = state.scripts.find(s => s.id === scriptId);
+    if (script) {
+      const type = document.getElementById('calEventType')?.value || 'PUBLICACION';
+      const prefix = type === 'RODAJE' ? '🎬 Rodaje: ' : (type === 'CREACION' ? '💡 Redactar: ' : '🚀 Publicar: ');
+      titleInput.value = `${prefix}#${script.number || ''} ${script.ideaGanadora}`;
+    }
+  }
+}
+
+function saveCalendarEvent() {
+  const client = document.getElementById('calEventClient')?.value.trim() || 'Jennil';
+  const type = document.getElementById('calEventType')?.value || 'PUBLICACION';
+  const title = document.getElementById('calEventTitle')?.value.trim() || '';
+  const date = document.getElementById('calEventDate')?.value || '';
+  const time = document.getElementById('calEventTime')?.value || '19:00';
+  const platform = document.getElementById('calEventPlatform')?.value || 'Instagram';
+  const status = document.getElementById('calEventStatus')?.value || 'PROGRAMADO';
+  const reminder = document.getElementById('calEventReminder')?.value || 'exact';
+  const notes = document.getElementById('calEventNotes')?.value.trim() || '';
+  const scriptId = document.getElementById('calEventScriptSelect')?.value || null;
+
+  if (!title) {
+    showToastNotification('⚠️ Por favor escribe el título de la actividad', 'alert-circle');
+    return;
+  }
+  if (!date) {
+    showToastNotification('⚠️ Por favor selecciona la fecha', 'alert-circle');
+    return;
+  }
+
+  if (!state.calendarEvents) state.calendarEvents = [];
+
+  const eventData = {
+    id: activeEditingCalEventId || ('calevent-' + Date.now()),
+    client: client,
+    type: type,
+    title: title,
+    date: date,
+    time: time,
+    platform: platform,
+    status: status,
+    reminder: reminder,
+    notes: notes,
+    scriptId: scriptId,
+    notified: false,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (activeEditingCalEventId) {
+    const idx = state.calendarEvents.findIndex(e => e.id === activeEditingCalEventId);
+    if (idx !== -1) {
+      state.calendarEvents[idx] = { ...state.calendarEvents[idx], ...eventData };
+    }
+  } else {
+    eventData.createdAt = new Date().toISOString();
+    state.calendarEvents.push(eventData);
+  }
+
+  saveState();
+  renderCalendarView();
+  closeCalendarEventModal();
+  showToastNotification('✅ Actividad programada en el calendario con éxito', 'check-circle');
+
+  // Request browser notification permission proactively if reminder configured
+  if (reminder !== 'none') {
+    requestNotificationPermission();
+  }
+}
+
+function deleteCurrentCalendarEvent() {
+  if (activeEditingCalEventId) {
+    deleteCalendarEvent(activeEditingCalEventId);
+    closeCalendarEventModal();
+  }
+}
+
+function deleteCalendarEvent(eventId) {
+  if (confirm('¿Estás seguro de eliminar esta actividad del calendario?')) {
+    state.calendarEvents = (state.calendarEvents || []).filter(e => e.id !== eventId);
+    saveState();
+    renderCalendarView();
+    showToastNotification('Actividad eliminada del calendario.', 'trash-2');
+  }
+}
+
+function toggleCalendarEventStatus(eventId) {
+  const ev = (state.calendarEvents || []).find(e => e.id === eventId);
+  if (ev) {
+    ev.status = ev.status === 'COMPLETADO' ? 'PROGRAMADO' : 'COMPLETADO';
+    saveState();
+    renderCalendarView();
+  }
+}
+
+// NOTIFICATIONS & iCAL EXPORT ENGINE (.ICS for iPhone & Google)
+function requestNotificationPermission() {
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+}
+
+function checkUpcomingNotifications() {
+  if (!state.calendarEvents || state.calendarEvents.length === 0) return;
+  const now = new Date();
+
+  state.calendarEvents.forEach(ev => {
+    if (ev.status === 'COMPLETADO' || ev.notified || ev.reminder === 'none') return;
+    if (!ev.date || !ev.time) return;
+
+    const eventDateTime = new Date(`${ev.date}T${ev.time}:00`);
+    if (isNaN(eventDateTime.getTime())) return;
+
+    let targetTime = new Date(eventDateTime);
+    if (ev.reminder === '15min') {
+      targetTime = new Date(eventDateTime.getTime() - 15 * 60000);
+    } else if (ev.reminder === '1hour') {
+      targetTime = new Date(eventDateTime.getTime() - 60 * 60000);
+    } else if (ev.reminder === '1day') {
+      targetTime = new Date(eventDateTime.getTime() - 24 * 60 * 60000);
+    }
+
+    const diffMinutes = (now - targetTime) / 60000;
+
+    // Trigger if within -1 to +5 minutes window
+    if (diffMinutes >= 0 && diffMinutes <= 5) {
+      ev.notified = true;
+      saveState();
+      triggerAlarmNotification(ev);
+    }
+  });
+}
+
+function triggerAlarmNotification(ev) {
+  const typeInfo = getCalendarEventTypeInfo(ev.type);
+  const title = `🔔 RECORDATORIO BLEX: ${typeInfo.icon} ${ev.title}`;
+  const body = `Cliente: ${ev.client} | Fecha: ${ev.date} a las ${ev.time} (${ev.platform || 'General'})`;
+
+  // Native Browser Notification
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      new Notification(title, {
+        body: body,
+        icon: 'logo.png'
+      });
+    } catch (e) {}
+  }
+
+  // Visual Toast / Alert in platform
+  showToastNotification(`🔔 ${ev.title} (${ev.client} - ${ev.time})`, 'bell');
+}
+
+// Run notification check every 60 seconds
+setInterval(checkUpcomingNotifications, 60000);
+
+function exportEventToICalendar(eventId) {
+  const ev = (state.calendarEvents || []).find(e => e.id === eventId);
+  if (!ev) return;
+  generateAndDownloadICS([ev], `evento-${ev.date}-${ev.client}.ics`);
+}
+
+function exportAllCalendarToICalendar() {
+  const events = state.calendarEvents || [];
+  if (events.length === 0) {
+    alert('No hay actividades programadas para exportar.');
+    return;
+  }
+  generateAndDownloadICS(events, `calendario-completo-blex-${calCurrentDate.getFullYear()}.ics`);
+}
+
+function generateAndDownloadICS(eventsList, filename) {
+  let icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//BLEX STUDIO//Content Calendar Engine//ES',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:BLEX STUDIO - Calendario de Contenidos'
+  ];
+
+  eventsList.forEach(ev => {
+    if (!ev.date) return;
+    const timeStr = (ev.time || '19:00').replace(':', '') + '00';
+    const dateFormatted = ev.date.replace(/-/g, '');
+    const dtStart = `${dateFormatted}T${timeStr}`;
+    
+    // Add 1 hour duration
+    const startDate = new Date(`${ev.date}T${ev.time || '19:00'}:00`);
+    const endDate = new Date(startDate.getTime() + 60 * 60000);
+    const endFormatted = endDate.toISOString().split('T')[0].replace(/-/g, '') + 'T' + String(endDate.getHours()).padStart(2, '0') + String(endDate.getMinutes()).padStart(2, '0') + '00';
+
+    const uid = (ev.id || 'event-' + Date.now()) + '@content-script-studio.vercel.app';
+    const summary = `[${ev.client}] ${ev.title}`;
+    const description = `Tipo: ${ev.type}\nPlataforma: ${ev.platform || 'N/A'}\nNotas: ${ev.notes || 'Sin notas'}`;
+
+    icsContent.push('BEGIN:VEVENT');
+    icsContent.push(`UID:${uid}`);
+    icsContent.push(`DTSTAMP:${dateFormatted}T000000Z`);
+    icsContent.push(`DTSTART:${dtStart}`);
+    icsContent.push(`DTEND:${endFormatted}`);
+    icsContent.push(`SUMMARY:${summary}`);
+    icsContent.push(`DESCRIPTION:${description}`);
+    icsContent.push('STATUS:CONFIRMED');
+
+    // Add Alarm Trigger for iPhone / Mac / Google Calendar
+    icsContent.push('BEGIN:VALARM');
+    icsContent.push('ACTION:DISPLAY');
+    icsContent.push(`DESCRIPTION:Recordatorio BLEX: ${summary}`);
+    if (ev.reminder === '15min') {
+      icsContent.push('TRIGGER:-PT15M');
+    } else if (ev.reminder === '1hour') {
+      icsContent.push('TRIGGER:-PT1H');
+    } else if (ev.reminder === '1day') {
+      icsContent.push('TRIGGER:-P1D');
+    } else {
+      icsContent.push('TRIGGER:-PT0M');
+    }
+    icsContent.push('END:VALARM');
+
+    icsContent.push('END:VEVENT');
+  });
+
+  icsContent.push('END:VCALENDAR');
+
+  const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToastNotification('📅 Archivo de calendario descargado para iPhone/Google', 'download');
+}
+
