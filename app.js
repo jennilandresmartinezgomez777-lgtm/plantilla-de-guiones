@@ -2647,12 +2647,8 @@ function getEffectiveServerUrl() {
   if (custom && custom.trim()) {
     return custom.trim().replace(/\/+$/, '');
   }
-  if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
-    const isLocal = host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
-    if (isLocal && window.location.port) {
-      return window.location.origin;
-    }
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
+    return window.location.origin;
   }
   return 'http://localhost:3000';
 }
