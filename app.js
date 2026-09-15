@@ -3988,13 +3988,21 @@ function escapeHtml(str) {
 }
 
 // ==========================================
-// MODULAR PRINT & EXPORT PDF STUDIO
+// MODULAR PRINT & EXPORT PDF STUDIO (6 MODULES + SMART PAYLOAD)
 // ==========================================
 
+let currentSmartDocPayload = null;
+let smartDocPendingItems = [];
+let smartDocSelectedTarget = 'auto';
+
 function openPrintModal() {
-  currentPrintModule = 'matrix';
+  openPrintModalFor('matrix');
+}
+
+function openPrintModalFor(moduleName = 'matrix') {
+  currentPrintModule = moduleName;
   printViralMode = 'current';
-  setPrintModule('matrix');
+  setPrintModule(moduleName);
   if (printModal) printModal.classList.remove('hidden');
   refreshLucideIcons();
 }
@@ -4006,11 +4014,13 @@ function closePrintModal() {
 function setPrintModule(moduleName) {
   currentPrintModule = moduleName;
   
-  // Update Tab active classes
+  // Update Tab active classes for all 6 modules
   const tabs = [
     { id: 'btnPrintTabMatrix', name: 'matrix', activeBorder: 'border-brand-500', activeBg: 'bg-brand-500/10', activeText: 'text-white' },
-    { id: 'btnPrintTabCards', name: 'cards', activeBorder: 'border-purple-500', activeBg: 'bg-purple-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabCards', name: 'cards', activeBorder: 'border-cyan-500', activeBg: 'bg-cyan-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabSet', name: 'set', activeBorder: 'border-indigo-500', activeBg: 'bg-indigo-500/10', activeText: 'text-white' },
     { id: 'btnPrintTabViral', name: 'viral', activeBorder: 'border-amber-500', activeBg: 'bg-amber-500/10', activeText: 'text-white' },
+    { id: 'btnPrintTabCalendar', name: 'calendar', activeBorder: 'border-purple-500', activeBg: 'bg-purple-500/10', activeText: 'text-white' },
     { id: 'btnPrintTabIdeas', name: 'ideas', activeBorder: 'border-yellow-500', activeBg: 'bg-yellow-500/10', activeText: 'text-white' }
   ];
 
@@ -4018,9 +4028,9 @@ function setPrintModule(moduleName) {
     const el = document.getElementById(tab.id);
     if (!el) return;
     if (tab.name === moduleName) {
-      el.className = `print-module-tab p-2.5 rounded-xl border ${tab.activeBorder} ${tab.activeBg} ${tab.activeText} font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer shadow-sm`;
+      el.className = `print-module-tab p-2 rounded-xl border ${tab.activeBorder} ${tab.activeBg} ${tab.activeText} font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer shadow-sm`;
     } else {
-      el.className = `print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer`;
+      el.className = `print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer`;
     }
   });
 
@@ -4034,10 +4044,12 @@ function setPrintModule(moduleName) {
   }
 
   // Reset print selection to match the active module
-  if (moduleName === 'matrix' || moduleName === 'cards') {
+  if (moduleName === 'matrix' || moduleName === 'cards' || moduleName === 'set') {
     printSelectedIds = new Set(getFilteredScripts().map(s => s.id));
   } else if (moduleName === 'viral') {
     printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
+  } else if (moduleName === 'calendar') {
+    printSelectedIds = new Set((state.calendarEvents || []).map(e => e.id));
   } else if (moduleName === 'ideas') {
     printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
   }
@@ -4105,13 +4117,15 @@ function renderPrintSelectionList() {
   if (!listContainer) return;
   listContainer.innerHTML = '';
 
-  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards' || currentPrintModule === 'set') {
     if (selectionArea) selectionArea.classList.remove('hidden');
     if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
     if (selectionLabel) {
       selectionLabel.textContent = currentPrintModule === 'matrix' 
         ? 'Seleccionar guiones para la Matriz & Resumen:' 
-        : 'Seleccionar fichas de guión para grabación:';
+        : currentPrintModule === 'cards'
+        ? 'Seleccionar fichas visuales para grabación:'
+        : 'Seleccionar guiones para el Set de Grabación & Espacio:';
     }
 
     const filtered = getFilteredScripts();
@@ -4208,6 +4222,35 @@ function renderPrintSelectionList() {
       if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${evals.length} evaluación(es) del historial`;
     }
 
+  } else if (currentPrintModule === 'calendar') {
+    if (selectionArea) selectionArea.classList.remove('hidden');
+    if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
+    if (selectionLabel) selectionLabel.textContent = 'Seleccionar actividades del calendario a imprimir:';
+
+    const events = state.calendarEvents || [];
+    if (events.length === 0) {
+      listContainer.innerHTML = `<p class="text-slate-500 text-xs py-4 text-center">No hay actividades programadas en el calendario.</p>`;
+      if (counter) counter.textContent = `0 actividades seleccionadas`;
+      return;
+    }
+
+    events.forEach(ev => {
+      const isChecked = printSelectedIds.has(ev.id);
+      const el = document.createElement('div');
+      el.className = "flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition";
+      el.innerHTML = `
+        <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer pr-2">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePrintItemId('${ev.id}')" class="rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-purple-500 cursor-pointer">
+          <span class="font-bold text-purple-400 shrink-0 text-[10px] uppercase">${escapeHtml(ev.date || '')} ${ev.time ? '· ' + ev.time : ''}</span>
+          <span class="font-medium text-white truncate">${escapeHtml(ev.title || 'Actividad')}</span>
+        </label>
+        <span class="text-[10px] uppercase font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded shrink-0">${escapeHtml(ev.type || 'Contenido')}</span>
+      `;
+      listContainer.appendChild(el);
+    });
+
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${events.length} actividad(es)`;
+
   } else if (currentPrintModule === 'ideas') {
     if (selectionArea) selectionArea.classList.remove('hidden');
     if (buttonsWrapper) buttonsWrapper.classList.remove('hidden');
@@ -4247,20 +4290,24 @@ function togglePrintItemId(id) {
   }
   
   const counter = document.getElementById('printSelectionCounter');
-  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards' || currentPrintModule === 'set') {
     if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${getFilteredScripts().length} guión(es)`;
   } else if (currentPrintModule === 'viral') {
     if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${(state.viralEvaluations || []).length} evaluación(es)`;
+  } else if (currentPrintModule === 'calendar') {
+    if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${(state.calendarEvents || []).length} actividad(es)`;
   } else if (currentPrintModule === 'ideas') {
     if (counter) counter.textContent = `Se imprimirán ${printSelectedIds.size} de ${getAllIdeasForPrint().length} idea(s)/nota(s)`;
   }
 }
 
 function selectAllPrintItems() {
-  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards') {
+  if (currentPrintModule === 'matrix' || currentPrintModule === 'cards' || currentPrintModule === 'set') {
     printSelectedIds = new Set(getFilteredScripts().map(s => s.id));
   } else if (currentPrintModule === 'viral') {
     printSelectedIds = new Set((state.viralEvaluations || []).map(e => e.id));
+  } else if (currentPrintModule === 'calendar') {
+    printSelectedIds = new Set((state.calendarEvents || []).map(e => e.id));
   } else if (currentPrintModule === 'ideas') {
     printSelectedIds = new Set(getAllIdeasForPrint().map(i => i.id));
   }
@@ -4421,6 +4468,7 @@ function getStandalonePrintStyles() {
 
 function generateCompletePrintDocument(forNewTab = false) {
   let bodyContent = '';
+  let payloadData = { module: currentPrintModule, timestamp: new Date().toISOString(), data: [] };
   const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
 
   if (currentPrintModule === 'matrix') {
@@ -4431,6 +4479,7 @@ function generateCompletePrintDocument(forNewTab = false) {
       return null;
     }
 
+    payloadData.data = scripts;
     const countTotal = scripts.length;
     const countIdeas = scripts.filter(s => s.status === 'Idea').length;
     const countRedactados = scripts.filter(s => s.status === 'Redactado').length;
@@ -4456,7 +4505,7 @@ function generateCompletePrintDocument(forNewTab = false) {
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
           <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos los Clientes' : escapeHtml(state.activeClient)}</p>
-          <p style="margin: 2px 0 0 0;"><strong>Total Guiones Seleccionados:</strong> ${countTotal} | <strong>Fecha:</strong> ${dateStr}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Total Guiones:</strong> ${countTotal} | <strong>Fecha:</strong> ${dateStr}</p>
         </div>
       </div>
 
@@ -4474,57 +4523,10 @@ function generateCompletePrintDocument(forNewTab = false) {
         `).join('')}
       </div>
 
-      <!-- DESGLOSE DETALLADO POR ESTADO (CUÁNTOS Y CUÁLES SON) -->
-      <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 14px 0;">
-          📋 Desglose Detallado por Estado de Producción
-        </h2>
-
-        ${statusCategories.map(cat => {
-          const groupScripts = scripts.filter(s => s.status === cat.key);
-          if (groupScripts.length === 0) return '';
-          return `
-            <div class="print-avoid-break" style="margin-bottom: 16px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; background: ${cat.bg}; border: 1px solid ${cat.border}; padding: 6px 12px; border-radius: 6px 6px 0 0;">
-                <span style="font-size: 10pt; font-weight: 800; color: ${cat.text};">${cat.icon} ${cat.label.toUpperCase()} (${groupScripts.length})</span>
-                <span style="font-size: 8pt; font-weight: 600; color: ${cat.text};">${groupScripts.length === 1 ? '1 guión' : groupScripts.length + ' guiones'}</span>
-              </div>
-              <table class="print-table" style="margin-top: 0; border-top: none;">
-                <thead>
-                  <tr>
-                    <th style="width: 35px; text-align: center;">#</th>
-                    <th style="width: 75px;">Cliente</th>
-                    <th>Título / Idea Ganadora</th>
-                    <th style="width: 120px;">Formato / Obj.</th>
-                    <th style="width: 70px;">Actor</th>
-                    <th>Gancho Inicial</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${groupScripts.map(s => `
-                    <tr>
-                      <td style="text-align: center; font-weight: bold; font-family: monospace;">#${s.number || '?'}</td>
-                      <td style="font-weight: bold;">${escapeHtml(s.client)}</td>
-                      <td style="font-weight: 600; color: #0f172a;">${escapeHtml(s.ideaGanadora || '-')}</td>
-                      <td>
-                        <div style="font-size: 8.5pt; font-weight: 600;">${escapeHtml(s.formato || '-')}</div>
-                        <div style="font-size: 7.5pt; color: #64748b; text-transform: uppercase;">${escapeHtml(s.objetivo || '')}</div>
-                      </td>
-                      <td style="font-size: 8.5pt;">${escapeHtml(s.actor || 'Principal')}</td>
-                      <td style="font-size: 8.5pt; color: #334155;">${escapeHtml(s.gancho || '-')}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          `;
-        }).join('')}
-      </div>
-
       <!-- TABLA GENERAL DE MATRIZ COMPLETA -->
-      <div class="print-avoid-break" style="margin-top: 20px;">
-        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 10px 0;">
-          📊 Matriz General Completa (${countTotal} guiones)
+      <div class="print-avoid-break" style="margin-top: 10px;">
+        <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 8px 0;">
+          📋 Listado Completo de Guiones Seleccionados (${countTotal})
         </h2>
         <table class="print-table">
           <thead>
@@ -4532,7 +4534,7 @@ function generateCompletePrintDocument(forNewTab = false) {
               <th style="width: 30px; text-align: center;">#</th>
               <th style="width: 70px;">Cliente</th>
               <th style="width: 140px;">Título / Idea</th>
-              <th style="width: 90px;">Formato</th>
+              <th style="width: 85px;">Formato</th>
               <th>🎣 Gancho</th>
               <th>📖 Historia</th>
               <th>💡 Moraleja</th>
@@ -4568,11 +4570,13 @@ function generateCompletePrintDocument(forNewTab = false) {
       return null;
     }
 
+    payloadData.data = scripts;
+
     bodyContent = `
       <div class="print-doc-header">
         <div>
           <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-          <p style="font-size: 11pt; font-weight: 700; color: #7c3aed; margin: 0;">🎴 FICHAS DETALLADAS DE PRODUCCIÓN Y GRABACIÓN</p>
+          <p style="font-size: 11pt; font-weight: 700; color: #0891b2; margin: 0;">🎴 TARJETAS VISUALES & FICHAS DE PRODUCCIÓN</p>
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
           <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos' : escapeHtml(state.activeClient)}</p>
@@ -4590,7 +4594,7 @@ function generateCompletePrintDocument(forNewTab = false) {
               </div>
               <div style="display: flex; gap: 6px;">
                 <span class="print-badge">${escapeHtml(s.client)}</span>
-                <span class="print-badge" style="background: #ede9fe; color: #6b21a8; border-color: #ddd6fe;">${escapeHtml(s.formato || 'Formato')}</span>
+                <span class="print-badge" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">${escapeHtml(s.formato || 'Formato')}</span>
                 <span class="print-badge" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">${escapeHtml(s.status || 'Estado')}</span>
               </div>
             </div>
@@ -4614,10 +4618,75 @@ function generateCompletePrintDocument(forNewTab = false) {
               </div>
             </div>
 
+            ${s.espacio ? `
+              <div class="print-section-box" style="border-left-color: #6366f1; margin-bottom: 8px;">
+                <strong style="font-size: 8.5pt; text-transform: uppercase; color: #4338ca; display: block; margin-bottom: 4px;">📍 Plan de Espacio, Vestimenta & Grabación</strong>
+                <p style="font-size: 8.5pt; margin: 0; color: #334155; white-space: pre-line; line-height: 1.4;">${escapeHtml(s.espacio)}</p>
+              </div>
+            ` : ''}
+
             <div style="display: flex; justify-content: space-between; font-size: 8.5pt; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
-              <span><strong>Actor / Vocero:</strong> ${escapeHtml(s.actor || 'Principal')}</span>
-              <span><strong>Contexto / Locación:</strong> ${escapeHtml(s.contextoAdicional || 'Estudio')}</span>
+              <span><strong>Actor:</strong> ${escapeHtml(s.actor || 'Principal')}</span>
+              <span><strong>Locación:</strong> ${escapeHtml(s.contextoAdicional || 'Estudio')}</span>
               <span><strong>Objetivo:</strong> ${escapeHtml(s.objetivo || 'General')}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+  } else if (currentPrintModule === 'set') {
+    const scripts = getFilteredScripts().filter(s => printSelectedIds.has(s.id));
+    if (scripts.length === 0) {
+      alert('Por favor selecciona al menos un guión para imprimir el Set de Grabación.');
+      return null;
+    }
+
+    payloadData.data = scripts;
+
+    bodyContent = `
+      <div class="print-doc-header">
+        <div>
+          <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 700; color: #4f46e5; margin: 0;">🎬 SET DE GRABACIÓN, ESPACIOS & TELEPRÓNTER</p>
+        </div>
+        <div style="text-align: right; font-size: 9pt; color: #64748b;">
+          <p style="margin: 0;"><strong>Cliente:</strong> ${state.activeClient === 'ALL' ? 'Todos' : escapeHtml(state.activeClient)}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Total Sets:</strong> ${scripts.length} | <strong>Fecha:</strong> ${dateStr}</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        ${scripts.map(s => `
+          <div class="print-card print-avoid-break">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+              <div>
+                <span style="font-size: 13pt; font-weight: 900; color: #4f46e5; margin-right: 8px;">🎬 SET #${s.number || '?'}</span>
+                <span style="font-size: 12pt; font-weight: 800; color: #0f172a;">${escapeHtml(s.ideaGanadora || 'Sin título')}</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <span class="print-badge" style="background: #eef2ff; color: #4338ca; border-color: #c7d2fe;">${escapeHtml(s.client)}</span>
+                <span class="print-badge">${escapeHtml(s.formato || 'Formato')}</span>
+              </div>
+            </div>
+
+            <!-- Set & Environment Details Box -->
+            <div class="print-section-box" style="border-left-color: #4f46e5; margin-bottom: 12px; background-color: #f8fafc;">
+              <strong style="font-size: 9pt; text-transform: uppercase; color: #4338ca; display: block; margin-bottom: 6px;">📍 Indicaciones de Espacio, Vestimenta, Luz y Audio:</strong>
+              <div style="font-size: 9pt; color: #1e293b; line-height: 1.5; white-space: pre-line;">
+                ${escapeHtml(s.espacio || s.contextoAdicional || 'Espacio estándar de grabación: Fondo limpio con iluminación frontal y micrófono de solapa inalámbrico.')}
+              </div>
+            </div>
+
+            <!-- Teleprompter Script Readout -->
+            <div class="print-section-box" style="border-left-color: #059669; background-color: #f0fdf4;">
+              <strong style="font-size: 9pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 4px;">📜 Texto Completo de Rodaje (Teleprónter):</strong>
+              <div style="font-size: 10pt; font-weight: 600; color: #0f172a; line-height: 1.5;">
+                <p style="margin: 0 0 6px 0;"><span style="color: #dc2626; font-weight: 800;">[GANCHO]</span> ${escapeHtml(s.gancho || '')}</p>
+                <p style="margin: 0 0 6px 0;"><span style="color: #2563eb; font-weight: 800;">[HISTORIA]</span> ${escapeHtml(s.historia || '')}</p>
+                ${s.moraleja ? `<p style="margin: 0 0 6px 0;"><span style="color: #d97706; font-weight: 800;">[MORALEJA]</span> ${escapeHtml(s.moraleja)}</p>` : ''}
+                <p style="margin: 0;"><span style="color: #059669; font-weight: 800;">[CTA]</span> ${escapeHtml(s.cta || '')}</p>
+              </div>
             </div>
           </div>
         `).join('')}
@@ -4638,7 +4707,6 @@ function generateCompletePrintDocument(forNewTab = false) {
           </div>
         </div>
 
-        <!-- KPI SUMMARY SUMMARY OF THE METHODOLOGY -->
         <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
           <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
             <div class="print-kpi-value" style="color: #f59e0b;">14.5 pts</div>
@@ -4670,7 +4738,6 @@ function generateCompletePrintDocument(forNewTab = false) {
                 <th style="width: 170px;">Criterio Estratégico</th>
                 <th style="width: 80px; text-align: center;">Puntaje</th>
                 <th>Definición y Regla de Cumplimiento</th>
-                <th style="width: 130px;">Impacto Psicológico</th>
               </tr>
             </thead>
             <tbody>
@@ -4679,134 +4746,45 @@ function generateCompletePrintDocument(forNewTab = false) {
                 <td style="font-weight: bold; color: #0f172a;">Regla del Niño de 5 Años</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.5 pts</td>
                 <td>El concepto y el gancho se entienden al instante. Cero palabras técnicas o tecnicismos abstractos.</td>
-                <td style="font-size: 8pt; color: #475569;">Elimina fricción cognitiva inmediata en los primeros 3 segundos.</td>
               </tr>
               <tr>
                 <td style="text-align: center; font-weight: bold;">2</td>
                 <td style="font-weight: bold; color: #0f172a;">Regla del 50 de 100</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.5 pts</td>
                 <td>Si le preguntas a 100 personas al azar en la calle, al menos a 50 les interesa o afecta directamente.</td>
-                <td style="font-size: 8pt; color: #475569;">Garantiza mercado masivo y consumo transversal del algoritmo.</td>
               </tr>
               <tr>
                 <td style="text-align: center; font-weight: bold;">3</td>
                 <td style="font-weight: bold; color: #0f172a;">Referencia Viral Comprobada</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+2.0 pts</td>
                 <td>El concepto o gancho está modelado de un video validado que superó las 100k a 1M+ reproducciones.</td>
-                <td style="font-size: 8pt; color: #475569;">Reduce riesgo; reproduce patrones de retención probados.</td>
               </tr>
               <tr>
                 <td style="text-align: center; font-weight: bold;">4</td>
                 <td style="font-weight: bold; color: #0f172a;">Mercado de Alto Consumo</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+0.5 pts</td>
                 <td>Temáticas de altísimo tráfico: dinero, ahorro, salud, hábitos, relaciones, psicología o tecnología.</td>
-                <td style="font-size: 8pt; color: #475569;">Aumenta ratio de compartidos por WhatsApp y guardados.</td>
               </tr>
               <tr>
                 <td style="text-align: center; font-weight: bold;">5</td>
                 <td style="font-weight: bold; color: #0f172a;">Tendencia o Novedad</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+1.5 pts</td>
                 <td>Se conecta con un tema en conversación activa: noticias del día, cambios normativos o coyuntura.</td>
-                <td style="font-size: 8pt; color: #475569;">Aprovecha picos de búsqueda e interés del momento (Trend Hijacking).</td>
               </tr>
               <tr>
                 <td style="text-align: center; font-weight: bold;">6</td>
                 <td style="font-weight: bold; color: #0f172a;">Controversia o Debate</td>
                 <td style="text-align: center; font-weight: 800; color: #d97706; font-size: 9.5pt;">+1.0 pts</td>
                 <td>Contiene una opinión contundente o postura sana que estimula comentarios y opiniones opuestas.</td>
-                <td style="font-size: 8pt; color: #475569;">Dispara la tasa de comentarios, métrica clave para el algoritmo.</td>
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <!-- SECCIÓN 2: LOS 4 GRUPOS DE FORMATOS AUDIOVISUALES (4.5 PTS MAX) -->
-        <div class="print-avoid-break" style="margin-bottom: 16px;">
-          <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 10px 0;">
-            📹 2. Los 4 Grupos de Formatos Audiovisuales & Niveles de Retención (+4.5 pts)
-          </h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            
-            <div class="print-section-box" style="border-left-color: #8b5cf6;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <strong style="font-size: 9pt; color: #6d28d9; text-transform: uppercase;">🎬 Grupo 1: Inmersión Total</strong>
-                <span class="print-badge" style="background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe;">+3.5 a +4.5 pts</span>
-              </div>
-              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Máxima retención. La cámara es el espectador viviendo la experiencia en primera persona o con dinamismo cinematográfico.</p>
-              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
-                <li><strong>POV (Point of View):</strong> +4.5 pts (El usuario siente que lo está viviendo)</li>
-                <li><strong>Vlog Dinámico:</strong> +4.0 pts (Cambios continuos de plano y acción)</li>
-                <li><strong>Formato Dinámico:</strong> +3.5 pts (B-Roll ágil y estímulos visuales)</li>
-              </ul>
-            </div>
-
-            <div class="print-section-box" style="border-left-color: #0284c7;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <strong style="font-size: 9pt; color: #0369a1; text-transform: uppercase;">🎙️ Grupo 2: Efecto Testigo & Curiosidad</strong>
-                <span class="print-badge" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;">+2.5 a +3.5 pts</span>
-              </div>
-              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Activa el voyerismo social y la curiosidad natural al observar una interacción espontánea entre dos personas.</p>
-              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
-                <li><strong>Prima Pregunta:</strong> +3.5 pts (Interrupción callejera o pregunta rápida)</li>
-                <li><strong>Entrevista Dinámica:</strong> +3.0 pts (Diálogo fluido con micrófono visible)</li>
-                <li><strong>Mirando a la Nada:</strong> +2.5 pts (Habla a un tercero fuera de cuadro)</li>
-              </ul>
-            </div>
-
-            <div class="print-section-box" style="border-left-color: #0d9488;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <strong style="font-size: 9pt; color: #0f766e; text-transform: uppercase;">🟩 Grupo 3: Demostración & Comentario</strong>
-                <span class="print-badge" style="background: #f0fdfa; color: #0f766e; border-color: #99f6e4;">+2.0 a +2.5 pts</span>
-              </div>
-              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Soporte visual con reacción o análisis simultáneo de pruebas, capturas o eventos en tiempo real.</p>
-              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
-                <li><strong>Pantalla Dividida (Split):</strong> +2.5 pts (Doble estímulo visual simultáneo)</li>
-                <li><strong>Pantalla Verde (Green Screen):</strong> +2.0 pts (Reacción sobre artículo o noticia)</li>
-              </ul>
-            </div>
-
-            <div class="print-section-box" style="border-left-color: #f59e0b;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <strong style="font-size: 9pt; color: #b45309; text-transform: uppercase;">🗣️ Grupo 4: Exposición Frontal</strong>
-                <span class="print-badge" style="background: #fefce8; color: #b45309; border-color: #fef08a;">+1.0 a +1.5 pts</span>
-              </div>
-              <p style="font-size: 8.5pt; color: #334155; margin: 0 0 4px 0;">Formato tradicional de mayor fricción que requiere ganchos hiper-potentes para retener al usuario.</p>
-              <ul style="font-size: 8pt; color: #475569; margin: 0; padding-left: 16px;">
-                <li><strong>Formato Selfie:</strong> +1.5 pts (Cámara en mano, espontaneidad y cercanía)</li>
-                <li><strong>Hablando a Cámara (Talking Head):</strong> +1.0 pt (Busto parlante con trípode fijo)</li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- SECCIÓN 3: MATRIZ DE DECISIÓN Y ESCALA DE DICTÁMENES -->
-        <div class="print-avoid-break">
-          <h2 style="font-size: 11pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 0 0 10px 0;">
-            ⚖️ 3. Escala de Dictámenes & Matriz de Producción BLEX
-          </h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-            <div style="border: 1.5px solid #a7f3d0; background: #ecfdf5; border-radius: 8px; padding: 8px 10px;">
-              <div style="font-size: 11pt; font-weight: 900; color: #065f46;">🟢 10.0 – 14.5 pts</div>
-              <strong style="font-size: 8.5pt; color: #047857; display: block; margin: 2px 0;">ALTO POTENCIAL VIRAL</strong>
-              <p style="font-size: 7.8pt; color: #064e3b; margin: 0; line-height: 1.35;">Aprobado para guionizado y grabación con máxima prioridad. Excelente combinación de atractivo masivo e inmersión.</p>
-            </div>
-            <div style="border: 1.5px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 8px 10px;">
-              <div style="font-size: 11pt; font-weight: 900; color: #92400e;">🟡 7.0 – 9.5 pts</div>
-              <strong style="font-size: 8.5pt; color: #b45309; display: block; margin: 2px 0;">POTENCIAL MEDIO</strong>
-              <p style="font-size: 7.8pt; color: #78350f; margin: 0; line-height: 1.35;">Viable para audiencia tibia. Para público frío, optimizar el gancho de 0-3 segundos o migrar a un formato con mayor inmersión.</p>
-            </div>
-            <div style="border: 1.5px solid #fecaca; background: #fef2f2; border-radius: 8px; padding: 8px 10px;">
-              <div style="font-size: 11pt; font-weight: 900; color: #991b1b;">🔴 0.0 – 6.5 pts</div>
-              <strong style="font-size: 8.5pt; color: #b91c1c; display: block; margin: 2px 0;">POTENCIAL BAJO</strong>
-              <p style="font-size: 7.8pt; color: #7f1d1d; margin: 0; line-height: 1.35;">No producir en este estado. Se recomienda reformular la idea, hacerla comprensible por cualquiera o buscar un caso real más sólido.</p>
-            </div>
-          </div>
         </div>
       `;
 
     } else if (printViralMode === 'current') {
       const data = getCurrentViralFormData();
+      payloadData.data = [data];
 
       bodyContent = `
         <div class="print-doc-header">
@@ -4816,15 +4794,15 @@ function generateCompletePrintDocument(forNewTab = false) {
           </div>
           <div style="text-align: right; font-size: 9pt; color: #64748b;">
             <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(data.client)}</p>
-            <p style="margin: 2px 0 0 0;"><strong>Fecha de Evaluación:</strong> ${dateStr}</p>
+            <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
           </div>
         </div>
 
         <div class="print-card" style="margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px;">
             <div>
-              <span style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada en Pantalla</span>
-              <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(data.title || '(Sin título ingresado)')}</h2>
+              <span style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Evaluada</span>
+              <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(data.title || '(Sin título)')}</h2>
               ${data.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(data.link)}</p>` : ''}
             </div>
             <div style="text-align: right;">
@@ -4835,260 +4813,122 @@ function generateCompletePrintDocument(forNewTab = false) {
             </div>
           </div>
 
-          <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 8px 0;">Desglose de los 6 Criterios de Viralidad</h3>
-          <table class="print-table" style="margin-bottom: 14px;">
-            <thead>
-              <tr>
-                <th>Criterio Evaluado</th>
-                <th style="width: 90px; text-align: center;">Ponderación</th>
-                <th style="width: 130px; text-align: center;">Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>1. Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
-                <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.nino ? '#059669' : '#94a3b8'};">${data.criteria.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-              <tr>
-                <td><strong>2. Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
-                <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.cincuenta ? '#059669' : '#94a3b8'};">${data.criteria.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-              <tr>
-                <td><strong>3. Referencia Viral Comprobada:</strong> Gancho o formato modelado de un video validado con >100k views.</td>
-                <td style="text-align: center; font-weight: 600;">2.0 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.refViral ? '#059669' : '#94a3b8'};">${data.criteria.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-              <tr>
-                <td><strong>4. Mercado Altamente Viral:</strong> Temáticas masivas de alto consumo habitual (dinero, salud, relaciones, ahorro).</td>
-                <td style="text-align: center; font-weight: 600;">0.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.mercadoViral ? '#059669' : '#94a3b8'};">${data.criteria.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-              <tr>
-                <td><strong>5. Tendencia o Novedad:</strong> Utiliza una conversación activa, noticia del momento o coyuntura.</td>
-                <td style="text-align: center; font-weight: 600;">1.5 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.tendencia ? '#059669' : '#94a3b8'};">${data.criteria.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-              <tr>
-                <td><strong>6. Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas sanas.</td>
-                <td style="text-align: center; font-weight: 600;">1.0 pts</td>
-                <td style="text-align: center; font-weight: 700; color: ${data.criteria.controversia ? '#059669' : '#94a3b8'};">${data.criteria.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0.0)'}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-            <div class="print-section-box" style="border-left-color: #8b5cf6;">
-              <strong style="font-size: 8pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
-              <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(data.format)}</p>
-              <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: <strong>+${data.formatScore.toFixed(1)} / 4.5 pts</strong></p>
-            </div>
-            <div class="print-section-box" style="border-left-color: #10b981;">
-              <strong style="font-size: 8pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios Base</strong>
-              <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${data.criteriaScore.toFixed(1)} / 10.0 Puntos</p>
-              <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Total Final = <strong>${data.totalScore.toFixed(1)} / 14.5 pts</strong></p>
-            </div>
-          </div>
-
           <div class="print-section-box" style="border-left-color: ${data.totalScore >= 10 ? '#059669' : data.totalScore >= 7 ? '#d97706' : '#dc2626'}; background-color: #fafafa;">
-            <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Dictamen Estratégico y Recomendación BLEX STUDIO:</strong>
+            <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Dictamen Estratégico BLEX STUDIO:</strong>
             <p style="font-size: 9pt; margin: 0; color: #1e293b; line-height: 1.45;">
               ${data.totalScore >= 10 
-                ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Esta idea cuenta con una estructura óptima de retención, simplicidad y atractivo masivo. Se recomienda proceder a guionizado y grabación con máxima prioridad.' 
+                ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Idea aprobada con máxima prioridad para guionizado y grabación.' 
                 : data.totalScore >= 7 
-                ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable para comunidad. Para tráfico frío, se sugiere reforzar el gancho inicial de 0-3 segundos o subir a un formato de mayor inmersión (POV, Vlog o Dinámico).' 
-                : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque, simplificar el mensaje para que cualquiera lo comprenda al instante o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
+                ? '⚡ <strong>POTENCIAL MEDIO:</strong> Viable. Optimizar gancho inicial de 0-3 segundos o subir a formato inmersivo.' 
+                : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda reformular o simplificar el mensaje antes de producir.'}
             </p>
           </div>
         </div>
       `;
 
     } else {
-      // History Mode (Custom selection of selected evaluations)
+      // History Mode
       const evals = (state.viralEvaluations || []).filter(e => printSelectedIds.has(e.id));
       if (evals.length === 0) {
         alert('Por favor selecciona al menos una evaluación del historial para imprimir.');
         return null;
       }
 
-      const countViral = evals.filter(e => (e.totalScore || 0) >= 10).length;
-      const countMedio = evals.filter(e => (e.totalScore || 0) >= 7 && (e.totalScore || 0) < 10).length;
-      const countBajo = evals.filter(e => (e.totalScore || 0) < 7).length;
-      const avgScore = (evals.reduce((acc, curr) => acc + (curr.totalScore || 0), 0) / evals.length).toFixed(1);
+      payloadData.data = evals;
 
-      // If user selected only 1 evaluation from history, print detailed executive sheet for it!
-      if (evals.length === 1) {
-        const item = evals[0];
-        const crit = item.criteria || {};
-
-        bodyContent = `
-          <div class="print-doc-header">
-            <div>
-              <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-              <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 FICHA EJECUTIVA DE EVALUACIÓN VIRAL</p>
-            </div>
-            <div style="text-align: right; font-size: 9pt; color: #64748b;">
-              <p style="margin: 0;"><strong>Cliente:</strong> ${escapeHtml(item.client || 'General')}</p>
-              <p style="margin: 2px 0 0 0;"><strong>Fecha de Evaluación:</strong> ${item.createdAt ? new Date(item.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : dateStr}</p>
-            </div>
+      bodyContent = `
+        <div class="print-doc-header">
+          <div>
+            <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+            <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 REPORTE DE HISTORIAL & RANKING DE VIRALIDAD</p>
           </div>
-
-          <div class="print-card" style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px;">
-              <div>
-                <span style="font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: #d97706; display: block; margin-bottom: 2px;">Idea Registrada en Historial</span>
-                <h2 style="font-size: 14pt; font-weight: 800; color: #0f172a; margin: 0;">${escapeHtml(item.title || '(Sin título ingresado)')}</h2>
-                ${item.link ? `<p style="font-size: 8.5pt; color: #0284c7; margin: 4px 0 0 0;">🔗 ${escapeHtml(item.link)}</p>` : ''}
-              </div>
-              <div style="text-align: right;">
-                <div style="font-size: 26pt; font-weight: 900; font-family: monospace; color: ${(item.totalScore || 0) >= 10 ? '#059669' : (item.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'};">${(item.totalScore || 0).toFixed(1)} <span style="font-size: 12pt; color: #64748b;">/ 14.5</span></div>
-                <span class="print-badge" style="font-size: 8.5pt; background: ${(item.totalScore || 0) >= 10 ? '#ecfdf5' : (item.totalScore || 0) >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${(item.totalScore || 0) >= 10 ? '#065f46' : (item.totalScore || 0) >= 7 ? '#92400e' : '#991b1b'}; border-color: ${(item.totalScore || 0) >= 10 ? '#a7f3d0' : (item.totalScore || 0) >= 7 ? '#fde68a' : '#fecaca'};">
-                  ${escapeHtml(item.potential || 'Evaluado')}
-                </span>
-              </div>
-            </div>
-
-            <h3 style="font-size: 10pt; font-weight: 800; text-transform: uppercase; color: #334155; margin: 0 0 8px 0;">Desglose de los 6 Criterios de Viralidad</h3>
-            <table class="print-table" style="margin-bottom: 14px;">
-              <thead>
-                <tr>
-                  <th>Criterio Evaluado</th>
-                  <th style="width: 90px; text-align: center;">Ponderación</th>
-                  <th style="width: 130px; text-align: center;">Resultado</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>1. Regla del Niño de 5 Años:</strong> Explicación sencilla, comprensible al instante por cualquiera.</td>
-                  <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.nino ? '#059669' : '#94a3b8'};">${crit.nino ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-                <tr>
-                  <td><strong>2. Regla del 50 de 100:</strong> De 100 personas en la calle, al menos a 50 les interesaría el tema.</td>
-                  <td style="text-align: center; font-weight: 600;">2.5 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.cincuenta ? '#059669' : '#94a3b8'};">${crit.cincuenta ? '✅ CUMPLE (+2.5)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-                <tr>
-                  <td><strong>3. Referencia Viral Comprobada:</strong> Gancho o formato modelado de un video validado con >100k views.</td>
-                  <td style="text-align: center; font-weight: 600;">2.0 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.refViral ? '#059669' : '#94a3b8'};">${crit.refViral ? '✅ CUMPLE (+2.0)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-                <tr>
-                  <td><strong>4. Mercado Altamente Viral:</strong> Temáticas masivas de alto consumo habitual (dinero, salud, relaciones, ahorro).</td>
-                  <td style="text-align: center; font-weight: 600;">0.5 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.mercadoViral ? '#059669' : '#94a3b8'};">${crit.mercadoViral ? '✅ CUMPLE (+0.5)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-                <tr>
-                  <td><strong>5. Tendencia o Novedad:</strong> Utiliza una conversación activa, noticia del momento o coyuntura.</td>
-                  <td style="text-align: center; font-weight: 600;">1.5 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.tendencia ? '#059669' : '#94a3b8'};">${crit.tendencia ? '✅ CUMPLE (+1.5)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-                <tr>
-                  <td><strong>6. Controversia o Debate:</strong> Estimula a la gente a comentar, disentir o defender posturas sanas.</td>
-                  <td style="text-align: center; font-weight: 600;">1.0 pts</td>
-                  <td style="text-align: center; font-weight: 700; color: ${crit.controversia ? '#059669' : '#94a3b8'};">${crit.controversia ? '✅ CUMPLE (+1.0)' : '❌ NO CUMPLE (0.0)'}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-              <div class="print-section-box" style="border-left-color: #8b5cf6;">
-                <strong style="font-size: 8pt; text-transform: uppercase; color: #6d28d9; display: block; margin-bottom: 2px;">Formato Audiovisual</strong>
-                <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${escapeHtml(item.format || 'No especificado')}</p>
-                <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Puntuación de formato: <strong>+${(item.formatScore || 0).toFixed(1)} / 4.5 pts</strong></p>
-              </div>
-              <div class="print-section-box" style="border-left-color: #10b981;">
-                <strong style="font-size: 8pt; text-transform: uppercase; color: #047857; display: block; margin-bottom: 2px;">Subtotal Criterios Base</strong>
-                <p style="font-size: 9.5pt; font-weight: bold; margin: 0; color: #0f172a;">${(item.criteriaScore || 0).toFixed(1)} / 10.0 Puntos</p>
-                <p style="font-size: 8pt; color: #64748b; margin: 2px 0 0 0;">Total Final = <strong>${(item.totalScore || 0).toFixed(1)} / 14.5 pts</strong></p>
-              </div>
-            </div>
-
-            <div class="print-section-box" style="border-left-color: ${(item.totalScore || 0) >= 10 ? '#059669' : (item.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'}; background-color: #fafafa;">
-              <strong style="font-size: 8.5pt; text-transform: uppercase; color: #0f172a; display: block; margin-bottom: 4px;">Dictamen Estratégico BLEX STUDIO:</strong>
-              <p style="font-size: 9pt; margin: 0; color: #1e293b; line-height: 1.45;">
-                ${(item.totalScore || 0) >= 10 
-                  ? '🚀 <strong>ALTO POTENCIAL VIRAL:</strong> Esta idea cuenta con una estructura óptima de retención, simplicidad y atractivo masivo. Se recomienda proceder a guionizado y grabación con máxima prioridad.' 
-                  : (item.totalScore || 0) >= 7 
-                  ? '⚡ <strong>POTENCIAL MEDIO:</strong> La idea es viable para comunidad. Para tráfico frío, se sugiere reforzar el gancho inicial de 0-3 segundos o subir a un formato de mayor inmersión.' 
-                  : '⚠️ <strong>POTENCIAL BAJO:</strong> Se recomienda pivotar el enfoque o buscar un caso de estudio más contundente antes de invertir tiempo de producción.'}
-              </p>
-            </div>
+          <div style="text-align: right; font-size: 9pt; color: #64748b;">
+            <p style="margin: 0;"><strong>Total Evaluaciones:</strong> ${evals.length}</p>
+            <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
           </div>
-        `;
-      } else {
-        // Multiple selected evaluations from history: render Comparative Report & KPI table
-        bodyContent = `
-          <div class="print-doc-header">
-            <div>
-              <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
-              <p style="font-size: 11pt; font-weight: 700; color: #d97706; margin: 0;">🔥 REPORTE DE HISTORIAL & RANKING DE VIRALIDAD</p>
-            </div>
-            <div style="text-align: right; font-size: 9pt; color: #64748b;">
-              <p style="margin: 0;"><strong>Total Evaluaciones Seleccionadas:</strong> ${evals.length}</p>
-              <p style="margin: 2px 0 0 0;"><strong>Fecha de Reporte:</strong> ${dateStr}</p>
-            </div>
-          </div>
+        </div>
 
-          <!-- KPI SUMMARY BAR -->
-          <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
-            <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
-              <div class="print-kpi-value" style="color: #f59e0b;">${evals.length}</div>
-              <div class="print-kpi-label" style="color: #e2e8f0;">Total Seleccionadas</div>
-            </div>
-            <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
-              <div class="print-kpi-value" style="color: #b45309;">${avgScore} / 14.5</div>
-              <div class="print-kpi-label" style="color: #b45309;">Promedio General</div>
-            </div>
-            <div class="print-kpi-card" style="border-color: #bbf7d0; background: #f0fdf4;">
-              <div class="print-kpi-value" style="color: #166534;">${countViral}</div>
-              <div class="print-kpi-label" style="color: #166534;">🚀 Muy Alto / Viral</div>
-            </div>
-            <div class="print-kpi-card" style="border-color: #fed7aa; background: #fff7ed;">
-              <div class="print-kpi-value" style="color: #9a3412;">${countMedio} (Medio) / ${countBajo} (Bajo)</div>
-              <div class="print-kpi-label" style="color: #9a3412;">⚡ Potencial Medio / Bajo</div>
-            </div>
-          </div>
-
-          <table class="print-table">
-            <thead>
-              <tr>
-                <th style="width: 30px; text-align: center;">#</th>
-                <th style="width: 75px;">Fecha</th>
-                <th style="width: 75px;">Cliente</th>
-                <th>Idea Evaluada & Enlace</th>
-                <th style="width: 110px;">Formato</th>
-                <th style="width: 85px; text-align: center;">Puntaje</th>
-                <th style="width: 110px; text-align: center;">Potencial</th>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width: 30px; text-align: center;">#</th>
+              <th style="width: 75px;">Fecha</th>
+              <th style="width: 75px;">Cliente</th>
+              <th>Idea Evaluada</th>
+              <th style="width: 110px;">Formato</th>
+              <th style="width: 85px; text-align: center;">Puntaje</th>
+              <th style="width: 110px; text-align: center;">Potencial</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${evals.map((e, idx) => `
+              <tr class="print-avoid-break">
+                <td style="text-align: center; font-weight: bold; font-family: monospace;">#${idx + 1}</td>
+                <td style="font-size: 8.5pt; color: #64748b;">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-ES') : '-'}</td>
+                <td style="font-weight: bold;">${escapeHtml(e.client || 'General')}</td>
+                <td style="font-weight: 600; color: #0f172a;">${escapeHtml(e.title || 'Sin título')}</td>
+                <td style="font-size: 8.5pt;">${escapeHtml(e.format || '-')}</td>
+                <td style="text-align: center; font-weight: bold; font-family: monospace; font-size: 10pt; color: ${(e.totalScore || 0) >= 10 ? '#059669' : (e.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'};">
+                  ${(e.totalScore || 0).toFixed(1)} / 14.5
+                </td>
+                <td style="text-align: center;">
+                  <span class="print-badge" style="font-size: 8pt; background: ${(e.totalScore || 0) >= 10 ? '#ecfdf5' : (e.totalScore || 0) >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${(e.totalScore || 0) >= 10 ? '#065f46' : (e.totalScore || 0) >= 7 ? '#92400e' : '#991b1b'}; border-color: ${(e.totalScore || 0) >= 10 ? '#a7f3d0' : (e.totalScore || 0) >= 7 ? '#fde68a' : '#fecaca'};">
+                    ${escapeHtml(e.potential || 'Evaluado')}
+                  </span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              ${evals.map((e, idx) => `
-                <tr class="print-avoid-break">
-                  <td style="text-align: center; font-weight: bold; font-family: monospace; color: #64748b;">#${idx + 1}</td>
-                  <td style="font-size: 8.5pt; color: #64748b;">${e.createdAt ? new Date(e.createdAt).toLocaleDateString('es-ES') : '-'}</td>
-                  <td style="font-weight: bold;">${escapeHtml(e.client || 'General')}</td>
-                  <td style="font-weight: 600; color: #0f172a;">
-                    ${escapeHtml(e.title || 'Sin título')}
-                    ${e.link ? `<div style="font-size: 7.5pt; color: #0284c7; font-weight: normal;">🔗 ${escapeHtml(e.link)}</div>` : ''}
-                  </td>
-                  <td style="font-size: 8.5pt;">${escapeHtml(e.format || '-')}</td>
-                  <td style="text-align: center; font-weight: bold; font-family: monospace; font-size: 10pt; color: ${(e.totalScore || 0) >= 10 ? '#059669' : (e.totalScore || 0) >= 7 ? '#d97706' : '#dc2626'};">
-                    ${(e.totalScore || 0).toFixed(1)} / 14.5
-                  </td>
-                  <td style="text-align: center;">
-                    <span class="print-badge" style="font-size: 8pt; background: ${(e.totalScore || 0) >= 10 ? '#ecfdf5' : (e.totalScore || 0) >= 7 ? '#fffbeb' : '#fef2f2'}; color: ${(e.totalScore || 0) >= 10 ? '#065f46' : (e.totalScore || 0) >= 7 ? '#92400e' : '#991b1b'}; border-color: ${(e.totalScore || 0) >= 10 ? '#a7f3d0' : (e.totalScore || 0) >= 7 ? '#fde68a' : '#fecaca'};">
-                      ${escapeHtml(e.potential || 'Evaluado')}
-                    </span>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      }
+            `).join('')}
+          </tbody>
+        </table>
+      `;
     }
+
+  } else if (currentPrintModule === 'calendar') {
+    const events = (state.calendarEvents || []).filter(e => printSelectedIds.has(e.id));
+    if (events.length === 0) {
+      alert('Por favor selecciona al menos una actividad del calendario para imprimir.');
+      return null;
+    }
+
+    payloadData.data = events;
+
+    bodyContent = `
+      <div class="print-doc-header">
+        <div>
+          <h1 style="font-size: 22pt; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">BLEX STUDIO</h1>
+          <p style="font-size: 11pt; font-weight: 700; color: #9333ea; margin: 0;">📅 CRONOGRAMA & CALENDARIO DE CONTENIDOS</p>
+        </div>
+        <div style="text-align: right; font-size: 9pt; color: #64748b;">
+          <p style="margin: 0;"><strong>Total Actividades:</strong> ${events.length}</p>
+          <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
+        </div>
+      </div>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th style="width: 85px;">Fecha / Hora</th>
+            <th style="width: 100px;">Actividad</th>
+            <th style="width: 75px;">Cliente</th>
+            <th>Título / Guión Programado</th>
+            <th style="width: 90px; text-align: center;">Estado</th>
+            <th>Notas / Plataforma</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${events.map(ev => `
+            <tr class="print-avoid-break">
+              <td style="font-weight: bold; font-family: monospace; font-size: 8.5pt;">${escapeHtml(ev.date || '')} <br><span style="color:#64748b; font-weight:normal;">${escapeHtml(ev.time || '19:00')}</span></td>
+              <td><span class="print-badge" style="background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff;">${escapeHtml(ev.type || 'Publicación')}</span></td>
+              <td style="font-weight: bold;">${escapeHtml(ev.client || 'General')}</td>
+              <td style="font-weight: 600; color: #0f172a;">${escapeHtml(ev.title || 'Actividad')}</td>
+              <td style="text-align: center;"><span class="print-badge">${escapeHtml(ev.status || 'Programado')}</span></td>
+              <td style="font-size: 8pt; color: #475569;">${escapeHtml(ev.notes || ev.platform || '-')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
 
   } else if (currentPrintModule === 'ideas') {
     const allIdeas = getAllIdeasForPrint().filter(i => printSelectedIds.has(i.id));
@@ -5097,14 +4937,7 @@ function generateCompletePrintDocument(forNewTab = false) {
       return null;
     }
 
-    const countScriptIdeas = allIdeas.filter(i => i.type === 'Idea de Guión').length;
-    const countNotes = allIdeas.filter(i => i.type.includes('Nota')).length;
-    
-    // Group count by client
-    const clientCounts = {};
-    allIdeas.forEach(i => {
-      clientCounts[i.client] = (clientCounts[i.client] || 0) + 1;
-    });
+    payloadData.data = allIdeas;
 
     bodyContent = `
       <div class="print-doc-header">
@@ -5113,75 +4946,55 @@ function generateCompletePrintDocument(forNewTab = false) {
           <p style="font-size: 11pt; font-weight: 700; color: #ca8a04; margin: 0;">💡 BANCO DE IDEAS & NOTAS ESTRATÉGICAS</p>
         </div>
         <div style="text-align: right; font-size: 9pt; color: #64748b;">
-          <p style="margin: 0;"><strong>Total Ideas / Notas:</strong> ${allIdeas.length}</p>
+          <p style="margin: 0;"><strong>Total Ideas:</strong> ${allIdeas.length}</p>
           <p style="margin: 2px 0 0 0;"><strong>Fecha:</strong> ${dateStr}</p>
         </div>
       </div>
 
-      <!-- KPI METRICS SUMMARY -->
-      <div class="print-kpi-grid" style="grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 16px;">
-        <div class="print-kpi-card" style="border-color: #0f172a; background: #0f172a; color: #ffffff;">
-          <div class="print-kpi-value" style="color: #eab308;">${allIdeas.length}</div>
-          <div class="print-kpi-label" style="color: #e2e8f0;">Total Ideas & Notas</div>
-        </div>
-        <div class="print-kpi-card" style="border-color: #fef08a; background: #fef9c3;">
-          <div class="print-kpi-value" style="color: #854d0e;">${countScriptIdeas}</div>
-          <div class="print-kpi-label" style="color: #854d0e;">💡 Ideas de Guiones</div>
-        </div>
-        <div class="print-kpi-card" style="border-color: #bae6fd; background: #f0f9ff;">
-          <div class="print-kpi-value" style="color: #0369a1;">${countNotes}</div>
-          <div class="print-kpi-label" style="color: #0369a1;">📝 Notas Estratégicas</div>
-        </div>
-        <div class="print-kpi-card" style="border-color: #e2e8f0; background: #f8fafc;">
-          <div class="print-kpi-value" style="color: #334155;">${Object.keys(clientCounts).length}</div>
-          <div class="print-kpi-label" style="color: #475569;">👥 Clientes con Ideas</div>
-        </div>
-      </div>
-
-      <!-- DESGLOSE DETALLADO DE TODAS LAS IDEAS -->
-      <div style="margin-top: 16px;">
-        <h2 style="font-size: 12pt; font-weight: 800; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 14px 0;">
-          📋 Listado y Detalle de Ideas Seleccionadas (${allIdeas.length})
-        </h2>
-
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          ${allIdeas.map((item, idx) => `
-            <div class="print-card print-avoid-break" style="margin-bottom: 12px; padding: 12px 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 9pt; font-weight: bold; font-family: monospace; color: #64748b;">#${idx + 1}</span>
-                  <span class="print-badge" style="background: ${item.type === 'Idea de Guión' ? '#fef9c3' : '#e0f2fe'}; color: ${item.type === 'Idea de Guión' ? '#854d0e' : '#0369a1'}; border-color: ${item.type === 'Idea de Guión' ? '#fef08a' : '#bae6fd'};">
-                    ${escapeHtml(item.type)}
-                  </span>
-                  <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(item.title)}</span>
-                </div>
-                <span class="print-badge" style="font-weight: 800;">${escapeHtml(item.client)}</span>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        ${allIdeas.map((item, idx) => `
+          <div class="print-card print-avoid-break">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 9pt; font-weight: bold; font-family: monospace; color: #64748b;">#${idx + 1}</span>
+                <span class="print-badge" style="background: ${item.type === 'Idea de Guión' ? '#fef9c3' : '#e0f2fe'}; color: ${item.type === 'Idea de Guión' ? '#854d0e' : '#0369a1'};">
+                  ${escapeHtml(item.type)}
+                </span>
+                <span style="font-size: 11pt; font-weight: 700; color: #0f172a;">${escapeHtml(item.title)}</span>
               </div>
-              <div class="print-section-box" style="border-left-color: ${item.type === 'Idea de Guión' ? '#eab308' : '#0284c7'}; white-space: pre-line; font-size: 9.5pt; color: #334155; line-height: 1.5; margin-top: 6px;">
-                ${escapeHtml(item.content)}
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 8pt; color: #64748b; margin-top: 6px;">
-                <span>📅 Registrado: ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : '-'}</span>
-                <span>BLEX STUDIO</span>
-              </div>
+              <span class="print-badge" style="font-weight: 800;">${escapeHtml(item.client)}</span>
             </div>
-          `).join('')}
-        </div>
+            <div class="print-section-box" style="white-space: pre-line; font-size: 9.5pt; color: #334155; line-height: 1.5; margin-top: 6px;">
+              ${escapeHtml(item.content)}
+            </div>
+          </div>
+        `).join('')}
       </div>
     `;
+  }
+
+  currentSmartDocPayload = payloadData;
+
+  // Safe JSON base64 embedding for instant lossless import
+  const rawPayloadJson = JSON.stringify(payloadData);
+  let base64Payload = '';
+  try {
+    base64Payload = btoa(unescape(encodeURIComponent(rawPayloadJson)));
+  } catch(e) {
+    base64Payload = '';
   }
 
   const topBarHtml = forNewTab ? `
     <div class="no-print-bar">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <strong style="font-size: 14px; letter-spacing: 0.5px;">BLEX STUDIO • Vista Previa de Impresión</strong>
+        <strong style="font-size: 14px; letter-spacing: 0.5px;">BLEX STUDIO • Impresión & Documento Inteligente</strong>
       </div>
       <div style="display: flex; gap: 8px;">
         <button onclick="window.print()" style="background: #16a34a; color: #fff; font-weight: bold; padding: 6px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
           🖨️ Imprimir / Guardar PDF
         </button>
         <button onclick="window.close()" style="background: #334155; color: #fff; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
-          Cerrar Pestaña
+          Cerrar
         </button>
       </div>
     </div>
@@ -5191,18 +5004,42 @@ function generateCompletePrintDocument(forNewTab = false) {
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>BLEX STUDIO - Impresión</title>
+  <title>BLEX STUDIO - ${escapeHtml(currentPrintModule.toUpperCase())}</title>
+  <meta name="blex-smart-module" content="${escapeHtml(currentPrintModule)}">
+  <meta name="blex-smart-data" content="${base64Payload}">
   <style>
     ${getStandalonePrintStyles()}
   </style>
 </head>
 <body>
+  <!-- BLEX_SMART_PAYLOAD_START:${base64Payload}:BLEX_SMART_PAYLOAD_END -->
   ${topBarHtml}
   <div class="print-doc-container">
     ${bodyContent}
   </div>
+  <script id="blex-smart-payload" type="application/json">
+    ${rawPayloadJson}
+  </script>
 </body>
 </html>`;
+}
+
+function downloadSmartDocPayload() {
+  const fullHtml = generateCompletePrintDocument(false);
+  if (!fullHtml || !currentSmartDocPayload) return;
+
+  const fileName = `blex_${currentPrintModule}_${new Date().toISOString().slice(0,10)}.html`;
+  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Archivo Inteligente de ${currentPrintModule} descargado. Puedes transferirlo a tu iPad o celular e incorporarlo.`, 'success');
 }
 
 function executeEnhancedPrint(openInNewTab = false) {
@@ -5229,7 +5066,7 @@ function executeEnhancedPrint(openInNewTab = false) {
     return;
   }
 
-  // Pure Isolated Iframe Printing (Guarantees zero blank pages across all devices)
+  // Pure Isolated Iframe Printing
   let printIframe = document.getElementById('blexPrintIframe');
   if (printIframe) {
     printIframe.remove();
@@ -5255,18 +5092,486 @@ function executeEnhancedPrint(openInNewTab = false) {
     try {
       printIframe.contentWindow.focus();
       printIframe.contentWindow.print();
-    } catch (err) {
-      console.warn('Iframe print fallback to window.open:', err);
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.open();
-        printWindow.document.write(fullHtml);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => printWindow.print(), 200);
+    } catch(e) {
+      console.warn('Iframe print error, falling back to window.print():', e);
+      window.print();
+    }
+  }, 400);
+}
+
+
+// =========================================================================
+// UNIVERSAL SMART PDF & DOCUMENT INCORPORATION / IMPORT BRIDGE
+// =========================================================================
+
+function openSmartDocImportModal(preferredTarget = 'auto') {
+  smartDocPendingItems = [];
+  smartDocSelectedTarget = preferredTarget;
+  setImportTargetModule(preferredTarget);
+
+  const modal = document.getElementById('smartDocImportModal');
+  const statusBox = document.getElementById('smartDocStatusBox');
+  const previewContainer = document.getElementById('smartDocPreviewContainer');
+  const applyBtn = document.getElementById('btnApplySmartDocImport');
+  const fileInput = document.getElementById('smartDocFileInput');
+
+  if (fileInput) fileInput.value = '';
+  if (statusBox) statusBox.classList.add('hidden');
+  if (previewContainer) previewContainer.classList.add('hidden');
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.classList.add('opacity-40', 'cursor-not-allowed');
+  }
+
+  if (modal) modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeSmartDocImportModal() {
+  const modal = document.getElementById('smartDocImportModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function setImportTargetModule(target) {
+  smartDocSelectedTarget = target;
+  const tabs = [
+    { id: 'importTabAuto', target: 'auto' },
+    { id: 'importTabCards', target: 'cards' },
+    { id: 'importTabSet', target: 'set' },
+    { id: 'importTabMatrix', target: 'matrix' },
+    { id: 'importTabViral', target: 'viral' },
+    { id: 'importTabCalendar', target: 'calendar' }
+  ];
+
+  tabs.forEach(t => {
+    const el = document.getElementById(t.id);
+    if (!el) return;
+    if (t.target === target) {
+      el.className = 'import-module-tab p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/10 text-white font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-sm';
+    } else {
+      el.className = 'import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer';
+    }
+  });
+
+  refreshLucideIcons();
+}
+
+async function handleSmartDocFileSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  await processSmartDocFile(file);
+}
+
+// PDF Text Extractor using PDF.js
+async function extractTextFromPdfFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = async function() {
+      try {
+        const typedArray = new Uint8Array(reader.result);
+        if (typeof pdfjsLib === 'undefined') {
+          // Fallback: decode as latin1/utf-8 raw text
+          const rawText = new TextDecoder('utf-8').decode(typedArray);
+          return resolve(rawText);
+        }
+
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          fullText += `\n--- Página ${i} ---\n` + pageText;
+        }
+        resolve(fullText);
+      } catch(err) {
+        console.warn('PDF.js parsing error, attempting raw text extraction:', err);
+        try {
+          const rawText = new TextDecoder('utf-8').decode(reader.result);
+          resolve(rawText);
+        } catch(e) {
+          reject(err);
+        }
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function processSmartDocFile(file) {
+  const statusBox = document.getElementById('smartDocStatusBox');
+  const statusTitle = document.getElementById('smartDocStatusTitle');
+  const statusDesc = document.getElementById('smartDocStatusDesc');
+  const previewContainer = document.getElementById('smartDocPreviewContainer');
+  const previewList = document.getElementById('smartDocPreviewList');
+  const itemsCountBadge = document.getElementById('smartDocItemsCount');
+  const detectedModuleBadge = document.getElementById('smartDocDetectedModuleBadge');
+  const applyBtn = document.getElementById('btnApplySmartDocImport');
+
+  if (statusBox) statusBox.classList.remove('hidden');
+  if (statusTitle) statusTitle.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-cyan-400"></i> <span>Analizando ${escapeHtml(file.name)}...</span>`;
+  if (statusDesc) statusDesc.textContent = 'Extrayendo datos estructurados, numeraciones, ganchos, historias y CTA...';
+  if (previewContainer) previewContainer.classList.add('hidden');
+  refreshLucideIcons();
+
+  try {
+    let fileText = '';
+    let extractedPayload = null;
+
+    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      fileText = await extractTextFromPdfFile(file);
+    } else {
+      fileText = await file.text();
+    }
+
+    // 1. Check for Embedded BLEX Payload (Zero loss instant extraction)
+    const payloadRegex = /<!--\s*BLEX_SMART_PAYLOAD_START:([A-Za-z0-9+/=]+):BLEX_SMART_PAYLOAD_END\s*-->/;
+    const metaRegex = /<meta\s+name="blex-smart-data"\s+content="([A-Za-z0-9+/=]+)"/i;
+    const match = fileText.match(payloadRegex) || fileText.match(metaRegex);
+
+    if (match && match[1]) {
+      try {
+        const decoded = decodeURIComponent(escape(atob(match[1])));
+        extractedPayload = JSON.parse(decoded);
+      } catch(e) {
+        console.warn('Base64 payload parse failed:', e);
       }
     }
-  }, 250);
+
+    // Direct JSON backup support
+    if (!extractedPayload && (file.name.endsWith('.json') || fileText.trim().startsWith('{'))) {
+      try {
+        const parsed = JSON.parse(fileText);
+        if (parsed.scripts || Array.isArray(parsed)) {
+          extractedPayload = { module: 'matrix', data: Array.isArray(parsed) ? parsed : (parsed.scripts || []) };
+        } else if (parsed.module && parsed.data) {
+          extractedPayload = parsed;
+        }
+      } catch(e) {}
+    }
+
+    // 2. Intelligent Pattern Extraction from Text (for standard exported PDFs)
+    if (!extractedPayload) {
+      extractedPayload = parseTextIntoSmartData(fileText, smartDocSelectedTarget);
+    }
+
+    // Determine target module
+    let finalModule = smartDocSelectedTarget !== 'auto' ? smartDocSelectedTarget : (extractedPayload.module || 'cards');
+    let items = extractedPayload.data || [];
+
+    if (!Array.isArray(items)) {
+      items = [items];
+    }
+
+    smartDocPendingItems = items;
+    smartDocSelectedTarget = finalModule;
+
+    if (items.length === 0) {
+      if (statusTitle) statusTitle.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i> <span class="text-amber-300">No se reconocieron elementos claros</span>`;
+      if (statusDesc) statusDesc.textContent = 'Verifica que el PDF o archivo contenga guiones, tarjetas visuales, evaluaciones o actividades de Blex Studio.';
+      refreshLucideIcons();
+      return;
+    }
+
+    // Render Preview
+    if (statusBox) statusBox.classList.remove('hidden');
+    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> <span class="text-emerald-300">¡Extracción Exitosa!</span>`;
+    if (statusDesc) statusDesc.textContent = `Se encontraron ${items.length} elemento(s) listos para sincronizar en ${finalModule.toUpperCase()}.`;
+
+    if (detectedModuleBadge) {
+      const labels = {
+        'cards': '🎴 Tarjetas Visuales',
+        'set': '🎬 Set de Grabación',
+        'matrix': '📊 Matriz de Guiones',
+        'viral': '🔥 Calculadora Viral',
+        'calendar': '📅 Calendario',
+        'ideas': '💡 Ideas & Notas'
+      };
+      detectedModuleBadge.textContent = labels[finalModule] || finalModule.toUpperCase();
+    }
+
+    if (itemsCountBadge) itemsCountBadge.textContent = items.length;
+
+    if (previewList) {
+      previewList.innerHTML = items.map((item, idx) => {
+        const title = item.ideaGanadora || item.title || item.name || `Elemento #${idx + 1}`;
+        const num = item.number || idx + 1;
+        const hook = item.gancho || item.hook || '';
+        const story = item.historia || item.story || item.notes || '';
+        const client = item.client || state.activeClient || 'General';
+
+        return `
+          <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-mono font-bold text-cyan-400 shrink-0">#${num}</span>
+                <span class="font-bold text-white truncate">${escapeHtml(title)}</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 shrink-0">${escapeHtml(client)}</span>
+            </div>
+            ${hook ? `<p class="text-[11px] text-slate-300 line-clamp-1"><strong class="text-red-400 font-semibold">Gancho:</strong> ${escapeHtml(hook)}</p>` : ''}
+            ${story ? `<p class="text-[11px] text-slate-400 line-clamp-1"><strong class="text-sky-400 font-semibold">Historia:</strong> ${escapeHtml(story)}</p>` : ''}
+            ${item.espacio ? `<p class="text-[10px] text-indigo-300 line-clamp-1">📍 ${escapeHtml(item.espacio)}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (previewContainer) previewContainer.classList.remove('hidden');
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+    }
+
+    refreshLucideIcons();
+
+  } catch(err) {
+    console.error('Smart Doc Import Error:', err);
+    if (statusTitle) statusTitle.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i> <span class="text-rose-300">Error al procesar el archivo</span>`;
+    if (statusDesc) statusDesc.textContent = err.message || 'No se pudo leer el PDF o documento.';
+    refreshLucideIcons();
+  }
+}
+
+// Deterministic Intelligent Parser for Printed Texts
+function parseTextIntoSmartData(text, targetModule) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  
+  // Detect scripts by numbering #1, #2 or "SET #1" or "Idea Ganadora"
+  const scriptBlocks = [];
+  let currentScript = null;
+  let currentField = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check for script start
+    const numMatch = line.match(/^(?:SET\s*)?#(\d+)\s*(?:[:.-]|\s+)?\s*(.*)/i);
+    if (numMatch) {
+      if (currentScript) scriptBlocks.push(currentScript);
+      currentScript = {
+        id: 'script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        number: parseInt(numMatch[1], 10),
+        ideaGanadora: (numMatch[2] || '').trim(),
+        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
+        formato: 'Talking Head',
+        status: 'Por Grabar',
+        gancho: '',
+        historia: '',
+        moraleja: '',
+        cta: '',
+        espacio: '',
+        contextoAdicional: '',
+        actor: 'Principal',
+        createdAt: new Date().toISOString()
+      };
+      currentField = null;
+      continue;
+    }
+
+    if (!currentScript && (line.includes('GANCHO') || line.includes('HISTORIA') || line.includes('FICHAS') || line.includes('TARJETAS'))) {
+      currentScript = {
+        id: 'script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        number: scriptBlocks.length + 1,
+        ideaGanadora: 'Guión Importado #' + (scriptBlocks.length + 1),
+        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
+        status: 'Por Grabar',
+        gancho: '',
+        historia: '',
+        moraleja: '',
+        cta: '',
+        espacio: '',
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    if (currentScript) {
+      if (/^🎣?\s*(?:\[?GANCHO\]?|Gancho)/i.test(line)) {
+        currentField = 'gancho';
+        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
+        if (afterColon && afterColon !== line) currentScript.gancho = afterColon;
+      } else if (/^📖?\s*(?:\[?HISTORIA\]?|Historia)/i.test(line)) {
+        currentField = 'historia';
+        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
+        if (afterColon && afterColon !== line) currentScript.historia = afterColon;
+      } else if (/^💡?\s*(?:\[?MORALEJA\]?|Moraleja)/i.test(line)) {
+        currentField = 'moraleja';
+        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
+        if (afterColon && afterColon !== line) currentScript.moraleja = afterColon;
+      } else if (/^🚀?\s*(?:\[?CTA\]?|Llamado a la Acción|CTA)/i.test(line)) {
+        currentField = 'cta';
+        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
+        if (afterColon && afterColon !== line) currentScript.cta = afterColon;
+      } else if (/^(?:📍?\s*Plan de Espacio|Espacio|Vestimenta|Locación|Indicaciones)/i.test(line)) {
+        currentField = 'espacio';
+        const afterColon = line.replace(/^.*?[:\]\)]\s*/, '').trim();
+        if (afterColon && afterColon !== line) currentScript.espacio = afterColon;
+      } else if (/^Cliente\s*[:(]/i.test(line)) {
+        currentScript.client = line.replace(/^Cliente\s*[:(]\s*/i, '').trim();
+        currentField = null;
+      } else if (currentField && currentScript[currentField] !== undefined) {
+        if (currentScript[currentField]) {
+          currentScript[currentField] += ' ' + line;
+        } else {
+          currentScript[currentField] = line;
+        }
+      } else if (!currentScript.ideaGanadora && line.length > 5 && !line.startsWith('---') && !line.includes('Formato') && !line.includes('Estado')) {
+        currentScript.ideaGanadora = line;
+      }
+    }
+  }
+
+  if (currentScript) scriptBlocks.push(currentScript);
+
+  if (scriptBlocks.length > 0) {
+    return {
+      module: targetModule === 'set' ? 'set' : 'cards',
+      data: scriptBlocks
+    };
+  }
+
+  // Fallback to calendar parsing if date mentions exist
+  const calendarMatches = [];
+  const dateRegex = /(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})/g;
+  for (let l of lines) {
+    if (dateRegex.test(l)) {
+      calendarMatches.push({
+        id: 'cal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        title: l.substring(0, 60),
+        date: l.match(dateRegex)[0],
+        time: '19:00',
+        client: state.activeClient !== 'ALL' ? state.activeClient : 'Jennil',
+        type: 'PUBLICACION',
+        status: 'PROGRAMADO',
+        notes: l
+      });
+    }
+  }
+
+  if (calendarMatches.length > 0) {
+    return {
+      module: 'calendar',
+      data: calendarMatches
+    };
+  }
+
+  return { module: 'cards', data: [] };
+}
+
+function applySmartDocImport() {
+  if (!smartDocPendingItems || smartDocPendingItems.length === 0) {
+    showToast('No hay elementos pendientes para importar.', 'warning');
+    return;
+  }
+
+  const moduleName = smartDocSelectedTarget;
+  let countUpdated = 0;
+
+  if (moduleName === 'cards' || moduleName === 'matrix' || moduleName === 'set') {
+    if (!state.scripts) state.scripts = [];
+    
+    smartDocPendingItems.forEach(newItem => {
+      // Find matching script by ID or number or title
+      let existingIndex = state.scripts.findIndex(s => s.id === newItem.id);
+      if (existingIndex === -1 && newItem.ideaGanadora) {
+        existingIndex = state.scripts.findIndex(s => s.ideaGanadora && s.ideaGanadora.toLowerCase().trim() === newItem.ideaGanadora.toLowerCase().trim());
+      }
+
+      if (existingIndex >= 0) {
+        // Update existing item while preserving missing details
+        state.scripts[existingIndex] = {
+          ...state.scripts[existingIndex],
+          ...newItem,
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        // Insert as new script with accurate numbering
+        const maxNum = state.scripts.reduce((max, s) => Math.max(max, s.number || 0), 0);
+        state.scripts.push({
+          ...newItem,
+          id: newItem.id || ('script_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+          number: newItem.number || (maxNum + 1),
+          createdAt: newItem.createdAt || new Date().toISOString()
+        });
+      }
+      countUpdated++;
+    });
+
+    saveState();
+    renderScripts();
+    switchView(moduleName === 'cards' ? 'cards' : moduleName === 'set' ? 'teleprompter' : 'matrix');
+
+  } else if (moduleName === 'viral') {
+    if (!state.viralEvaluations) state.viralEvaluations = [];
+
+    smartDocPendingItems.forEach(item => {
+      const existingIdx = state.viralEvaluations.findIndex(e => e.id === item.id);
+      if (existingIdx >= 0) {
+        state.viralEvaluations[existingIdx] = { ...state.viralEvaluations[existingIdx], ...item };
+      } else {
+        state.viralEvaluations.unshift({
+          ...item,
+          id: item.id || ('viral_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+          createdAt: item.createdAt || new Date().toISOString()
+        });
+      }
+      countUpdated++;
+    });
+
+    saveState();
+    renderViralHistoryTable();
+    switchView('viral_calc');
+
+  } else if (moduleName === 'calendar') {
+    if (!state.calendarEvents) state.calendarEvents = [];
+
+    smartDocPendingItems.forEach(ev => {
+      const existingIdx = state.calendarEvents.findIndex(e => e.id === ev.id);
+      if (existingIdx >= 0) {
+        state.calendarEvents[existingIdx] = { ...state.calendarEvents[existingIdx], ...ev };
+      } else {
+        state.calendarEvents.push({
+          ...ev,
+          id: ev.id || ('cal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+          createdAt: ev.createdAt || new Date().toISOString()
+        });
+      }
+      countUpdated++;
+    });
+
+    saveState();
+    renderCalendarView();
+    switchView('calendar');
+
+  } else if (moduleName === 'ideas') {
+    if (!state.notes) state.notes = {};
+
+    smartDocPendingItems.forEach(item => {
+      const client = item.client || 'General';
+      if (!state.notes[client]) state.notes[client] = [];
+
+      state.notes[client].unshift({
+        id: item.id || ('note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+        title: item.title || 'Idea / Nota',
+        content: item.content || '',
+        updatedAt: new Date().toISOString()
+      });
+      countUpdated++;
+    });
+
+    saveState();
+    updateNotesAndIdeasBadges();
+  }
+
+  // Trigger background cloud sync so all devices receive the updated data
+  if (typeof syncPushToCloud === 'function') {
+    syncPushToCloud().catch(err => console.warn('Cloud sync push warning:', err));
+  }
+
+  closeSmartDocImportModal();
+  showToast(`¡${countUpdated} elemento(s) incorporados y actualizados exitosamente en ${moduleName.toUpperCase()}!`, 'success');
 }
 
 function printSingleScript(scriptId) {

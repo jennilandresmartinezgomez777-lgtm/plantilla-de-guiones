@@ -45,6 +45,8 @@
       }
     }
   </script>
+  <!-- PDF.js for Smart PDF Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="styles.css?v=1789430809466&t=1789412033428">
@@ -366,6 +368,9 @@
             <button onclick="toggleFullScreen()" title="Pantalla Completa" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition">
               <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
             </button>
+            <button onclick="openSmartDocImportModal()" title="Incorporar PDF" class="p-1.5 text-cyan-400 hover:text-cyan-200 hover:bg-slate-800 rounded-lg transition">
+              <i data-lucide="file-input" class="w-3.5 h-3.5"></i>
+            </button>
             <button onclick="openPrintModal()" title="Imprimir / PDF" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
               <i data-lucide="printer" class="w-3.5 h-3.5"></i>
             </button>
@@ -402,6 +407,10 @@
           <div class="hidden sm:flex items-center gap-1 border-l border-slate-800 pl-2 shrink-0">
             <button id="btnFullScreen" onclick="toggleFullScreen()" title="Pantalla Completa" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="maximize" class="w-4 h-4"></i>
+            </button>
+            <button onclick="openSmartDocImportModal()" title="Incorporar PDF o Documento Inteligente (Actualizar Tarjetas, Guiones, etc.)" class="p-1.5 text-cyan-400 hover:text-cyan-200 hover:bg-slate-800 rounded-lg transition cursor-pointer flex items-center gap-1 font-semibold text-xs border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 shadow-sm">
+              <i data-lucide="file-input" class="w-4 h-4"></i>
+              <span class="hidden xl:inline">Incorporar PDF</span>
             </button>
             <button id="btnPrint" title="Imprimir / Exportar a PDF" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer">
               <i data-lucide="printer" class="w-4 h-4"></i>
@@ -533,6 +542,10 @@
               </button>
             </div>
             <div class="flex items-center gap-2">
+              <button type="button" onclick="openSmartDocImportModal('viral')" class="bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 hover:text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <i data-lucide="file-input" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Incorporar PDF Viral</span>
+              </button>
               <button id="btnPrintViralGuide" type="button" onclick="printViralGuide()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-amber-300 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Imprimir Guía Oficial y Conceptos Técnicos de Viralidad">
                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span>Guía & Conceptos</span>
@@ -1035,6 +1048,10 @@
           </div>
           
           <div class="flex items-center gap-2">
+            <button type="button" onclick="openSmartDocImportModal('matrix')" class="bg-brand-950/70 hover:bg-brand-900/80 text-brand-300 hover:text-white font-bold text-xs px-3 py-1.5 rounded-lg border border-brand-500/40 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="file-input" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>📥 Incorporar PDF Matriz</span>
+            </button>
             <button id="btnClearAllScripts" class="bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
               <i data-lucide="trash" class="w-3.5 h-3.5"></i>
               <span>Vaciar Plantilla Completa</span>
@@ -1086,6 +1103,30 @@
 
       <!-- VIEW 2: CARDS VIEW -->
       <section id="viewCards" class="hidden space-y-6">
+        <!-- Cards Toolbar & Fast Action Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl print:hidden">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Tarjetas Visuales de Producción</h3>
+              <p class="text-[11px] text-slate-400">Fichas estructuradas para grabación, rodaje y creación visual</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="openSmartDocImportModal('cards')" class="bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 hover:text-white font-bold text-xs px-3 py-2 rounded-xl border border-cyan-500/40 hover:border-cyan-400 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+              <i data-lucide="file-input" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>📥 Incorporar PDF de Tarjetas</span>
+            </button>
+            <button type="button" onclick="openPrintModalFor('cards')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>🎴 Imprimir Fichas / PDF</span>
+            </button>
+          </div>
+        </div>
+
         <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           <!-- Cards injected via JS -->
         </div>
@@ -1105,6 +1146,14 @@
             <select id="teleprompterSelect" class="bg-slate-950 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 text-slate-200 outline-none max-w-xs cursor-pointer">
               <!-- Options injected via JS -->
             </select>
+            <button type="button" onclick="openSmartDocImportModal('set')" class="bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 hover:text-white font-bold text-xs px-3 py-2 rounded-lg border border-indigo-500/40 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="file-input" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span class="hidden sm:inline">Incorporar PDF</span>
+            </button>
+            <button type="button" onclick="openPrintModalFor('set')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Imprimir Set & Guiones">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span class="hidden sm:inline">Imprimir Set</span>
+            </button>
             <button onclick="toggleSetCardFullscreen()" id="btnHeaderSetFullscreen" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 shrink-0 cursor-pointer" title="Maximizar / Pantalla Completa">
               <i data-lucide="maximize-2" class="w-4 h-4"></i>
               <span class="hidden sm:inline">Pantalla Completa</span>
@@ -2383,6 +2432,14 @@
 
 
             <!-- Add Event Button -->
+            <button type="button" onclick="openSmartDocImportModal('calendar')" class="bg-purple-950/70 hover:bg-purple-900/80 text-purple-300 font-bold text-xs px-3.5 py-2 rounded-xl border border-purple-500/40 transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="file-input" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span class="hidden sm:inline">Incorporar PDF</span>
+            </button>
+            <button type="button" onclick="openPrintModalFor('calendar')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Imprimir Calendario a PDF">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span class="hidden sm:inline">Imprimir Calendario</span>
+            </button>
             <button type="button" onclick="openNewCalendarEventModal()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-brand-900/50 cursor-pointer">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>+ Programar Actividad</span>
@@ -2922,30 +2979,42 @@
       <!-- Module Selection Tabs -->
       <div class="space-y-1.5 shrink-0">
         <label class="block text-xs font-semibold text-slate-300">¿Qué deseas imprimir o exportar?</label>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <!-- Tab 1: Matriz -->
-          <button type="button" onclick="setPrintModule('matrix')" id="btnPrintTabMatrix" class="print-module-tab p-2.5 rounded-xl border border-brand-500 bg-brand-500/10 text-white font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+          <button type="button" onclick="setPrintModule('matrix')" id="btnPrintTabMatrix" class="print-module-tab p-2 rounded-xl border border-brand-500 bg-brand-500/10 text-white font-bold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer shadow-sm">
             <i data-lucide="table" class="w-4 h-4 text-brand-400"></i>
-            <span>📊 Matriz & Métricas</span>
-            <span class="text-[9px] font-normal text-slate-300">Total, Estados y Tabla</span>
+            <span>📊 Matriz</span>
+            <span class="text-[9px] font-normal text-slate-300">Resumen y Tabla</span>
           </button>
-          <!-- Tab 2: Fichas -->
-          <button type="button" onclick="setPrintModule('cards')" id="btnPrintTabCards" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
-            <i data-lucide="layout-grid" class="w-4 h-4 text-purple-400"></i>
-            <span>🎴 Fichas de Grabación</span>
-            <span class="text-[9px] font-normal text-slate-400">Gancho, Historia, CTA</span>
+          <!-- Tab 2: Fichas Visuales -->
+          <button type="button" onclick="setPrintModule('cards')" id="btnPrintTabCards" class="print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i>
+            <span>🎴 Fichas Visuales</span>
+            <span class="text-[9px] font-normal text-slate-400">Ganchos, Historia</span>
           </button>
-          <!-- Tab 3: Viralidad -->
-          <button type="button" onclick="setPrintModule('viral')" id="btnPrintTabViral" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+          <!-- Tab 3: Set de Grabación -->
+          <button type="button" onclick="setPrintModule('set')" id="btnPrintTabSet" class="print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="clapperboard" class="w-4 h-4 text-indigo-400"></i>
+            <span>🎬 Set & Espacio</span>
+            <span class="text-[9px] font-normal text-slate-400">Locación, Ropa, Luz</span>
+          </button>
+          <!-- Tab 4: Viralidad -->
+          <button type="button" onclick="setPrintModule('viral')" id="btnPrintTabViral" class="print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
             <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-            <span>🔥 Calculadora Viral</span>
+            <span>🔥 Viralidad</span>
             <span class="text-[9px] font-normal text-slate-400">Activa o Historial</span>
           </button>
-          <!-- Tab 4: Ideas -->
-          <button type="button" onclick="setPrintModule('ideas')" id="btnPrintTabIdeas" class="print-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+          <!-- Tab 5: Calendario -->
+          <button type="button" onclick="setPrintModule('calendar')" id="btnPrintTabCalendar" class="print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
+            <i data-lucide="calendar" class="w-4 h-4 text-purple-400"></i>
+            <span>📅 Calendario</span>
+            <span class="text-[9px] font-normal text-slate-400">Rodajes & Fechas</span>
+          </button>
+          <!-- Tab 6: Ideas -->
+          <button type="button" onclick="setPrintModule('ideas')" id="btnPrintTabIdeas" class="print-module-tab p-2 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-700 font-semibold text-xs flex flex-col items-center gap-1 transition text-center cursor-pointer">
             <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-400"></i>
-            <span>💡 Banco de Ideas</span>
-            <span class="text-[9px] font-normal text-slate-400">Ideas y Notas</span>
+            <span>💡 Ideas & Notas</span>
+            <span class="text-[9px] font-normal text-slate-400">Banco Creativo</span>
           </button>
         </div>
       </div>
@@ -3008,6 +3077,10 @@
           Cancelar
         </button>
         <div class="flex items-center gap-2">
+          <button type="button" onclick="downloadSmartDocPayload()" class="bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 font-bold px-3 py-2 rounded-xl text-xs border border-cyan-500/40 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Descarga archivo inteligente auto-portátil para pasar a otro celular, iPad o PC">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
+            <span class="hidden sm:inline">Descargar Archivo Inteligente</span>
+          </button>
           <button type="button" onclick="executeEnhancedPrint(true)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold px-3.5 py-2.5 rounded-xl text-xs sm:text-sm border border-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Abrir documento limpio en una pestaña nueva">
             <i data-lucide="external-link" class="w-4 h-4 text-cyan-400"></i>
             <span>Abrir en Pestaña</span>
@@ -3892,6 +3965,132 @@
       <button type="button" onclick="closeInAppAlarmModal()" class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition">
         Cerrar aviso
       </button>
+    </div>
+  </div>
+
+
+  <!-- MODAL: SMART PDF & DOCUMENT INCORPORATOR / BRIDGE -->
+  <div id="smartDocImportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-sm shadow-cyan-950/50">
+            <i data-lucide="file-input" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white">Incorporar PDF o Documento Inteligente</h3>
+            <p class="text-[11px] text-slate-400">Actualiza automáticamente Tarjetas Visuales, Guiones, Calendario o Set desde tu archivo</p>
+          </div>
+        </div>
+        <button onclick="closeSmartDocImportModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Destination Target Module Selector -->
+      <div class="space-y-1.5 shrink-0">
+        <label class="block text-xs font-semibold text-slate-300">¿Dónde deseas incorporar o actualizar la información?</label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <button type="button" onclick="setImportTargetModule('auto')" id="importTabAuto" class="import-module-tab p-2.5 rounded-xl border border-cyan-500 bg-cyan-500/10 text-white font-bold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Auto-detectar</p>
+              <p class="text-[9px] font-normal text-slate-300">Reconoce el módulo</p>
+            </div>
+          </button>
+          <button type="button" onclick="setImportTargetModule('cards')" id="importTabCards" class="import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Tarjetas Visuales</p>
+              <p class="text-[9px] font-normal text-slate-400">Fichas & Guiones</p>
+            </div>
+          </button>
+          <button type="button" onclick="setImportTargetModule('set')" id="importTabSet" class="import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="clapperboard" class="w-4 h-4 text-indigo-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Set de Grabación</p>
+              <p class="text-[9px] font-normal text-slate-400">Espacios & Rodaje</p>
+            </div>
+          </button>
+          <button type="button" onclick="setImportTargetModule('matrix')" id="importTabMatrix" class="import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="table" class="w-4 h-4 text-brand-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Matriz General</p>
+              <p class="text-[9px] font-normal text-slate-400">Todos los Guiones</p>
+            </div>
+          </button>
+          <button type="button" onclick="setImportTargetModule('viral')" id="importTabViral" class="import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Calculadora Viral</p>
+              <p class="text-[9px] font-normal text-slate-400">Evaluaciones & Score</p>
+            </div>
+          </button>
+          <button type="button" onclick="setImportTargetModule('calendar')" id="importTabCalendar" class="import-module-tab p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200 font-semibold text-xs flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="calendar" class="w-4 h-4 text-purple-400"></i>
+            <div class="text-left">
+              <p class="leading-tight">Calendario</p>
+              <p class="text-[9px] font-normal text-slate-400">Actividades & Fechas</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drag & Drop / File Input Box -->
+      <div id="smartDocDropZone" onclick="document.getElementById('smartDocFileInput').click()" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 bg-slate-950/80 hover:bg-cyan-950/20 p-5 rounded-2xl text-center cursor-pointer transition space-y-2 shrink-0">
+        <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto text-xl">
+          📄
+        </div>
+        <div>
+          <p class="text-sm font-bold text-white">Haz clic o arrastra tu PDF o Documento aquí</p>
+          <p class="text-xs text-slate-400 mt-0.5">Soporta PDFs exportados desde celular/iPad, HTML inteligente, JSON o texto</p>
+        </div>
+        <div class="flex items-center justify-center gap-2 text-[11px] font-semibold text-cyan-400">
+          <span class="bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">PDF (.pdf)</span>
+          <span class="bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">JSON (.json)</span>
+          <span class="bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">Texto / HTML</span>
+        </div>
+        <input type="file" id="smartDocFileInput" accept=".pdf,.json,.txt,.html,.doc,.docx" class="hidden" onchange="handleSmartDocFileSelect(event)">
+      </div>
+
+      <!-- Parsing Status / Progress / AI Feedback -->
+      <div id="smartDocStatusBox" class="hidden p-3 bg-cyan-950/30 border border-cyan-500/30 rounded-xl space-y-2 text-xs shrink-0">
+        <div class="flex items-center justify-between">
+          <span id="smartDocStatusTitle" class="font-bold text-cyan-300 flex items-center gap-1.5">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-cyan-400"></i>
+            <span>Analizando y extrayendo información estructurada...</span>
+          </span>
+          <span id="smartDocStatusBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">IA Parser</span>
+        </div>
+        <p id="smartDocStatusDesc" class="text-slate-300 text-[11px]">Reconociendo numeraciones, ganchos, historias, moralejas, llamadas a la acción y metadatos...</p>
+      </div>
+
+      <!-- Preview of Extracted Items (Scrollable List) -->
+      <div id="smartDocPreviewContainer" class="hidden flex-1 min-h-0 flex flex-col space-y-2">
+        <div class="flex items-center justify-between shrink-0">
+          <label class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span>✨</span> Elementos listos para incorporar (<span id="smartDocItemsCount">0</span>):
+          </label>
+          <span id="smartDocDetectedModuleBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">Tarjetas Visuales</span>
+        </div>
+        <div id="smartDocPreviewList" class="space-y-1.5 overflow-y-auto pr-1 bg-slate-950 p-3 rounded-xl border border-slate-800 flex-1 max-h-48 text-xs">
+          <!-- Dynamically previewed cards/scripts -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-800 shrink-0">
+        <button type="button" onclick="closeSmartDocImportModal()" class="px-3 sm:px-4 py-2 rounded-lg text-slate-400 hover:text-white transition text-xs sm:text-sm cursor-pointer">
+          Cancelar
+        </button>
+        <button id="btnApplySmartDocImport" type="button" onclick="applySmartDocImport()" disabled class="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-cyan-950/60 flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>
+          <span>Incorporar & Actualizar Plataforma</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
