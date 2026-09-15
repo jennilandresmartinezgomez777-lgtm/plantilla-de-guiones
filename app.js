@@ -11202,6 +11202,9 @@ function saveCalendarEvent() {
   closeCalendarEventModal();
   showToastNotification('✅ Actividad programada en el calendario con éxito', 'check-circle');
 
+  // Trigger automatic email dispatch to user and spouse Gmail
+  dispatchEmailNotification(eventData);
+
   // Request browser notification permission proactively if reminder configured
   if (reminder !== 'none') {
     requestNotificationPermission();
@@ -11718,3 +11721,79 @@ function subscribeLiveCalendarFeed() {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(checkMobileNotificationBanner, 1500);
 });
+
+
+// Automatic Email Dispatcher via Serverless API
+async function dispatchEmailNotification(ev) {
+  const email1 = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
+  const email2 = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
+
+  const emails = [email1, email2].filter(e => e && e.includes('@'));
+  if (emails.length === 0) return;
+
+  try {
+    const payload = {
+      emails: emails,
+      title: ev.title || 'Actividad Programada',
+      client: ev.client || 'General',
+      date: ev.date || '',
+      time: ev.time || '19:00',
+      platform: ev.platform || 'Instagram',
+      notes: ev.notes || ''
+    };
+
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => res.json()).then(data => {
+      console.log('📧 Email dispatch status:', data);
+    }).catch(err => {
+      console.warn('Email dispatch warning:', err);
+    });
+  } catch (e) {
+    console.warn('Dispatch error:', e);
+  }
+}
+
+async function testEmailDispatch() {
+  const email1Input = document.getElementById('userNotificationEmail');
+  const email2Input = document.getElementById('partnerNotificationEmail');
+
+  const email1 = (email1Input ? email1Input.value.trim() : '') || localStorage.getItem('blex_user_email') || '';
+  const email2 = (email2Input ? email2Input.value.trim() : '') || localStorage.getItem('blex_partner_email') || '';
+
+  const emails = [email1, email2].filter(e => e && e.includes('@'));
+
+  if (emails.length === 0) {
+    showToastNotification('⚠️ Primero ingresa al menos un correo de Gmail', 'alert-circle');
+    return;
+  }
+
+  showToastNotification('📤 Enviando correo de prueba a Gmail...', 'send');
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        emails: emails,
+        title: '🚀 ¡Prueba Exitosa de Notificación BLEX Studio!',
+        client: (state.clients && state.clients[0]) || 'Jennil',
+        date: new Date().toLocaleDateString('es-CO'),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        platform: 'Instagram Reels / TikTok',
+        notes: '¡Hola! Este correo confirma que tus notificaciones y recordatorios de contenido están 100% activos y funcionando.'
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToastNotification(`✅ Correo enviado con éxito a: ${emails.join(', ')}. ¡Revisa tu bandeja de entrada!`, 'check-circle');
+    } else {
+      showToastNotification('⚠️ Error al enviar correo. Revisa que el correo esté bien escrito.', 'alert-circle');
+    }
+  } catch (err) {
+    showToastNotification('⚠️ No se pudo conectar con el servidor de correo.', 'alert-circle');
+  }
+}

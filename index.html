@@ -3722,9 +3722,12 @@
               <input type="email" id="partnerNotificationEmail" placeholder="correoesposa@gmail.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none focus:ring-2 focus:ring-pink-500">
             </div>
 
-            <div class="flex items-center justify-between pt-1">
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
               <button type="button" onclick="saveUserNotificationEmails()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold px-4 py-2 rounded-xl transition cursor-pointer text-xs shadow-md flex items-center gap-1.5">
                 <i data-lucide="check" class="w-3.5 h-3.5"></i> Guardar Ambos Correos
+              </button>
+              <button type="button" onclick="testEmailDispatch()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 font-bold px-3 py-2 rounded-xl transition cursor-pointer text-xs border border-rose-500/30 flex items-center gap-1.5">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i> 📨 Enviar Correo de Prueba Ahora
               </button>
             </div>
 
