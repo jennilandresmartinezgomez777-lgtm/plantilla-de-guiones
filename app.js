@@ -9275,24 +9275,237 @@ function confirmStrategyAndAdvanceToStep1() {
   generateWizardStep1Hooks();
 }
 
+// =========================================================================
+// 64 VIRAL HOOKS DYNAMIC ADAPTATION & SLOT MANAGEMENT
+// =========================================================================
+
+function cleanHookTopic(topic) {
+  if (!topic) return 'Multiplicar tus ingresos';
+  return topic
+    .replace(/^Tema:s*/i, '')
+    .replace(/^Fórmula[^:]*:s*/i, '')
+    .replace(/(Gancho:[^)]+)/i, '')
+    .replace(/["']/g, '')
+    .trim();
+}
+
+function adaptHookFormulaToContext(hook, rawTopic, manualContext, niche, variantIndex = 0) {
+  if (!hook) return 'La clave sobre ' + (rawTopic || 'este tema') + ' que casi nadie aplica.';
+  
+  const topic = cleanHookTopic(rawTopic) || 'este método financiero';
+  const formula = hook.formula || '';
+  const example = hook.example || '';
+  const manual = manualContext ? manualContext.trim() : '';
+
+  const amounts = ['$10.000', '$50.000', '$100.000', 'el triple', '7 cifras'];
+  const times = ['30 días', '90 días', '6 meses', '1 año', '24 horas'];
+  const numbers = ['3', '5', '4', '7', '10'];
+  const amountsVar = amounts[variantIndex % amounts.length];
+  const timesVar = times[variantIndex % times.length];
+  const numbersVar = numbers[variantIndex % numbers.length];
+
+  if (!formula.includes('[')) {
+    return (example || ('Lo que nadie te cuenta sobre ' + topic)).replace(/\.\.\.$/, '').trim();
+  }
+
+  return formula.replace(/\[([^\]]+)\]/g, (match, tag) => {
+    const t = tag.toLowerCase();
+    if (manual && manual.length > 5 && !manual.toLowerCase().startsWith('ej:')) {
+      if (t.includes('opción impopular') || t.includes('error') || t.includes('secreto') || t.includes('resultado') || t.includes('tema')) {
+        return manual;
+      }
+    }
+    if (t.includes('cifra exacta') || t.includes('cifra real') || t.includes('dinero')) return amountsVar;
+    if (t.includes('tiempo') || t.includes('segundos') || t.includes('minutos')) return timesVar;
+    if (t.includes('número')) return numbersVar;
+    if (t.includes('opción impopular') || t.includes('opción a')) return topic;
+    if (t.includes('opción masiva') || t.includes('opción b') || t.includes('método tradicional')) return 'guardar tu dinero bajo el colchón';
+    if (t.includes('error') || t.includes('mal hábito') || t.includes('comportamiento')) return 'cometer este error con ' + topic;
+    if (t.includes('consecuencia negativa') || t.includes('situación dolorosa')) return 'perder tu dinero';
+    if (t.includes('resultado') || t.includes('logro') || t.includes('objetivo') || t.includes('beneficio')) return 'multiplicar tu capital con ' + topic;
+    if (t.includes('persona') || t.includes('empresario') || t.includes('celebridad')) return 'Warren Buffett';
+    if (t.includes('bancos') || t.includes('corporaciones')) return 'los grandes bancos';
+    if (t.includes('postura común')) return 'esperar el momento perfecto';
+    if (t.includes('postura disruptiva')) return 'empezar hoy mismo con ' + topic;
+    if (t.includes('elemento visual') || t.includes('efecto')) return 'Mira esto con atención';
+    if (t.includes('pregunta') || t.includes('cifra tabú')) return '¿Cuánto dinero estás perdiendo por no saber ' + topic + '?';
+    if (t.includes('refrán') || t.includes('creencia')) return 'que necesitas millones para ' + topic;
+    if (t.includes('hecho')) return 'la clave está en la constancia';
+    return topic;
+  }).replace(/\.\.\.$/, '').trim();
+}
+
+function populateGlobalHookDropdown() {
+  const globalSelect = document.getElementById('wizGlobalHookSelect');
+  if (!globalSelect) return;
+
+  const allHooks = getHooksData();
+  const currentVal = wizardState.globalHookId || 'custom';
+
+  let optionsHtml = '<option value="custom" ' + (currentVal === 'custom' ? 'selected' : '') + '>🎲 Ganchos variados / personalizados por tarjeta</option>';
+  optionsHtml += allHooks.map(h => {
+    const isSel = String(currentVal) === String(h.id) ? 'selected' : '';
+    return '<option value="' + h.id + '" ' + isSel + '>🎯 Gancho #' + h.id + ': ' + h.name + ' (' + h.category + ')</option>';
+  }).join('');
+
+  globalSelect.innerHTML = optionsHtml;
+}
+
+function onWizardGlobalHookChange(val) {
+  wizardState.globalHookId = val;
+  if (val !== 'custom') {
+    const hookId = parseInt(val, 10);
+    wizardState.slotHookIds = [hookId, hookId, hookId, hookId, hookId];
+    applyGlobalHookToAllSlots();
+  }
+}
+
+function applyGlobalHookToAllSlots() {
+  const globalSelect = document.getElementById('wizGlobalHookSelect');
+  const val = globalSelect ? globalSelect.value : 'custom';
+  if (val !== 'custom') {
+    const hookId = parseInt(val, 10);
+    wizardState.slotHookIds = [hookId, hookId, hookId, hookId, hookId];
+    wizardState.globalHookId = hookId;
+  }
+  generateWizardStep1Hooks();
+}
+
+function distribute5RecommendedHooks() {
+  wizardState.slotHookIds = [1, 3, 2, 8, 5];
+  wizardState.globalHookId = 'custom';
+  const globalSelect = document.getElementById('wizGlobalHookSelect');
+  if (globalSelect) globalSelect.value = 'custom';
+  generateWizardStep1Hooks();
+}
+
+function changeWizardSlotHook(slotIdx, hookIdVal) {
+  const hookId = parseInt(hookIdVal, 10);
+  if (!wizardState.slotHookIds) wizardState.slotHookIds = [1, 3, 2, 8, 5];
+  wizardState.slotHookIds[slotIdx] = hookId;
+  wizardState.globalHookId = 'custom';
+
+  const globalSelect = document.getElementById('wizGlobalHookSelect');
+  if (globalSelect) globalSelect.value = 'custom';
+
+  const allHooks = getHooksData();
+  const hookDef = allHooks.find(h => String(h.id) === String(hookId));
+  if (!hookDef) return;
+
+  const topic = wizardState.topic || '';
+  const manualInput = document.getElementById('wizHookManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
+
+  const newHookText = adaptHookFormulaToContext(hookDef, topic, manualContext, wizardState.niche, slotIdx);
+
+  if (!wizardState.generatedHooks) wizardState.generatedHooks = [];
+  wizardState.generatedHooks[slotIdx] = {
+    hookId: hookDef.id,
+    formula: '#' + hookDef.id + ' ' + hookDef.name,
+    hook: newHookText,
+    reason: hookDef.summary || 'Alta retención en 3 segundos'
+  };
+
+  renderWizardStep1Cards(wizardState.generatedHooks);
+  selectWizardHook(slotIdx);
+}
+
+async function regenerateSingleWizardHook(slotIdx) {
+  if (!wizardState.slotHookIds) wizardState.slotHookIds = [1, 3, 2, 8, 5];
+  const hookId = wizardState.slotHookIds[slotIdx] || 1;
+  const allHooks = getHooksData();
+  const hookDef = allHooks.find(h => String(h.id) === String(hookId)) || allHooks[0];
+
+  const topic = wizardState.topic || '';
+  const strategy = wizardState.strategyText || (wizardState.strategy?.howToFlip) || 'Enfoque de alto valor';
+  const manualInput = document.getElementById('wizHookManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
+
+  const card = document.getElementById('wizHookCard_' + slotIdx);
+  if (card) {
+    const p = card.querySelector('p');
+    if (p) p.innerHTML = '<span class="text-amber-400 animate-pulse font-medium">⚡ Regenerando con IA...</span>';
+  }
+
+  const prompt = [
+    'Actúa como el estratega viral #1 en Instagram Reels y TikTok de BLEX STUDIO.',
+    '',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
+    '',
+    'CONTEXTO DEL CONTENIDO:',
+    '- Tema central: "' + topic + '"',
+    '- Estrategia de impacto: "' + strategy + '"',
+    (manualContext ? '- GUÍA O ENFOQUE MANUAL DEL USUARIO: "' + manualContext + '"' : ''),
+    '- FÓRMULA ASIGNADA: #' + hookDef.id + ' ' + hookDef.name + ' (' + hookDef.formula + ')',
+    '- Ejemplo de referencia: "' + hookDef.example + '"',
+    '',
+    'REGLAS CRÍTICAS:',
+    '1. Genera UN SOLO gancho magnético de 0 a 3 segundos (máximo 8 a 12 palabras) que aplique exactamente la fórmula #' + hookDef.id + '.',
+    '2. Responde ÚNICAMENTE con el texto exacto del gancho (sin comillas, sin explicaciones).'
+  ].join('\n');
+
+  try {
+    const raw = await callOllama(prompt, 0.8);
+    let hookText = (raw || '').trim().replace(/^[\"']|[\"']$/g, '').replace(/^Gancho:\s*/i, '');
+    if (!hookText || hookText.length < 5) {
+      hookText = adaptHookFormulaToContext(hookDef, topic, manualContext, wizardState.niche, slotIdx + 2);
+    }
+    wizardState.generatedHooks[slotIdx] = {
+      hookId: hookDef.id,
+      formula: '#' + hookDef.id + ' ' + hookDef.name,
+      hook: hookText,
+      reason: hookDef.summary || 'Alta retención en 3 segundos'
+    };
+    renderWizardStep1Cards(wizardState.generatedHooks);
+    selectWizardHook(slotIdx);
+  } catch (e) {
+    const fallbackText = adaptHookFormulaToContext(hookDef, topic, manualContext, wizardState.niche, slotIdx + 2);
+    wizardState.generatedHooks[slotIdx] = {
+      hookId: hookDef.id,
+      formula: '#' + hookDef.id + ' ' + hookDef.name,
+      hook: fallbackText,
+      reason: hookDef.summary || 'Alta retención en 3 segundos'
+    };
+    renderWizardStep1Cards(wizardState.generatedHooks);
+    selectWizardHook(slotIdx);
+  }
+}
+
 // STEP 1: Generate 5 Hooks
 async function generateWizardStep1Hooks() {
+  populateGlobalHookDropdown();
+
+  const allHooks = getHooksData();
   const topic = wizardState.topic || '';
   const niche = wizardState.niche || 'Finanzas y Dinero';
   const strategy = wizardState.strategyText || (wizardState.strategy?.howToFlip) || 'Enfoque de alto valor y diferenciación';
   const intent = wizardState.userIntent || '';
-  const selectedHook = wizardState.selectedCatalogHook || null;
   
+  if (!wizardState.slotHookIds || wizardState.slotHookIds.length !== 5) {
+    if (wizardState.selectedCatalogHook) {
+      const catId = wizardState.selectedCatalogHook.id;
+      wizardState.slotHookIds = [catId, catId, catId, catId, catId];
+      wizardState.globalHookId = catId;
+    } else {
+      wizardState.slotHookIds = [1, 3, 2, 8, 5];
+      wizardState.globalHookId = 'custom';
+    }
+  }
+
   const manualInput = document.getElementById('wizHookManualContext');
   const manualContext = manualInput ? manualInput.value.trim() : '';
 
   const grid = document.getElementById('wizCardsGrid1');
   if (grid) {
-    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales cortos (0-3s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Adaptando las opciones a tu idea manual: "' + manualContext + '"' : 'Optimizando 5 fórmulas psicológicas de alto impacto.') + '</p></div>';
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 ganchos virales adaptados (0-3s)...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Integrando tu enfoque manual: "' + manualContext + '"' : 'Adaptando las 5 fórmulas psicológicas seleccionadas.') + '</p></div>';
   }
 
+  const assignedHooks = wizardState.slotHookIds.map((id, idx) => {
+    return allHooks.find(h => String(h.id) === String(id)) || allHooks[idx] || allHooks[0];
+  });
+
   const prompt = [
-    'Actúa como el estratega viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL.',
+    'Actúa como el estratega viral #1 en Instagram Reels y TikTok especializado en DINERO, FINANZAS Y DESARROLLO PERSONAL de BLEX STUDIO.',
     '',
     (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(wizardState.client || 'Jennil') : ''),
     '',
@@ -9300,19 +9513,28 @@ async function generateWizardStep1Hooks() {
     '- Tema central: "' + topic + '"',
     '- Estrategia de impacto a seguir: "' + strategy + '"',
     (manualContext ? '- GUÍA O ENFOQUE MANUAL DEL USUARIO PARA EL GANCHO: "' + manualContext + '"' : ''),
-    (selectedHook ? '- FÓRMULA SELECCIONADA #' + selectedHook.id + ' (' + selectedHook.name + '): "' + selectedHook.formula + '"' : ''),
     '- Nicho objetivo: ' + niche,
     (intent ? '- Intención: "' + intent + '"' : ''),
     '',
+    'DEBES GENERAR EXACTAMENTE 5 GANCHOS VIRALES DE 0 A 3 SEGUNDOS (MÁXIMO 8-12 PALABRAS) APLICANDO ESTRICTAMENTE LAS SIGUIENTES 5 FÓRMULAS DEL CATÁLOGO:',
+    '',
+    assignedHooks.map((h, i) => {
+      return 'Opción ' + (i + 1) + ' (Fórmula #' + h.id + ' - ' + h.name + '):\n' +
+        '- Estructura: ' + h.formula + '\n' +
+        '- Explicación: ' + h.summary + '\n' +
+        '- Ejemplo de referencia: "' + h.example + '"';
+    }).join('\n\n'),
+    '',
     'REGLAS CRÍTICAS PARA EL GANCHO (Paso 1):',
     '1. TIEMPO EXACTO: El gancho debe durar 0 a 3 segundos (máximo 8 a 12 palabras).',
-    '2. FÓRMULAS: Selecciona 5 fórmulas psicológicas distintas (ej: Contra corriente, Alerta/Error, Secreto, Número específico, Open Loop).',
+    '2. ADAPTACIÓN: Aplica estrictamente cada fórmula al tema "' + topic + '" y la guía manual del usuario.',
     (manualContext ? '3. ALINEACIÓN MANUAL: Cada una de las 5 opciones debe aplicar tu enfoque manual: "' + manualContext + '".' : ''),
     '',
-    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 ganchos:',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 objetos:',
     '[',
     '  {',
-    '    "formula": "#1 Gancho Contra Corriente",',
+    '    "hookId": ' + assignedHooks[0].id + ',',
+    '    "formula": "#' + assignedHooks[0].id + ' ' + assignedHooks[0].name + '",',
     '    "hook": "Frase de 8-12 palabras",',
     '    "reason": "Por qué detiene el scroll"',
     '  }',
@@ -9328,22 +9550,34 @@ async function generateWizardStep1Hooks() {
     } catch (e) {}
 
     if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
-      wizardState.generatedHooks = parsed.slice(0, 5).map(h => {
+      wizardState.generatedHooks = parsed.slice(0, 5).map((h, idx) => {
         let hookText = (h.hook || '').trim().replace(/^[\"']|[\"']$/g, '');
+        const hookDef = assignedHooks[idx] || allHooks[0];
         return {
-          formula: h.formula || 'Gancho Viral',
-          hook: hookText,
-          reason: h.reason || 'Alta retención en 3 segundos'
+          hookId: h.hookId || hookDef.id,
+          formula: h.formula || ('#' + hookDef.id + ' ' + hookDef.name),
+          hook: hookText || adaptHookFormulaToContext(hookDef, topic, manualContext, niche, idx),
+          reason: h.reason || hookDef.summary || 'Alta retención en 3 segundos'
         };
       });
       renderWizardStep1Cards(wizardState.generatedHooks);
     } else {
-      wizardState.generatedHooks = getFallbackHooks(topic, niche, manualContext);
+      wizardState.generatedHooks = assignedHooks.map((h, idx) => ({
+        hookId: h.id,
+        formula: '#' + h.id + ' ' + h.name,
+        hook: adaptHookFormulaToContext(h, topic, manualContext, niche, idx),
+        reason: h.summary || 'Alta retención en 3 segundos'
+      }));
       renderWizardStep1Cards(wizardState.generatedHooks);
     }
   } catch (err) {
-    console.warn('Step 1 hook error, using fallback:', err);
-    wizardState.generatedHooks = getFallbackHooks(topic, niche, manualContext);
+    console.warn('Step 1 hook generation fallback:', err);
+    wizardState.generatedHooks = assignedHooks.map((h, idx) => ({
+      hookId: h.id,
+      formula: '#' + h.id + ' ' + h.name,
+      hook: adaptHookFormulaToContext(h, topic, manualContext, niche, idx),
+      reason: h.summary || 'Alta retención en 3 segundos'
+    }));
     renderWizardStep1Cards(wizardState.generatedHooks);
   }
 }
@@ -9352,22 +9586,43 @@ function renderWizardStep1Cards(hooks) {
   const grid = document.getElementById('wizCardsGrid1');
   if (!grid) return;
 
+  const allHooks = getHooksData();
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+
   grid.innerHTML = hooks.map((item, idx) => {
-    const letters = ['A', 'B', 'C', 'D', 'E'];
     const letter = letters[idx] || (idx + 1);
     const isSelected = wizardState.selectedHook === item.hook;
+    const currentHookId = item.hookId || (wizardState.slotHookIds ? wizardState.slotHookIds[idx] : 1);
+    const hookDef = allHooks.find(h => String(h.id) === String(currentHookId)) || allHooks[0];
 
-    return '<div onclick="selectWizardHook(' + idx + ')" id="wizHookCard_' + idx + '" class="p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 ' + (isSelected ? 'bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60') + '">' +
-      '<div class="space-y-2">' +
-        '<div class="flex items-center justify-between">' +
-          '<span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-500/30">' + letter + '</span>' +
-          '<span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-900 px-2 py-0.5 rounded border border-slate-800">' + (item.formula || 'Fórmula Viral') + '</span>' +
+    const optionsHtml = allHooks.map(h => {
+      const isSel = String(h.id) === String(currentHookId) ? 'selected' : '';
+      return '<option value="' + h.id + '" ' + isSel + '>#' + h.id + ' ' + h.name + ' (' + h.category + ')</option>';
+    }).join('');
+
+    return '<div id="wizHookCard_' + idx + '" class="p-4 rounded-xl border transition flex flex-col justify-between space-y-3 ' + (isSelected ? 'bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60') + '">' +
+      '<div class="space-y-2.5">' +
+        '<div class="flex items-center justify-between gap-2">' +
+          '<span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">' + letter + '</span>' +
+          '<div class="flex-1 min-w-0" onclick="event.stopPropagation()">' +
+            '<select onchange="changeWizardSlotHook(' + idx + ', this.value)" class="w-full bg-slate-900 border border-slate-700 hover:border-amber-400 text-[11px] font-bold text-amber-200 rounded-lg px-2 py-1 outline-none truncate cursor-pointer" title="Cambiar la fórmula de este gancho">' +
+              optionsHtml +
+            '</select>' +
+          '</div>' +
+          '<button type="button" onclick="event.stopPropagation(); regenerateSingleWizardHook(' + idx + ')" class="p-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-800 transition shrink-0 cursor-pointer" title="Regenerar solo esta opción con IA">' +
+            '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>' +
+          '</button>' +
         '</div>' +
-        '<p class="text-xs sm:text-sm font-bold text-white leading-snug">"' + item.hook + '"</p>' +
+        '<div class="text-[10.5px] text-slate-400 bg-slate-900/80 px-2 py-1 rounded border border-slate-800/80 leading-tight">' +
+          '<span class="text-amber-400/90 font-mono font-semibold">Fórmula:</span> ' + escapeHtml(hookDef ? hookDef.formula : (item.formula || 'Fórmula')) +
+        '</div>' +
+        '<div onclick="selectWizardHook(' + idx + ')" class="cursor-pointer">' +
+          '<p class="text-xs sm:text-sm font-bold text-white leading-snug">"' + escapeHtml(item.hook) + '"</p>' +
+        '</div>' +
       '</div>' +
-      '<div class="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-400">' +
-        '<span class="italic line-clamp-1">' + (item.reason || 'Alto impacto psicológico') + '</span>' +
-        '<span class="text-amber-400 font-bold shrink-0 ml-2">' + (isSelected ? '✓ Elegido' : 'Seleccionar') + '</span>' +
+      '<div onclick="selectWizardHook(' + idx + ')" class="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-400 cursor-pointer">' +
+        '<span class="italic line-clamp-1">' + escapeHtml(item.reason || hookDef?.summary || 'Alto impacto psicológico') + '</span>' +
+        '<span class="text-amber-400 font-bold shrink-0 ml-2">' + (isSelected ? '✓ Elegido' : 'Elegir') + '</span>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -9391,9 +9646,13 @@ function selectWizardHook(idx) {
     const card = document.getElementById('wizHookCard_' + i);
     if (card) {
       if (i === idx) {
-        card.className = 'p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/50';
+        card.className = 'p-4 rounded-xl border transition flex flex-col justify-between space-y-3 bg-amber-950/40 border-amber-500 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/50';
+        const span = card.querySelector('.pt-2 span:last-child');
+        if (span) span.innerText = '✓ Elegido';
       } else {
-        card.className = 'p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60';
+        card.className = 'p-4 rounded-xl border transition flex flex-col justify-between space-y-3 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60';
+        const span = card.querySelector('.pt-2 span:last-child');
+        if (span) span.innerText = 'Elegir';
       }
     }
   });
