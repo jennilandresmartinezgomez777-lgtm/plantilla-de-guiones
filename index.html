@@ -3685,25 +3685,27 @@
       var urlInput = document.getElementById('aiConfigServerUrl');
       var modelInput = document.getElementById('aiConfigModelName');
 
-      if (urlInput) {
-        var cleanUrl = urlInput.value.trim().replace(/\/+$/, '');
-        if (typeof aiState !== 'undefined') aiState.serverUrl = cleanUrl;
-        localStorage.setItem('ai_server_url', cleanUrl);
+      var cleanUrl = urlInput ? urlInput.value.trim().replace(/\/+$/, '') : 'http://localhost:11434';
+      if (!cleanUrl) cleanUrl = 'http://localhost:11434';
+      var cleanModel = modelInput ? modelInput.value.trim() : 'qwen2.5:7b';
+      if (!cleanModel) cleanModel = 'qwen2.5:7b';
+
+      if (typeof aiState !== 'undefined') {
+        aiState.serverUrl = cleanUrl;
+        aiState.model = cleanModel;
+      }
+      localStorage.setItem('ai_server_url', cleanUrl);
+      localStorage.setItem('ai_model', cleanModel);
+
+      if (typeof aiUpdateConnectionBadge === 'function') aiUpdateConnectionBadge(true);
+      if (typeof showToastNotification === 'function') {
+        showToastNotification('💾 Servidor IA guardado: ' + cleanUrl, 'check-circle');
+      } else if (typeof showToast === 'function') {
+        showToast('💾 Servidor IA guardado con éxito', 'success');
       }
 
-      if (modelInput) {
-        var cleanModel = modelInput.value.trim();
-        if (typeof aiState !== 'undefined') aiState.model = cleanModel;
-        localStorage.setItem('ai_model', cleanModel);
-      }
-
-      if (typeof showToast === 'function') {
-        showToast('💾 Ajustes de servidor guardados con éxito', 'success');
-      }
       closeAiServerConfigModal();
-      if (typeof checkAiServerHealth === 'function') {
-        checkAiServerHealth();
-      }
+      if (typeof checkAiServerHealth === 'function') checkAiServerHealth();
     };
   </script>
 

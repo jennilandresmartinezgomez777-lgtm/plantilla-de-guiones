@@ -1,3 +1,12 @@
+function getColombiaTodayDateString() {
+  try {
+    const d = new Date();
+    const colStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    if (colStr && colStr.length === 10) return colStr;
+  } catch (e) {}
+  return new Date().toISOString().split('T')[0];
+}
+
 function sanitizeScriptData(s) {
   if (!s || typeof s !== 'object') return s;
   const cleanStr = (val, fallback = '') => {
@@ -1021,7 +1030,7 @@ try {
 
 let state = {
   clients: Array.isArray(savedClients) ? savedClients : INITIAL_CLIENTS,
-  scripts: (Array.isArray(savedScripts) && savedScripts.length > 0) ? savedScripts : INITIAL_SCRIPTS,
+  scripts: Array.isArray(savedScripts) ? savedScripts : INITIAL_SCRIPTS,
   deletedScripts: Array.isArray(savedDeletedScripts) ? savedDeletedScripts : [],
   notes: (savedNotes && typeof savedNotes === 'object') ? savedNotes : INITIAL_NOTES,
   viralEvaluations: Array.isArray(savedViralEvals) ? savedViralEvals : INITIAL_VIRAL_EVALUATIONS,
@@ -1045,9 +1054,6 @@ if (!state.notes["Natalia"]) state.notes["Natalia"] = [];
 // Auto-purge corrupted scripts (s1, s2, test_1)
 if (Array.isArray(state.scripts)) {
   state.scripts = state.scripts.filter(s => s && s.id !== 's1' && s.id !== 's2' && s.id !== 'test_1');
-  if (state.scripts.length === 0) {
-    state.scripts = INITIAL_SCRIPTS;
-  }
 }
 
 
@@ -2700,104 +2706,74 @@ function mergeFullAppData(local, remote) {
   const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
   const now = Date.now();
 
-  // 0. Merge Deleted Scripts (Tombstones with 15-day TTL)
+  const localActiveMap = new Map();
+  (local.scripts || []).forEach(s => {
+    if (s && s.id) localActiveMap.set(String(s.id), s);
+  });
+
   const deletedMap = new Map();
   (remote.deletedScripts || []).forEach(s => {
     if (s && s.id && s.deletedAt) {
       const age = now - new Date(s.deletedAt).getTime();
-      if (age < FIFTEEN_DAYS_MS) deletedMap.set(String(s.id), s);
+      const localActive = localActiveMap.get(String(s.id));
+      const wasRestoredLocally = localActive && (!s.deletedAt || (localActive.updatedAt && localActive.updatedAt >= s.deletedAt));
+      if (age < FIFTEEN_DAYS_MS && !wasRestoredLocally) {
+        deletedMap.set(String(s.id), s);
+      }
     }
   });
+
   (local.deletedScripts || []).forEach(s => {
     if (s && s.id && s.deletedAt) {
       const age = now - new Date(s.deletedAt).getTime();
-      if (age < FIFTEEN_DAYS_MS) {
-        const existing = deletedMap.get(String(s.id));
-        if (!existing || new Date(s.deletedAt) >= new Date(existing.deletedAt)) {
-          deletedMap.set(String(s.id), s);
-        }
+      if (age < FIFTEEN_DAYS_MS && !localActiveMap.has(String(s.id))) {
+        deletedMap.set(String(s.id), s);
       }
     }
   });
+
   const mergedDeletedScripts = Array.from(deletedMap.values());
   const deletedIdsSet = new Set(mergedDeletedScripts.map(s => String(s.id)));
 
-  // 1. Merge Active Scripts by ID (NEVER restore scripts present in deletedIdsSet)
-  const scriptsMap = new Map();
-  (remote.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
-      scriptsMap.set(String(s.id), s);
-    }
-  });
-  (local.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
-      const existing = scriptsMap.get(String(s.id));
-      if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
-        scriptsMap.set(String(s.id), s);
-      }
-    }
-  });
-  const mergedScripts = Array.from(scriptsMap.values());
+  let mergedScripts = [];
+  if (Array.isArray(local.scripts)) {
+    mergedScripts = local.scripts.filter(s => s && s.id && !deletedIdsSet.has(String(s.id)));
+  } else {
+    const scriptsMap = new Map();
+    (remote.scripts || []).forEach(s => {
+      if (s && s.id && !deletedIdsSet.has(String(s.id))) scriptsMap.set(String(s.id), s);
+    });
+    mergedScripts = Array.from(scriptsMap.values());
+  }
 
-  // 2. Merge Calendar Events by ID or date+title (ensures NO event from PC or mobile is lost)
   const calMap = new Map();
-  (remote.calendarEvents || []).forEach(c => {
-    if (c) {
-      const key = String(c.id || (c.date + '_' + c.title));
-      calMap.set(key, c);
-    }
-  });
-  (local.calendarEvents || []).forEach(c => {
-    if (c) {
-      const key = String(c.id || (c.date + '_' + c.title));
-      calMap.set(key, c);
-    }
-  });
-  const mergedCalendar = Array.from(calMap.values());
+  (remote.calendarEvents || []).forEach(c => { if (c) calMap.set(String(c.id || (c.date + '_' + c.title)), c); });
+  (local.calendarEvents || []).forEach(c => { if (c) calMap.set(String(c.id || (c.date + '_' + c.title)), c); });
 
-  // 3. Merge Clients
   const mergedClients = Array.from(new Set([
     ...(local.clients || []),
     ...(remote.clients || []),
     'Jennil', 'Natalia'
   ]));
 
-  // 4. Merge Notes per Client
   const mergedNotes = {};
   mergedClients.forEach(c => {
     const lNotes = (local.notes && Array.isArray(local.notes[c])) ? local.notes[c] : [];
     const rNotes = (remote.notes && Array.isArray(remote.notes[c])) ? remote.notes[c] : [];
     const notesMap = new Map();
-    rNotes.forEach(n => {
-      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
-      notesMap.set(k, n);
-    });
-    lNotes.forEach(n => {
-      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
-      notesMap.set(k, n);
-    });
+    rNotes.forEach(n => { notesMap.set(typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n)), n); });
+    lNotes.forEach(n => { notesMap.set(typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n)), n); });
     mergedNotes[c] = Array.from(notesMap.values());
   });
-
-  // 5. Merge Emails
-  const mergedEmails = {
-    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || localStorage.getItem('blex_user_email') || '',
-    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || localStorage.getItem('blex_partner_email') || ''
-  };
-
-  // 6. Merge Viral Evaluations
-  const evalMap = new Map();
-  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
-  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
 
   return {
     clients: mergedClients,
     scripts: mergedScripts,
     deletedScripts: mergedDeletedScripts,
     notes: mergedNotes,
-    calendarEvents: mergedCalendar,
-    viralEvaluations: Array.from(evalMap.values()),
-    notificationEmails: mergedEmails,
+    calendarEvents: Array.from(calMap.values()),
+    viralEvaluations: local.viralEvaluations || remote.viralEvaluations || [],
+    notificationEmails: local.notificationEmails || remote.notificationEmails || { primary: 'jennilandresmartinezgomez777@gmail.com', secondary: 'ncolorado2511@outlook.com' },
     aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
     challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
     updatedAt: new Date().toISOString()
@@ -3645,13 +3621,28 @@ function toggleScriptCompleted(scriptId) {
 function clearAllScripts() {
   const currentClientText = state.activeClient === 'ALL' ? 'de todos los clientes' : `del cliente "${state.activeClient}"`;
   if (confirm(`⚠️ ALERTA: ¿Estás seguro de que deseas vaciar/eliminar los guiones ${currentClientText}? Esta acción eliminará los videos mostrados.`)) {
+    const scriptsToDelete = state.activeClient === 'ALL' ? (state.scripts || []) : (state.scripts || []).filter(s => s.client === state.activeClient);
+    
+    if (!Array.isArray(state.deletedScripts)) state.deletedScripts = [];
+    const nowISO = new Date().toISOString();
+    scriptsToDelete.forEach(s => {
+      state.deletedScripts = state.deletedScripts.filter(d => String(d.id) !== String(s.id));
+      state.deletedScripts.unshift({ ...s, deletedAt: nowISO });
+    });
+
     if (state.activeClient === 'ALL') {
       state.scripts = [];
     } else {
       state.scripts = state.scripts.filter(s => s.client !== state.activeClient);
     }
+
     saveState();
     renderAll();
+    updateTrashBadgeCount();
+    if (typeof saveStateToCloud === 'function') saveStateToCloud(true);
+    if (typeof showToastNotification === 'function') {
+      showToastNotification('🗑️ Se vaciaron ' + scriptsToDelete.length + ' guiones (guardados en la Papelera por 15 días).', 'info');
+    }
   }
 }
 
@@ -4012,24 +4003,23 @@ function deleteScript(scriptId) {
 
   const scriptTitle = script.ideaGanadora || script.title || ('Guión #' + (script.number || ''));
   if (confirm('¿Mover el guión "' + scriptTitle + '" a la papelera? (Permanecerá 15 días antes de borrarse definitivamente)')) {
-    script.deletedAt = new Date().toISOString();
+    const scriptCopy = { ...script, deletedAt: new Date().toISOString() };
     
     if (!Array.isArray(state.deletedScripts)) state.deletedScripts = [];
     state.deletedScripts = state.deletedScripts.filter(s => String(s.id) !== String(scriptId));
-    state.deletedScripts.unshift(script);
+    state.deletedScripts.unshift(scriptCopy);
 
-    state.scripts = state.scripts.filter(s => String(s.id) !== String(scriptId));
+    state.scripts = (state.scripts || []).filter(s => String(s.id) !== String(scriptId));
 
     saveState();
     renderAll();
     updateTrashBadgeCount();
+    if (typeof saveStateToCloud === 'function') saveStateToCloud(true);
     if (typeof showToastNotification === 'function') {
       showToastNotification('🗑️ Guión movido a la papelera (15 días para restaurar).', 'info');
     }
   }
 }
-
-// (openTeleprompterForScript defined above)
 
 // CLIENT MANAGEMENT (ADD, RENAME, DELETE)
 function openClientManagerModal() {
@@ -8251,21 +8241,25 @@ function saveAiServerConfig() {
   const urlInput = document.getElementById('aiConfigServerUrl');
   const modelInput = document.getElementById('aiConfigModelName');
 
-  if (urlInput) {
-    const cleanUrl = urlInput.value.trim().replace(/\/+$/, '');
-    aiState.serverUrl = cleanUrl;
-    localStorage.setItem('ai_server_url', cleanUrl);
+  let cleanUrl = urlInput ? urlInput.value.trim().replace(/\/+$/, '') : 'http://localhost:11434';
+  if (!cleanUrl) cleanUrl = 'http://localhost:11434';
+  let cleanModel = modelInput ? modelInput.value.trim() : 'qwen2.5:7b';
+  if (!cleanModel) cleanModel = 'qwen2.5:7b';
+
+  aiState.serverUrl = cleanUrl;
+  aiState.model = cleanModel;
+  localStorage.setItem('ai_server_url', cleanUrl);
+  localStorage.setItem('ai_model', cleanModel);
+
+  if (typeof aiUpdateConnectionBadge === 'function') aiUpdateConnectionBadge(true);
+  if (typeof showToastNotification === 'function') {
+    showToastNotification('💾 Servidor IA guardado: ' + cleanUrl + ' (' + cleanModel + ')', 'check-circle');
+  } else if (typeof showToast === 'function') {
+    showToast('💾 Servidor IA guardado con éxito', 'success');
   }
 
-  if (modelInput) {
-    const cleanModel = modelInput.value.trim();
-    aiState.model = cleanModel;
-    localStorage.setItem('ai_model', cleanModel);
-  }
-
-  showToast('💾 Ajustes de servidor guardados con éxito', 'success');
   closeAiServerConfigModal();
-  checkAiServerHealth();
+  if (typeof checkAiServerHealth === 'function') checkAiServerHealth();
 }
 
 // =============================================================================
@@ -13640,12 +13634,14 @@ function restoreScriptFromTrash(scriptId) {
 
   state.deletedScripts.splice(scriptIndex, 1);
   if (!Array.isArray(state.scripts)) state.scripts = [];
+  state.scripts = state.scripts.filter(s => String(s.id) !== String(scriptId));
   state.scripts.unshift(script);
 
   saveState();
   renderAll();
   renderTrashModalList();
   updateTrashBadgeCount();
+  if (typeof saveStateToCloud === 'function') saveStateToCloud(true);
   if (typeof showToastNotification === 'function') {
     showToastNotification('✅ Guión #' + (script.number || '') + ' restaurado a la Matriz.', 'success');
   }

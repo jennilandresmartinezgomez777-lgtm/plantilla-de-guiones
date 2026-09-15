@@ -115,109 +115,74 @@ function mergeAppData(local, remote) {
   const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
   const now = Date.now();
 
-  // 0. Merge Deleted Scripts (Tombstones with 15-day TTL)
+  const localActiveMap = new Map();
+  (local.scripts || []).forEach(s => {
+    if (s && s.id) localActiveMap.set(String(s.id), s);
+  });
+
   const deletedMap = new Map();
   (remote.deletedScripts || []).forEach(s => {
     if (s && s.id && s.deletedAt) {
       const age = now - new Date(s.deletedAt).getTime();
-      if (age < FIFTEEN_DAYS_MS) deletedMap.set(String(s.id), s);
+      const localActive = localActiveMap.get(String(s.id));
+      const wasRestoredLocally = localActive && (!s.deletedAt || (localActive.updatedAt && localActive.updatedAt >= s.deletedAt));
+      if (age < FIFTEEN_DAYS_MS && !wasRestoredLocally) {
+        deletedMap.set(String(s.id), s);
+      }
     }
   });
+
   (local.deletedScripts || []).forEach(s => {
     if (s && s.id && s.deletedAt) {
       const age = now - new Date(s.deletedAt).getTime();
-      if (age < FIFTEEN_DAYS_MS) {
-        const existing = deletedMap.get(String(s.id));
-        if (!existing || new Date(s.deletedAt) >= new Date(existing.deletedAt)) {
-          deletedMap.set(String(s.id), s);
-        }
+      if (age < FIFTEEN_DAYS_MS && !localActiveMap.has(String(s.id))) {
+        deletedMap.set(String(s.id), s);
       }
     }
   });
+
   const mergedDeletedScripts = Array.from(deletedMap.values());
   const deletedIdsSet = new Set(mergedDeletedScripts.map(s => String(s.id)));
 
-  // Filter out corrupted test IDs (s1, s2, test_1)
-  deletedIdsSet.add('s1');
-  deletedIdsSet.add('s2');
-  deletedIdsSet.add('test_1');
+  let mergedScripts = [];
+  if (Array.isArray(local.scripts)) {
+    mergedScripts = local.scripts.filter(s => s && s.id && !deletedIdsSet.has(String(s.id)));
+  } else {
+    const scriptsMap = new Map();
+    (remote.scripts || []).forEach(s => {
+      if (s && s.id && !deletedIdsSet.has(String(s.id))) scriptsMap.set(String(s.id), s);
+    });
+    mergedScripts = Array.from(scriptsMap.values());
+  }
 
-  // 1. Merge Active Scripts by ID (NEVER restore scripts present in deletedIdsSet)
-  const scriptsMap = new Map();
-  (remote.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id)) && (s.ideaGanadora || s.gancho || s.title)) {
-      scriptsMap.set(String(s.id), s);
-    }
-  });
-  (local.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id)) && (s.ideaGanadora || s.gancho || s.title)) {
-      const existing = scriptsMap.get(String(s.id));
-      if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
-        scriptsMap.set(String(s.id), s);
-      }
-    }
-  });
-  const mergedScripts = Array.from(scriptsMap.values());
-
-  // 2. Merge Calendar Events
   const calMap = new Map();
-  (remote.calendarEvents || []).forEach(c => {
-    if (c) {
-      const key = String(c.id || (c.date + '_' + c.title));
-      calMap.set(key, c);
-    }
-  });
-  (local.calendarEvents || []).forEach(c => {
-    if (c) {
-      const key = String(c.id || (c.date + '_' + c.title));
-      calMap.set(key, c);
-    }
-  });
-  const mergedCalendar = Array.from(calMap.values());
+  (remote.calendarEvents || []).forEach(c => { if (c) calMap.set(String(c.id || (c.date + '_' + c.title)), c); });
+  (local.calendarEvents || []).forEach(c => { if (c) calMap.set(String(c.id || (c.date + '_' + c.title)), c); });
 
-  // 3. Merge Clients
   const mergedClients = Array.from(new Set([
     ...(local.clients || []),
     ...(remote.clients || []),
     'Jennil', 'Natalia'
   ]));
 
-  // 4. Merge Notes per Client
   const mergedNotes = {};
   mergedClients.forEach(c => {
     const lNotes = (local.notes && Array.isArray(local.notes[c])) ? local.notes[c] : [];
     const rNotes = (remote.notes && Array.isArray(remote.notes[c])) ? remote.notes[c] : [];
     const notesMap = new Map();
-    rNotes.forEach(n => {
-      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
-      notesMap.set(k, n);
-    });
-    lNotes.forEach(n => {
-      const k = typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n));
-      notesMap.set(k, n);
-    });
+    rNotes.forEach(n => { notesMap.set(typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n)), n); });
+    lNotes.forEach(n => { notesMap.set(typeof n === 'string' ? n : (n.id || n.text || JSON.stringify(n)), n); });
     mergedNotes[c] = Array.from(notesMap.values());
   });
 
-  // 5. Merge Emails
-  const mergedEmails = {
-    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || 'jennilandresmartinezgomez777@gmail.com',
-    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || 'ncolorado2511@outlook.com'
-  };
-
-  // 6. Merge Viral Evaluations
-  const evalMap = new Map();
-  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
-  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
-
   return {
     clients: mergedClients,
-    scripts: mergedScripts.length > 0 ? mergedScripts : DEFAULT_INITIAL_DATA.scripts,
+    scripts: mergedScripts,
     deletedScripts: mergedDeletedScripts,
     notes: mergedNotes,
-    calendarEvents: mergedCalendar,
-    viralEvaluations: Array.from(evalMap.values()),
-    notificationEmails: mergedEmails,
+    calendarEvents: Array.from(calMap.values()),
+    viralEvaluations: local.viralEvaluations || remote.viralEvaluations || [],
+    notificationEmails: local.notificationEmails || remote.notificationEmails || { primary: 'jennilandresmartinezgomez777@gmail.com', secondary: 'ncolorado2511@outlook.com' },
     aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
     challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
     updatedAt: new Date().toISOString()
