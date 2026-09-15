@@ -1,3 +1,62 @@
+
+const DEFAULT_INITIAL_DATA = {
+  "clients": [
+    "Jennil",
+    "Natalia"
+  ],
+  "scripts": [
+    {
+      "id": "script-1789443084089",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Jennil",
+      "ideaGanadora": "Venta",
+      "linkReferencia": "",
+      "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprenden desde cero toda la metodología aplicada que utilizaron nuestro alumnos Mabel, Asceineth, Jeison y otros  Más",
+      "historia": "Obtendrás metodología y entorno propio de análisis para que aprendas a tomar tus propias decisiones sin depender de nadie\n.plataforma con herramientas \n.sala de operativo en vivo 4 veces por semana\n.Acompañamiento personalizado \n.estrategia rentables.\n.algoritmos entrenados con IA y muchos más.",
+      "moraleja": "",
+      "cta": "Si quieres tener resultados, mejorar tus ingresos, mientras haces lo que amas escribe la palabra CAMBIO te ayudaré y te mostraré como lograrlo!",
+      "contextoAdicional": "PRUEBAS VIDEOS CORTOS (VARIOS)",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "updatedAt": "2026-09-15T03:31:24.089Z",
+      "createdAt": "2026-09-15T03:31:24.089Z"
+    },
+    {
+      "id": "script-1789481120131",
+      "client": "Jennil",
+      "number": 2,
+      "status": "Idea",
+      "ideaGanadora": "estar pendiente",
+      "linkReferencia": "",
+      "gancho": "estar pendiente",
+      "historia": "Pendiente de redactar historia...",
+      "moraleja": "Pendiente de redactar moraleja...",
+      "cta": "Pendiente de redactar CTA...",
+      "formato": "Hablando a cámara",
+      "objetivo": "VIRAL",
+      "actor": "Jennil",
+      "contextoAdicional": "",
+      "attachments": [],
+      "completed": false,
+      "createdAt": "2026-09-15T14:05:20.131Z",
+      "updatedAt": "2026-09-15T14:05:20.132Z"
+    }
+  ],
+  "notes": {
+    "Jennil": [],
+    "Natalia": []
+  },
+  "viralEvaluations": [],
+  "deletedScripts": [],
+  "challengeStartDate": "2026-09-13",
+  "updatedAt": "2026-09-15T20:19:49.280Z"
+};
 const fs = require('fs');
 const path = require('path');
 
@@ -184,7 +243,7 @@ module.exports = async (req, res) => {
 
       if (body && Array.isArray(body.scripts)) {
         // Fetch current cloud state to perform deep merge
-        const existingCloudData = (channel === 'default') ? await fetchFromPersistentCloud() : null;
+        const existingCloudData = (channel === 'default') ? ((await fetchFromPersistentCloud()) || DEFAULT_INITIAL_DATA) : null;
         const mergedData = mergeAppData(body, existingCloudData);
         mergedData.updatedAt = body.updatedAt || new Date().toISOString();
 
