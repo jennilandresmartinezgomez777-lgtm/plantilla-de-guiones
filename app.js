@@ -2643,13 +2643,13 @@ function updateSyncStatus(connected, lastSyncMsg = '') {
   if (connected) {
     if (dot) {
       dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50';
-      dot.title = 'Servidor Conectado y Sincronizado';
+      dot.title = 'Sincronización Automática 24/7 Activa';
     }
     if (text) {
-      text.innerText = 'Sincronizado';
+      text.innerText = 'Sincronizado 24/7';
     }
     if (btnHeader) {
-      btnHeader.className = 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold px-3 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
+      btnHeader.className = 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-emerald-500/30 transition flex items-center gap-2 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
     }
     if (offlineAlert) {
       offlineAlert.classList.add('hidden');
@@ -2657,13 +2657,13 @@ function updateSyncStatus(connected, lastSyncMsg = '') {
   } else {
     if (dot) {
       dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/80 animate-pulse';
-      dot.title = 'Sin Conexión con Servidor (Modo Local)';
+      dot.title = 'Sin Conexión con la Nube / Servidor';
     }
     if (text) {
       text.innerText = 'Desconectado';
     }
     if (btnHeader) {
-      btnHeader.className = 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 font-bold px-3 py-2 rounded-lg text-xs sm:text-sm border border-rose-500/40 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
+      btnHeader.className = 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm border border-rose-500/40 transition flex items-center gap-2 shadow-sm whitespace-nowrap cursor-pointer shrink-0';
     }
     if (offlineAlert) {
       offlineAlert.classList.remove('hidden');
