@@ -1901,177 +1901,127 @@ function renderTeleprompterView(scripts) {
 }
 
 function displayScriptInTeleprompter(scriptId) {
+  if (!teleprompterDisplay) return;
   const script = state.scripts.find(s => s.id === scriptId);
-  if (!script || !teleprompterDisplay) return;
 
-  const scripts = state.scripts || [];
-  const currentIndex = scripts.findIndex(s => s.id === scriptId);
-  const prevScript = currentIndex > 0 ? scripts[currentIndex - 1] : null;
-  const nextScript = currentIndex >= 0 && currentIndex < scripts.length - 1 ? scripts[currentIndex + 1] : null;
+  if (!script) {
+    teleprompterDisplay.innerHTML = `
+      <div class="text-center py-16 text-slate-500">
+        <p class="text-base">Selecciona un guión para visualizarlo en modo Set de Grabación.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const isLibre = script.scriptType === 'libre' || (!script.historia && !script.moraleja && script.guionLibre);
 
   if (isSetCardFullscreen) {
-    // RENDER FULLSCREEN MAXIMIZED CARD
     teleprompterDisplay.innerHTML = `
-      <div class="set-fullscreen-container space-y-6 sm:space-y-8 animate-fadeIn">
-        
-        <!-- Sticky Top Fullscreen Navigation Bar -->
-        <div class="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md border border-purple-500/30 p-3 sm:p-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-3">
-          
+      <div class="set-fullscreen-wrapper">
+        <div class="set-fullscreen-header flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <div class="flex items-center gap-3">
+            <span class="bg-brand-500/20 text-brand-400 text-sm font-extrabold px-3 py-1 rounded-xl border border-brand-500/30">
+              #${script.number || '-'}
+            </span>
+            <span class="text-lg sm:text-xl font-bold text-white">${escapeHtml(script.ideaGanadora)}</span>
+            <span class="text-xs text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">${escapeHtml(script.client)}</span>
+            ${isLibre ? '<span class="text-xs text-purple-400 bg-purple-500/20 px-2.5 py-1 rounded-lg border border-purple-500/30">📝 Guión Libre</span>' : ''}
+          </div>
           <div class="flex items-center gap-2">
-            <button onclick="toggleSetCardFullscreen()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs sm:text-sm px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-rose-950/50 cursor-pointer" title="Salir de Pantalla Completa (Esc)">
-              <i data-lucide="minimize-2" class="w-4 h-4"></i>
-              <span>Salir Pantalla Completa</span>
+            <button onclick="toggleSetCardFullscreen()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="minimize-2" class="w-4 h-4"></i> <span>Salir Pantalla Completa</span>
             </button>
-            
-            <!-- Quick Prev / Next Navigator -->
-            <div class="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl p-1 gap-1">
-              <button onclick="navigateTeleprompterScript(-1)" ${!prevScript ? 'disabled class="opacity-30 cursor-not-allowed text-slate-500 p-1.5 rounded-lg"' : 'class="text-slate-300 hover:text-white hover:bg-slate-800 p-1.5 rounded-lg transition cursor-pointer"'} title="Guión Anterior">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-              </button>
-              <span class="text-xs font-bold text-slate-300 px-2 select-none whitespace-nowrap">
-                #${script.number || (currentIndex + 1)} (${currentIndex + 1}/${scripts.length})
+          </div>
+        </div>
+
+        ${isLibre ? `
+          <div class="bg-gradient-to-br from-purple-950/20 via-slate-950 to-slate-900 border-l-4 border-purple-500 p-8 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-purple-400 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4"></i> 📝 GUIÓN COMPLETO (TEXTO LIBRE)
               </span>
-              <button onclick="navigateTeleprompterScript(1)" ${!nextScript ? 'disabled class="opacity-30 cursor-not-allowed text-slate-500 p-1.5 rounded-lg"' : 'class="text-slate-300 hover:text-white hover:bg-slate-800 p-1.5 rounded-lg transition cursor-pointer"'} title="Guión Siguiente">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              <button onclick="copyScriptSection('${script.id}', 'guionLibre', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
               </button>
             </div>
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-medium text-slate-100 whitespace-pre-line leading-relaxed">
+              ${escapeHtml(script.guionLibre || script.gancho || '')}
+            </p>
           </div>
-
-          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <button onclick="openScriptInTeleprompterPro('${script.id}')" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/50 cursor-pointer">
-              <i data-lucide="tv" class="w-4 h-4"></i>
-              <span>Teleprónter Pro</span>
-            </button>
-            <button onclick="copyFullScript('${script.id}', this)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow-md cursor-pointer">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-              <span>Copiar Guión</span>
-            </button>
-            <button onclick="printSingleScript('${script.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow-md cursor-pointer" title="Imprimir Guión">
-              <i data-lucide="printer" class="w-4 h-4"></i>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Fullscreen Script Info Header -->
-        <div class="bg-slate-900/90 border border-slate-800 p-6 sm:p-8 rounded-3xl space-y-4 shadow-xl">
-          <div class="flex flex-wrap items-center gap-2.5">
-            <span class="bg-brand-500/20 text-brand-300 text-xs font-bold px-3 py-1 rounded-lg border border-brand-500/30">
-              👤 ${script.client}
-            </span>
-            <span class="bg-slate-800 text-slate-200 text-xs font-bold px-3 py-1 rounded-lg border border-slate-700">
-              Guión #${script.number || '-'}
-            </span>
-            <span class="bg-amber-500/10 text-amber-400 text-xs font-bold px-3 py-1 rounded-lg border border-amber-500/20">
-              📹 Formato: ${script.formato}
-            </span>
-            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-lg border border-emerald-500/20">
-              🎯 Objetivo: ${script.objetivo}
-            </span>
-            ${script.actor ? `
-            <span class="bg-purple-500/10 text-purple-300 text-xs font-bold px-3 py-1 rounded-lg border border-purple-500/20">
-              🎭 Actor: ${script.actor}
-            </span>` : ''}
-            ${script.contextoAdicional ? `
-            <span class="bg-slate-800 text-slate-300 text-xs font-medium px-3 py-1 rounded-lg border border-slate-700">
-              📍 ${script.contextoAdicional}
-            </span>` : ''}
-          </div>
-
-          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight mt-2">
-            ${script.ideaGanadora}
-          </h1>
-        </div>
-
-        <!-- Fullscreen Prompter Script Sections (Gigantic Clear Font for Reading on Set) -->
-        <div class="space-y-6 sm:space-y-8">
-          
-          <!-- GANCHO -->
-          <div class="bg-amber-500/5 border-l-8 border-amber-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
-                🪝 GANCHO (Hook - Primeros 3 seg)
-              </span>
+        ` : `
+        <div class="space-y-8">
+          <div class="bg-amber-500/10 border-l-4 border-amber-500 p-8 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO (Primeros 3 seg)</span>
               <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
               </button>
             </div>
-            <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-100 leading-relaxed sm:leading-relaxed">
-              ${script.gancho}
+            <p class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-amber-100 leading-tight">
+              ${escapeHtml(script.gancho)}
             </p>
           </div>
 
-          <!-- HISTORIA / CONTEXTO -->
-          <div class="bg-emerald-500/5 border-l-8 border-emerald-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
-                📖 HISTORIA - CONTEXTO
-              </span>
+          <div class="bg-emerald-500/10 border-l-4 border-emerald-500 p-8 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
               <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
               </button>
             </div>
-            <p class="text-xl sm:text-2xl lg:text-3xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed sm:leading-relaxed">
-              ${script.historia}
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-emerald-100 whitespace-pre-line leading-relaxed">
+              ${escapeHtml(script.historia)}
             </p>
           </div>
 
-          <!-- MORALEJA / VALOR -->
-          <div class="bg-rose-500/5 border-l-8 border-rose-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-rose-400 flex items-center gap-1.5">
-                💡 MORALEJA / SOLUCIÓN
-              </span>
+          <div class="bg-rose-500/10 border-l-4 border-rose-500 p-8 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / SOLUCIÓN</span>
               <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
               </button>
             </div>
-            <p class="text-xl sm:text-2xl lg:text-3xl font-medium text-rose-100 whitespace-pre-line leading-relaxed sm:leading-relaxed">
-              ${script.moraleja}
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-rose-100 whitespace-pre-line leading-relaxed">
+              ${escapeHtml(script.moraleja)}
             </p>
           </div>
 
-          <!-- CTA -->
-          <div class="bg-blue-500/5 border-l-8 border-blue-500 p-6 sm:p-8 rounded-r-3xl space-y-3 shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs sm:text-sm font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
-                📣 LLAMADO A LA ACCIÓN (CTA)
-              </span>
+          <div class="bg-blue-500/10 border-l-4 border-blue-500 p-8 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
               <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
               </button>
             </div>
-            <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-100 leading-relaxed sm:leading-relaxed">
-              ${script.cta}
+            <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-100 leading-relaxed">
+              ${escapeHtml(script.cta)}
             </p>
           </div>
-
         </div>
-
+        `}
       </div>
     `;
   } else {
-    // RENDER NORMAL CARD VIEW
     teleprompterDisplay.innerHTML = `
       <!-- Prompter Header Bar -->
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded border border-brand-500/20">
-              ${script.client}
+              ${escapeHtml(script.client)}
             </span>
             <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2 py-1 rounded">
               Guión #${script.number || '-'}
             </span>
             <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-1 rounded border border-amber-500/20">
-              Formato: ${script.formato}
+              Formato: ${escapeHtml(script.formato)}
             </span>
+            ${isLibre ? '<span class="bg-purple-500/20 text-purple-300 text-xs font-bold px-2 py-1 rounded border border-purple-500/30">📝 Guión Libre</span>' : ''}
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-3">${script.ideaGanadora}</h2>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-3">${escapeHtml(script.ideaGanadora)}</h2>
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-          <!-- Button to Expand / Maximize to Full Screen -->
           <button onclick="toggleSetCardFullscreen()" id="btnCardSetFullscreen" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-md shadow-purple-950/40 cursor-pointer" title="Maximizar tarjeta a pantalla completa">
             <i data-lucide="maximize-2" class="w-4 h-4"></i>
             <span>Ampliar Pantalla</span>
@@ -2088,65 +2038,72 @@ function displayScriptInTeleprompter(scriptId) {
           </button>
           
           <div class="text-sm text-slate-400 pl-1">
-            <span>Actor: <strong class="text-white">${script.actor || 'N/A'}</strong></span>
-            ${script.contextoAdicional ? `<span class="border-l border-slate-800 pl-2">📍 ${script.contextoAdicional}</span>` : ''}
+            <span>Actor: <strong class="text-white">${escapeHtml(script.actor || 'N/A')}</strong></span>
+            ${script.contextoAdicional ? `<span class="border-l border-slate-800 pl-2">📍 ${escapeHtml(script.contextoAdicional)}</span>` : ''}
           </div>
         </div>
       </div>
 
-      <!-- Prompter Script Sections (Large Reading Font) -->
+      <!-- Prompter Script Sections -->
       <div class="space-y-8 py-4">
-        
-        <!-- GANCHO -->
-        <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO (Hook - Primeros 3 seg)</span>
-            <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-            </button>
+        ${isLibre ? `
+          <div class="bg-gradient-to-br from-purple-950/20 via-slate-950 to-slate-900 border-l-4 border-purple-500 p-6 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-purple-400 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4"></i> 📝 GUIÓN COMPLETO (TEXTO LIBRE)
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'guionLibre', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-xl sm:text-2xl font-medium text-slate-100 whitespace-pre-line leading-relaxed">${escapeHtml(script.guionLibre || script.gancho || '')}</p>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-amber-100 leading-relaxed">${script.gancho}</p>
-        </div>
-
-        <!-- HISTORIA / CONTEXTO -->
-        <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
-            <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-            </button>
+        ` : `
+          <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO (Hook - Primeros 3 seg)</span>
+              <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-2xl sm:text-3xl font-bold text-amber-100 leading-relaxed">${escapeHtml(script.gancho)}</p>
           </div>
-          <p class="text-xl sm:text-2xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed">${script.historia}</p>
-        </div>
 
-        <!-- MORALEJA / VALOR -->
-        <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / SOLUCIÓN</span>
-            <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-            </button>
+          <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
+              <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-xl sm:text-2xl font-medium text-emerald-100 whitespace-pre-line leading-relaxed">${escapeHtml(script.historia)}</p>
           </div>
-          <p class="text-xl sm:text-2xl font-medium text-rose-100 whitespace-pre-line leading-relaxed">${script.moraleja}</p>
-        </div>
 
-        <!-- CTA -->
-        <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
-            <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-            </button>
+          <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / SOLUCIÓN</span>
+              <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-xl sm:text-2xl font-medium text-rose-100 whitespace-pre-line leading-relaxed">${escapeHtml(script.moraleja)}</p>
           </div>
-          <p class="text-2xl sm:text-3xl font-bold text-blue-100 leading-relaxed">${script.cta}</p>
-        </div>
 
+          <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
+              <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+              </button>
+            </div>
+            <p class="text-2xl sm:text-3xl font-bold text-blue-100 leading-relaxed">${escapeHtml(script.cta)}</p>
+          </div>
+        `}
       </div>
     `;
   }
   refreshLucideIcons();
 }
-
 function openTeleprompterForScript(scriptId) {
   openScriptInTeleprompterPro(scriptId);
 }
@@ -2186,53 +2143,115 @@ function openFocusScriptModal(scriptId) {
   }
 
   if (modalBody) {
-    modalBody.innerHTML = `
-      <div class="space-y-6">
-        <div class="flex items-center gap-3">
-          <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded border border-brand-500/20">${script.client}</span>
-          <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2 py-1 rounded">Guión #${script.number || '-'}</span>
-          <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-1 rounded border border-amber-500/20">Formato: ${script.formato}</span>
-        </div>
-
-        <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO</span>
-            <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+    const isLibre = script.scriptType === 'libre' || (!script.historia && !script.moraleja && script.guionLibre);
+    
+    if (isLibre) {
+      modalBody.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded-xl border border-brand-500/20">${escapeHtml(script.client)}</span>
+            <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2.5 py-1 rounded-xl">Guión #${script.number || '-'}</span>
+            <span class="bg-purple-500/15 text-purple-300 text-xs font-extrabold px-2.5 py-1 rounded-xl border border-purple-500/30 flex items-center gap-1">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 📝 Guión Libre
+            </span>
+            <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2.5 py-1 rounded-xl border border-amber-500/20">Formato: ${escapeHtml(script.formato)}</span>
+            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-xl border border-emerald-500/20">Objetivo: ${escapeHtml(script.objetivo)}</span>
+            ${script.actor ? `<span class="bg-slate-800/80 text-slate-300 text-xs font-medium px-2.5 py-1 rounded-xl">👤 ${escapeHtml(script.actor)}</span>` : ''}
           </div>
-          <p class="text-2xl font-bold text-amber-100">${script.gancho}</p>
-        </div>
 
-        <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
-            <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
+          <div class="bg-gradient-to-br from-purple-950/20 via-slate-950 to-slate-900 border-l-4 border-purple-500 p-6 rounded-r-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-purple-400 flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4"></i> 📝 GUION COMPLETO (TEXTO LIBRE)
+              </span>
+              <button onclick="copyScriptSection('${script.id}', 'guionLibre', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Guión
+              </button>
+            </div>
+            <p class="text-lg sm:text-xl font-medium text-slate-100 whitespace-pre-line leading-relaxed">${escapeHtml(script.guionLibre || script.gancho || '')}</p>
           </div>
-          <p class="text-xl font-medium text-emerald-100 whitespace-pre-line">${script.historia}</p>
-        </div>
 
-        <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / VALOR</span>
-            <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
-          </div>
-          <p class="text-xl font-medium text-rose-100 whitespace-pre-line">${script.moraleja}</p>
-        </div>
+          ${script.contextoAdicional ? `
+            <div class="bg-slate-950/80 border border-slate-800 p-4 rounded-xl space-y-1">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">📍 Contexto Adicional / Notas</span>
+              <p class="text-sm text-slate-300">${escapeHtml(script.contextoAdicional)}</p>
+            </div>
+          ` : ''}
 
-        <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
-            <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700">Copiar</button>
-          </div>
-          <p class="text-2xl font-bold text-blue-100">${script.cta}</p>
+          ${Array.isArray(script.attachments) && script.attachments.length > 0 ? `
+            <div class="bg-slate-950/80 border border-slate-800 p-4 rounded-xl space-y-2">
+              <span class="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Archivos Adjuntos (${script.attachments.length})
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${script.attachments.map(att => `
+                  <div onclick="openAttachmentPreviewModal('${att.id}', '${script.id}')" class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-brand-500/40 cursor-pointer transition">
+                    <span class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(att.name)}</span>
+                    <span class="text-[10px] text-slate-400">${escapeHtml(att.size || '')}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
-      </div>
-    `;
+      `;
+    } else {
+      modalBody.innerHTML = `
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="bg-brand-500/10 text-brand-400 text-xs font-bold px-2.5 py-1 rounded-xl border border-brand-500/20">${escapeHtml(script.client)}</span>
+            <span class="bg-slate-800 text-slate-300 text-xs font-bold px-2.5 py-1 rounded-xl">Guión #${script.number || '-'}</span>
+            <span class="bg-amber-500/10 text-amber-400 text-xs font-medium px-2.5 py-1 rounded-xl border border-amber-500/20">Formato: ${escapeHtml(script.formato)}</span>
+            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-xl border border-emerald-500/20">Objetivo: ${escapeHtml(script.objetivo)}</span>
+            ${script.actor ? `<span class="bg-slate-800/80 text-slate-300 text-xs font-medium px-2.5 py-1 rounded-xl">👤 ${escapeHtml(script.actor)}</span>` : ''}
+          </div>
+
+          <div class="bg-amber-500/5 border-l-4 border-amber-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">🪝 GANCHO</span>
+              <button onclick="copyScriptSection('${script.id}', 'gancho', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Copiar</button>
+            </div>
+            <p class="text-2xl font-bold text-amber-100">${escapeHtml(script.gancho)}</p>
+          </div>
+
+          <div class="bg-emerald-500/5 border-l-4 border-emerald-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">📖 HISTORIA - CONTEXTO</span>
+              <button onclick="copyScriptSection('${script.id}', 'historia', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Copiar</button>
+            </div>
+            <p class="text-xl font-medium text-emerald-100 whitespace-pre-line">${escapeHtml(script.historia)}</p>
+          </div>
+
+          <div class="bg-rose-500/5 border-l-4 border-rose-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-rose-400">💡 MORALEJA / VALOR</span>
+              <button onclick="copyScriptSection('${script.id}', 'moraleja', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Copiar</button>
+            </div>
+            <p class="text-xl font-medium text-rose-100 whitespace-pre-line">${escapeHtml(script.moraleja)}</p>
+          </div>
+
+          <div class="bg-blue-500/5 border-l-4 border-blue-500 p-6 rounded-r-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold uppercase tracking-widest text-blue-400">📣 LLAMADO A LA ACCIÓN (CTA)</span>
+              <button onclick="copyScriptSection('${script.id}', 'cta', this)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition">Copiar</button>
+            </div>
+            <p class="text-2xl font-bold text-blue-100">${escapeHtml(script.cta)}</p>
+          </div>
+
+          ${script.contextoAdicional ? `
+            <div class="bg-slate-950/80 border border-slate-800 p-4 rounded-xl space-y-1">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">📍 Contexto Adicional / Notas</span>
+              <p class="text-sm text-slate-300">${escapeHtml(script.contextoAdicional)}</p>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
   }
 
   if (modal) modal.classList.remove('hidden');
   refreshLucideIcons();
 }
-
 function closeFocusModal() {
   const modal = document.getElementById('focusScriptModal');
   if (modal) modal.classList.add('hidden');
@@ -2284,22 +2303,32 @@ function copyScriptSection(scriptId, sectionKey, btnElement) {
 function copyFullScript(scriptId, btnElement) {
   const script = state.scripts.find(s => s.id === scriptId);
   if (!script) return;
+  let fullText = '';
+  const isLibre = script.scriptType === 'libre' || (!script.historia && !script.moraleja && script.guionLibre);
+  
+  if (isLibre) {
+    fullText = `[CLIENTE: ${script.client} - GUIÓN #${script.number || ''}]
+[IDEA: ${script.ideaGanadora}]
+[FORMATO: ${script.formato}]
 
-  const fullText = `💡 IDEA: ${script.ideaGanadora}
-🎯 OBJETIVO: ${script.objetivo} | 📹 FORMATO: ${script.formato} | 👤 ACTOR: ${script.actor || 'N/A'}
+${script.guionLibre || script.gancho || ''}`;
+  } else {
+    fullText = `[CLIENTE: ${script.client} - GUIÓN #${script.number || ''}]
+[IDEA: ${script.ideaGanadora}]
+[FORMATO: ${script.formato}]
 
-🪝 GANCHO:
+[GANCHO]
 ${script.gancho}
 
-📖 HISTORIA - CONTEXTO:
+[HISTORIA]
 ${script.historia}
 
-💡 MORALEJA / VALOR:
+[MORALEJA]
 ${script.moraleja}
 
-📣 CTA:
+[CTA]
 ${script.cta}`;
-
+  }
   copyTextToClipboard(fullText, btnElement);
 }
 
@@ -3302,6 +3331,53 @@ function getPointsForFormat(format) {
 }
 
 // SCRIPT CRUD
+
+let currentScriptModalMode = 'structured';
+
+function setScriptModalMode(mode) {
+  currentScriptModalMode = mode;
+  const btnStruct = document.getElementById('btnModeStructured');
+  const btnLibre = document.getElementById('btnModeLibre');
+  const secStruct = document.getElementById('sectionStructuredScript');
+  const secLibre = document.getElementById('sectionGuionLibre');
+
+  if (mode === 'libre') {
+    if (btnLibre) {
+      btnLibre.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-purple-600 text-white shadow-sm cursor-pointer';
+    }
+    if (btnStruct) {
+      btnStruct.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer';
+    }
+    if (secStruct) secStruct.classList.add('hidden');
+    if (secLibre) secLibre.classList.remove('hidden');
+    updateGuionLibreStats();
+  } else {
+    if (btnStruct) {
+      btnStruct.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-brand-600 text-white shadow-sm cursor-pointer';
+    }
+    if (btnLibre) {
+      btnLibre.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer';
+    }
+    if (secLibre) secLibre.classList.add('hidden');
+    if (secStruct) secStruct.classList.remove('hidden');
+  }
+  refreshLucideIcons();
+}
+
+function updateGuionLibreStats() {
+  const textarea = document.getElementById('formGuionLibre');
+  const badge = document.getElementById('guionLibreWordCount');
+  if (!textarea || !badge) return;
+  const text = textarea.value.trim();
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  const seconds = Math.round(words / 2.5); // ~150 words per minute
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  const timeStr = min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+  badge.textContent = `${words} palabras · ~${timeStr}`;
+}
+
+
 function openNewScriptModal() {
   scriptPendingAttachments = [];
   renderScriptAttachmentsList();
@@ -3317,6 +3393,12 @@ function openNewScriptModal() {
   document.getElementById('formFormato').value = 'Hablando a cámara';
   document.getElementById('formObjetivo').value = 'VENTA';
   populateActorOptions(initialClient);
+
+  const formGuionLibre = document.getElementById('formGuionLibre');
+  if (formGuionLibre) formGuionLibre.value = '';
+  updateGuionLibreStats();
+
+  setScriptModalMode('structured');
 
   scriptModal.classList.remove('hidden');
   refreshLucideIcons();
@@ -3346,6 +3428,18 @@ function openEditScriptModal(id) {
   document.getElementById('formCTA').value = script.cta || '';
   document.getElementById('formContextoAdicional').value = script.contextoAdicional || '';
 
+  const formGuionLibre = document.getElementById('formGuionLibre');
+  if (formGuionLibre) {
+    formGuionLibre.value = script.guionLibre || (script.scriptType === 'libre' ? script.gancho : '') || '';
+  }
+  updateGuionLibreStats();
+
+  if (script.scriptType === 'libre' || (!script.historia && !script.moraleja && script.guionLibre)) {
+    setScriptModalMode('libre');
+  } else {
+    setScriptModalMode('structured');
+  }
+
   scriptModal.classList.remove('hidden');
   refreshLucideIcons();
 }
@@ -3353,8 +3447,6 @@ function openEditScriptModal(id) {
 function closeModal() {
   scriptModal.classList.add('hidden');
 }
-
-// (openFocusScriptModal & closeFocusModal defined above)
 
 function submitScriptFormManually() {
   const formClientEl = document.getElementById('formClient');
@@ -3386,6 +3478,13 @@ function submitScriptFormManually() {
   const numInput = document.getElementById('formNumber');
   const scriptNumber = numInput ? parseInt(numInput.value, 10) || getNextScriptNumber() : getNextScriptNumber();
 
+  const isLibre = currentScriptModalMode === 'libre';
+  const guionLibreText = document.getElementById('formGuionLibre') ? document.getElementById('formGuionLibre').value.trim() : '';
+  const ganchoText = document.getElementById('formGancho') ? document.getElementById('formGancho').value.trim() : '';
+  const historiaText = document.getElementById('formHistoria') ? document.getElementById('formHistoria').value.trim() : '';
+  const moralejaText = document.getElementById('formMoraleja') ? document.getElementById('formMoraleja').value.trim() : '';
+  const ctaText = document.getElementById('formCTA') ? document.getElementById('formCTA').value.trim() : '';
+
   const scriptData = {
     id: state.editingScriptId || ('script-' + Date.now()),
     client: clientName,
@@ -3396,10 +3495,12 @@ function submitScriptFormManually() {
     actor: document.getElementById('formActor') ? document.getElementById('formActor').value.trim() : clientName,
     ideaGanadora: ideaGanadora,
     linkReferencia: document.getElementById('formLinkReferencia') ? document.getElementById('formLinkReferencia').value.trim() : '',
-    gancho: document.getElementById('formGancho') ? document.getElementById('formGancho').value.trim() : '',
-    historia: document.getElementById('formHistoria') ? document.getElementById('formHistoria').value.trim() : '',
-    moraleja: document.getElementById('formMoraleja') ? document.getElementById('formMoraleja').value.trim() : '',
-    cta: document.getElementById('formCTA') ? document.getElementById('formCTA').value.trim() : '',
+    scriptType: isLibre ? 'libre' : 'structured',
+    guionLibre: guionLibreText,
+    gancho: isLibre ? (ganchoText || guionLibreText) : ganchoText,
+    historia: isLibre ? '' : historiaText,
+    moraleja: isLibre ? '' : moralejaText,
+    cta: isLibre ? '' : ctaText,
     contextoAdicional: document.getElementById('formContextoAdicional') ? document.getElementById('formContextoAdicional').value.trim() : '',
     attachments: scriptPendingAttachments || [],
     views: existingScript ? (existingScript.views || 0) : 0,
@@ -3419,9 +3520,9 @@ function submitScriptFormManually() {
   }
 
   saveState();
-  closeModal();
   renderAll();
-  showToastNotification('✓ ¡Guión #' + scriptData.number + ' guardado con éxito!');
+  closeModal();
+  showToastNotification('✅ Guión guardado con éxito', 'check-circle');
 }
 
 function submitQuickIdeaManually() {

@@ -2301,6 +2301,21 @@
       <form id="scriptForm" onsubmit="event.preventDefault(); submitScriptFormManually();" class="p-6 space-y-5 overflow-y-auto flex-1 text-sm">
         <input type="hidden" id="scriptId">
 
+        <!-- Script Mode Toggle (Estructurado vs Guión Libre) -->
+        <div class="flex items-center justify-between bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+          <span class="text-xs font-bold text-slate-400 pl-2">Tipo de Guión:</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="btnModeStructured" onclick="setScriptModalMode('structured')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition bg-brand-600 text-white shadow-sm cursor-pointer">
+              <i data-lucide="layout-list" class="w-3.5 h-3.5"></i>
+              <span>Estructurado (4 Partes)</span>
+            </button>
+            <button type="button" id="btnModeLibre" onclick="setScriptModalMode('libre')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>📝 Guión Libre</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Row 1: Client, Number, Status -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -2324,7 +2339,7 @@
           </div>
         </div>
 
-        <!-- Row 2: Idea Ganadora & Formato & Objetivo -->
+        <!-- Row 2: Formato & Objetivo & Actor -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="sm:col-span-1">
             <label class="block text-xs font-semibold text-slate-400 mb-1">Formato *</label>
@@ -2371,15 +2386,15 @@
           <div class="flex items-center justify-between gap-2 mb-1">
             <label class="block text-xs font-semibold text-amber-400">💡 Idea Ganadora *</label>
             <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="copyField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
-              <button type="button" onclick="pasteField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="pasteField('formIdeaGanadora', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
               </button>
             </div>
           </div>
-          <input type="text" id="formIdeaGanadora" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+          <input type="text" id="formIdeaGanadora" required placeholder="Ej: Las 3 trampas del ahorro tradicional..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-medium focus:ring-2 focus:ring-brand-500 outline-none">
         </div>
 
         <!-- Enlace / Link de Referencia -->
@@ -2387,95 +2402,129 @@
           <div class="flex items-center justify-between gap-2 mb-1">
             <label class="block text-xs font-semibold text-sky-400">🔗 Link de Referencia</label>
             <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="copyField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
-              <button type="button" onclick="pasteField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="pasteField('formLinkReferencia', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
               </button>
             </div>
           </div>
-          <input type="url" id="formLinkReferencia" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <input type="url" id="formLinkReferencia" placeholder="https://instagram.com/reel/..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
         </div>
 
-        <!-- Gancho (Hook) -->
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <label class="block text-xs font-semibold text-amber-400">🪝 Gancho *</label>
+        <!-- OPTION A: SECTION GUIÓN LIBRE (Espacio amplio para escribir el guión) -->
+        <div id="sectionGuionLibre" class="space-y-2 hidden">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <label class="block text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i>
+                <span>📝 Cuerpo del Guión Libre *</span>
+              </label>
+              <span id="guionLibreWordCount" class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">0 palabras · ~0s</span>
+            </div>
             <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="copyField('formGuionLibre', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
-              <button type="button" onclick="pasteField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="pasteField('formGuionLibre', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+              </button>
+              <button type="button" onclick="document.getElementById('formGuionLibre').value = ''; updateGuionLibreStats();" class="text-[10px] text-slate-400 hover:text-rose-300 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="trash-2" class="w-3 h-3"></i> Limpiar
               </button>
             </div>
           </div>
-          <textarea id="formGancho" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+          <textarea 
+            id="formGuionLibre" 
+            rows="11" 
+            placeholder="Escribe o pega aquí el guión completo del video de forma libre y continua (gancho, desarrollo, diálogo, mensaje final y llamado a la acción)..."
+            oninput="updateGuionLibreStats()"
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none leading-relaxed text-sm placeholder-slate-600 font-normal"
+          ></textarea>
         </div>
 
-        <!-- Historia - Contexto -->
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <label class="block text-xs font-semibold text-emerald-400">📖 Historia - Contexto *</label>
-            <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
-              </button>
-              <button type="button" onclick="pasteField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
-              </button>
+        <!-- OPTION B: SECTION ESTRUCTURADO (4 Partes) -->
+        <div id="sectionStructuredScript" class="space-y-4">
+          <!-- Gancho (Hook) -->
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <label class="block text-xs font-semibold text-amber-400">🪝 Gancho *</label>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="copyField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+                </button>
+                <button type="button" onclick="pasteField('formGancho', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+                </button>
+              </div>
             </div>
+            <textarea id="formGancho" rows="2" placeholder="Primeros 3 segundos impactantes..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
           </div>
-          <textarea id="formHistoria" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
-        </div>
 
-        <!-- Moraleja / Valor -->
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <label class="block text-xs font-semibold text-rose-400">💡 Moraleja / Valor *</label>
-            <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
-              </button>
-              <button type="button" onclick="pasteField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
-              </button>
+          <!-- Historia - Contexto -->
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <label class="block text-xs font-semibold text-emerald-400">📖 Historia - Contexto *</label>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="copyField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+                </button>
+                <button type="button" onclick="pasteField('formHistoria', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+                </button>
+              </div>
             </div>
+            <textarea id="formHistoria" rows="4" placeholder="Desarrollo del video o anécdota..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
           </div>
-          <textarea id="formMoraleja" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
-        </div>
 
-        <!-- CTA (Call to Action) -->
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <label class="block text-xs font-semibold text-blue-400">📣 CTA (Llamado a la Acción) *</label>
-            <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
-              </button>
-              <button type="button" onclick="pasteField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
-                <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
-              </button>
+          <!-- Moraleja / Valor -->
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <label class="block text-xs font-semibold text-rose-400">💡 Moraleja / Valor *</label>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="copyField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+                </button>
+                <button type="button" onclick="pasteField('formMoraleja', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+                </button>
+              </div>
             </div>
+            <textarea id="formMoraleja" rows="3" placeholder="Enseñanza clave o solución directa..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
           </div>
-          <textarea id="formCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+
+          <!-- CTA (Call to Action) -->
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <label class="block text-xs font-semibold text-blue-400">📣 CTA (Llamado a la Acción) *</label>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="copyField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+                </button>
+                <button type="button" onclick="pasteField('formCTA', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
+                </button>
+              </div>
+            </div>
+            <textarea id="formCTA" rows="2" placeholder="Comenta 'GUION' o sígueme para más..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+          </div>
         </div>
 
-        <!-- Contexto Adicional de Grabación -->
+        <!-- Contexto Adicional de Grabación / Notas -->
         <div>
           <div class="flex items-center justify-between gap-2 mb-1">
             <label class="block text-xs font-semibold text-slate-400">📍 Contexto Adicional / Notas</label>
             <div class="flex items-center gap-1">
-              <button type="button" onclick="copyField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="copyField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="copy" class="w-3 h-3"></i> Copiar
               </button>
-              <button type="button" onclick="pasteField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1">
+              <button type="button" onclick="pasteField('formContextoAdicional', this)" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 transition flex items-center gap-1 cursor-pointer">
                 <i data-lucide="clipboard" class="w-3 h-3"></i> Pegar
               </button>
             </div>
           </div>
-          <input type="text" id="formContextoAdicional" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <input type="text" id="formContextoAdicional" placeholder="Ej: Grabar en oficina, plano medio..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-brand-500 outline-none">
         </div>
 
         <!-- Archivos Adjuntos / Fotos de Referencia -->
@@ -2994,8 +3043,8 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=1789482999&t=1789482999"></script>
-  <script src="app.js?v=1789482999&t=1789482999"></script>
+  <script src="ai-hooks-data.js?v=1789484000&t=1789484000"></script>
+  <script src="app.js?v=1789484000&t=1789484000"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)
