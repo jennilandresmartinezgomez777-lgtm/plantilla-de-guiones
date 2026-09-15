@@ -2758,41 +2758,56 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="p-6 space-y-5 text-sm text-slate-300">
+      <div class="p-5 sm:p-6 space-y-4 text-sm text-slate-300">
         <p class="text-xs text-slate-400 leading-relaxed">
-          Mantén todos tus guiones, ideas, notas y evaluaciones de viralidad sincronizados en tiempo real entre tu <strong>PC, iPad e iPhone</strong>:
+          Mantén todos tus guiones, ideas, notas y evaluaciones de viralidad sincronizados en tiempo real entre tu <strong>PC, iPad, celular y el de tu esposa</strong>:
         </p>
 
         <!-- Method 0: Cloud Sync (No link sending) -->
-        <div class="bg-gradient-to-r from-emerald-950/40 to-slate-950 border border-emerald-500/30 p-4 rounded-xl space-y-3">
+        <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 p-4 rounded-xl space-y-3">
           <div class="flex items-center justify-between">
             <span class="font-bold text-white text-xs flex items-center gap-1.5">
               <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
-              Sincronización en la Nube (Automática y 1-Clic)
+              Sincronización en la Nube / Vercel (Gratis 24/7)
             </span>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">Recomendado</span>
+            <span id="modalCloudStatusBadge" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">🟢 Activa</span>
           </div>
-          <p class="text-xs text-slate-400">Guarda tus guiones en la nube desde cualquier dispositivo y se actualizarán automáticamente en los demás.</p>
+          <p class="text-xs text-slate-400">Sincroniza tus guiones automáticamente. Funciona en cualquier momento incluso si el computador está apagado.</p>
+          
           <div class="flex gap-2">
             <button id="btnSaveCloud" onclick="saveStateToCloud()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-md">
               <i data-lucide="cloud-upload" class="w-4 h-4"></i>
-              <span>Guardar en Nube</span>
+              <span>Forzar Guardado</span>
             </button>
             <button id="btnLoadCloud" onclick="loadStateFromCloud()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold py-2.5 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
               <i data-lucide="cloud-download" class="w-4 h-4 text-emerald-400"></i>
-              <span>Cargar de Nube</span>
+              <span>Descargar de Nube</span>
             </button>
           </div>
+
+          <!-- Server / Cloud URL Configuration -->
+          <div class="pt-2 border-t border-slate-800 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block text-[11px] font-semibold text-slate-300">🌐 URL del Servidor / Vercel:</label>
+              <span id="currentConnectedServerLabel" class="text-[10px] text-cyan-400 font-mono">Detectado Automáticamente</span>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="syncServerUrlInput" placeholder="Ej: https://tu-estudio.vercel.app o http://192.168.1.15:3000" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-cyan-500">
+              <button type="button" onclick="saveCustomServerUrl()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer whitespace-nowrap font-semibold">
+                Guardar URL
+              </button>
+            </div>
+          </div>
+
           <!-- Personal Cloud Sync Key -->
           <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
-            <label class="block text-[11px] font-semibold text-slate-300">🔑 Clave Personal de Sincronización (PC, iPad e iPhone):</label>
+            <label class="block text-[11px] font-semibold text-slate-300">🔑 Clave Privada de Sincronización (Opcional):</label>
             <div class="flex gap-2">
               <input type="text" id="syncPersonalCodeInput" placeholder="Ej: MI-ESTUDIO-1" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-emerald-500">
               <button type="button" onclick="savePersonalSyncCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer whitespace-nowrap">
                 Guardar Clave
               </button>
             </div>
-            <p class="text-[10px] text-slate-400 leading-tight">Al usar la misma clave en tu PC, iPad e iPhone, la sincronización entre los tres será 100% directa y privada.</p>
           </div>
         </div>
 
@@ -2813,7 +2828,7 @@
 
         <!-- Method 2: Sync Code -->
         <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-          <span class="font-bold text-white text-xs block">Opción 3: Código de Texto (Copiar y Pegar)</span>
+          <span class="font-bold text-white text-xs block">Opción 3: Código de Respaldo Manual (Copiar y Pegar)</span>
           <div class="flex gap-2">
             <button onclick="copySyncCodeToClipboard()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
               <i data-lucide="code" class="w-3.5 h-3.5 text-amber-400"></i>
@@ -2828,7 +2843,7 @@
 
         <!-- Method 3: JSON File -->
         <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-          <span class="font-bold text-white text-xs block">Opción 3: Archivo de Respaldo JSON</span>
+          <span class="font-bold text-white text-xs block">Opción 4: Archivo de Respaldo JSON</span>
           <div class="flex gap-2">
             <button onclick="triggerJSONExport()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-lg text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
               <i data-lucide="download" class="w-3.5 h-3.5 text-brand-400"></i>
@@ -2854,8 +2869,8 @@
 
   <div id="dedicatedPrintArea"></div>
 
-  <script src="ai-hooks-data.js?v=1789444175515.6&t=1789412033428"></script>
-  <script src="app.js?v=1789444175515&t=1789412033428"></script>
+  <script src="ai-hooks-data.js?v=1789444433217.6&t=1789412033428"></script>
+  <script src="app.js?v=1789444433217&t=1789412033428"></script>
 
   <script>
     // Universal Inline Handlers for Server Config Modal (Instant availability on iPad/Mobile)

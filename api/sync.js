@@ -99,7 +99,13 @@ module.exports = async (req, res) => {
       }
     }
 
-    return res.status(404).json({ error: `No cloud state available for channel '${channel}'` });
+    return res.status(200).json({ 
+      clients: ['Jennil'], 
+      scripts: [], 
+      notes: { Jennil: [] }, 
+      viralEvaluations: [], 
+      updatedAt: new Date().toISOString() 
+    });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
