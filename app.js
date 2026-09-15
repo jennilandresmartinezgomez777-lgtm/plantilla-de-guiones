@@ -7,6 +7,28 @@ function getColombiaTodayDateString() {
   return new Date().toISOString().split('T')[0];
 }
 
+
+function deduplicateScripts(scripts) {
+  if (!Array.isArray(scripts)) return [];
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
+  const result = [];
+
+  for (const s of scripts) {
+    if (!s || typeof s !== 'object') continue;
+    const id = String(s.id || '').trim();
+    if (!id || seenIds.has(id)) continue;
+
+    const fp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+    if (fp.length > 5 && seenFingerprints.has(fp)) continue;
+
+    seenIds.add(id);
+    if (fp.length > 5) seenFingerprints.add(fp);
+    result.push(s);
+  }
+  return result;
+}
+
 function sanitizeScriptData(s) {
   if (!s || typeof s !== 'object') return s;
   const cleanStr = (val, fallback = '') => {
@@ -1184,6 +1206,15 @@ try {
   }
 } catch(e) {}
 
+
+// AUTO-DEDUPLICATE STATE ON STARTUP
+try {
+  if (Array.isArray(state.scripts)) {
+    state.scripts = deduplicateScripts(state.scripts);
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  }
+} catch(e) {}
+
 document.addEventListener('DOMContentLoaded', () => {
   checkUrlForSyncData();
   renderClientSelect();
@@ -1230,6 +1261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function saveState() {
+  if (Array.isArray(state.scripts)) state.scripts = deduplicateScripts(state.scripts);
   const nowISO = new Date().toISOString();
   state.updatedAt = nowISO;
 
@@ -1399,6 +1431,7 @@ function renderClientSelect() {
 }
 
 function renderAll() {
+  if (Array.isArray(state.scripts)) state.scripts = deduplicateScripts(state.scripts);
   renderChallengeCountdown();
   const filtered = getFilteredScripts();
   const baseScriptsForStats = state.activeClient === 'ALL' 
@@ -2967,7 +3000,7 @@ async function loadStateFromCloud(isSilent = false) {
 
 function applyCloudData(data, channel = null, isSilent = false) {
   if (!data) return;
-  if (Array.isArray(data.scripts)) state.scripts = data.scripts;
+  if (Array.isArray(data.scripts)) state.scripts = deduplicateScripts(data.scripts);
   if (Array.isArray(data.deletedScripts)) state.deletedScripts = data.deletedScripts;
   cleanupExpiredDeletedScripts();
   updateTrashBadgeCount();
@@ -4009,7 +4042,16 @@ function deleteScript(scriptId) {
     state.deletedScripts = state.deletedScripts.filter(s => String(s.id) !== String(scriptId));
     state.deletedScripts.unshift(scriptCopy);
 
-    state.scripts = (state.scripts || []).filter(s => String(s.id) !== String(scriptId));
+    // Remove from state.scripts (by ID AND by identical content)
+    const fp = `${(script.client || 'Jennil').toLowerCase().trim()}|${(script.ideaGanadora || script.title || '').toLowerCase().trim()}|${(script.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+    state.scripts = (state.scripts || []).filter(s => {
+      if (String(s.id) === String(scriptId)) return false;
+      const sFp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+      if (fp.length > 5 && sFp === fp) return false;
+      return true;
+    });
+
+    state.scripts = deduplicateScripts(state.scripts);
 
     saveState();
     renderAll();
@@ -13634,8 +13676,18 @@ function restoreScriptFromTrash(scriptId) {
 
   state.deletedScripts.splice(scriptIndex, 1);
   if (!Array.isArray(state.scripts)) state.scripts = [];
-  state.scripts = state.scripts.filter(s => String(s.id) !== String(scriptId));
+  
+  // Remove any duplicate in active scripts before restoring
+  const fp = `${(script.client || 'Jennil').toLowerCase().trim()}|${(script.ideaGanadora || script.title || '').toLowerCase().trim()}|${(script.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+  state.scripts = state.scripts.filter(s => {
+    if (String(s.id) === String(scriptId)) return false;
+    const sFp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+    if (fp.length > 5 && sFp === fp) return false;
+    return true;
+  });
+
   state.scripts.unshift(script);
+  state.scripts = deduplicateScripts(state.scripts);
 
   saveState();
   renderAll();

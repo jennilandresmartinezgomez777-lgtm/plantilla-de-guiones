@@ -111,6 +111,24 @@ const DEFAULT_INITIAL_DATA = {
   "updatedAt": "2026-09-15T20:37:52.945Z"
 };
 
+function deduplicateScripts(scripts) {
+  if (!Array.isArray(scripts)) return [];
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
+  const result = [];
+  for (const s of scripts) {
+    if (!s || typeof s !== 'object') continue;
+    const id = String(s.id || '').trim();
+    if (!id || seenIds.has(id)) continue;
+    const fp = `${(s.client || 'Jennil').toLowerCase().trim()}|${(s.ideaGanadora || s.title || '').toLowerCase().trim()}|${(s.gancho || '').toLowerCase().trim().slice(0, 50)}`;
+    if (fp.length > 5 && seenFingerprints.has(fp)) continue;
+    seenIds.add(id);
+    if (fp.length > 5) seenFingerprints.add(fp);
+    result.push(s);
+  }
+  return result;
+}
+
 function mergeAppData(local, remote) {
   if (!remote || typeof remote !== 'object') return local || DEFAULT_INITIAL_DATA;
   if (!local || typeof local !== 'object') return remote || DEFAULT_INITIAL_DATA;
