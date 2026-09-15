@@ -1,7 +1,190 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const PORT = 3000;
+const OLLAMA_HOST = 'http://127.0.0.1:11434';
+const DIR = __dirname;
+
+const DEFAULT_INITIAL_DATA = {
+  "clients": [
+    "Jennil",
+    "Natalia"
+  ],
+  "scripts": [
+    {
+      "id": "script-1789443084089",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Jennil",
+      "ideaGanadora": "Venta - Metodología desde Cero",
+      "linkReferencia": "",
+      "gancho": "No importa cuál sea el nivel de conocimiento que tengas, con nosotros podrás aprender desde cero toda la metodología aplicada que utilizaron nuestros alumnos Mabel, Asceineth, Jeison y otros más.",
+      "historia": "Obtendrás metodología y entorno propio de análisis para que aprendas a tomar tus propias decisiones sin depender de nadie.\n- Plataforma con herramientas exclusivas\n- Sala operativa en vivo 4 veces por semana\n- Acompañamiento personalizado y estrategias rentables\n- Algoritmos entrenados con IA y mucho más.",
+      "moraleja": "Aprender un sistema probado es la diferencia entre improvisar y tener resultados consistentes.",
+      "cta": "Si quieres tener resultados y mejorar tus ingresos mientras haces lo que amas, escribe la palabra CAMBIO, te ayudaré y te mostraré cómo lograrlo.",
+      "contextoAdicional": "PRUEBAS VIDEOS CORTOS (VARIOS)",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "updatedAt": "2026-09-15T20:29:29.854Z",
+      "createdAt": "2026-09-15T03:31:24.089Z"
+    },
+    {
+      "id": "script-1",
+      "client": "Jennil",
+      "number": 2,
+      "status": "Por Grabar",
+      "formato": "Formato entrevista",
+      "objetivo": "VENTA",
+      "actor": "Jennil",
+      "ideaGanadora": "¿Cuánto gastas al mes en Miami?",
+      "linkReferencia": "",
+      "gancho": "¿Cuánto gastas al mes viviendo en Miami?",
+      "historia": "Gasta $5,000 dólares al mes entre casa, coche, comida, hijos y ropa...\n\n¿Y lo pagas con Tarjeta de Crédito o de Débito?\n— Con tarjeta de débito.",
+      "moraleja": "Si pagas con tarjeta de crédito te dan puntos para viajar gratis y además REPORTA POSITIVAMENTE EN TU PUNTAJE DE CRÉDITO.",
+      "cta": "Escribe en comentarios la palabra CRÉDITO para aprender a maximizar tu puntaje.",
+      "contextoAdicional": "Se graba en Brickell Center",
+      "attachments": [],
+      "completed": false,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-13T01:44:41.229Z"
+    },
+    {
+      "id": "script-2",
+      "client": "Jennil",
+      "number": 3,
+      "status": "Redactado",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Jennil",
+      "ideaGanadora": "Deja de pagar por tu tarjeta hasta que no hagas esto",
+      "linkReferencia": "",
+      "gancho": "Deja de pagar por tu tarjeta de crédito hasta que no hagas esto.",
+      "historia": "Ten cuidado con estas 3 cosas porque estás perdiendo mucho dinero y puede hasta bajar tu puntaje:\n1. Fecha de corte en la app del banco.\n2. Evita tarjetas de tiendas comerciales.\n3. Cuidado con adelantos de efectivo.",
+      "moraleja": "Corregir estos 3 errores te ahorrará miles de dólares al año y subirá tu puntaje rápidamente.",
+      "cta": "Escribe CREDITO en comentarios para recibir nuestra guía de reparación gratuita.",
+      "contextoAdicional": "En oficina con pantalla de datos",
+      "attachments": [],
+      "completed": false,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-13T01:44:41.230Z"
+    },
+    {
+      "id": "script-29",
+      "client": "Jennil",
+      "number": 4,
+      "status": "Editado",
+      "formato": "Formato entrevista",
+      "objetivo": "VIRAL",
+      "actor": "Jennil",
+      "ideaGanadora": "Cómo Negociar y Borrar Colecciones Médicas por Ley",
+      "linkReferencia": "",
+      "gancho": "Las facturas médicas menores a $500 NO pueden aparecer en tu reporte de crédito por ley.",
+      "historia": "Explicación de las nuevas normativas federales de los burós de crédito (Equifax, Experian, TransUnion) para remover deudas médicas pagadas o menores de $500 de inmediato.",
+      "moraleja": "Conocer tus derechos financieros te ahorra miles de dólares y protege tu crédito.",
+      "cta": "Comenta MEDICO para enviarte el modelo de carta de disputa legal.",
+      "contextoAdicional": "Oficina ejecutiva con micrófono de pie",
+      "attachments": [],
+      "completed": false,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-12T13:55:04.486Z"
+    },
+    {
+      "id": "script-24",
+      "client": "Jennil",
+      "number": 5,
+      "status": "Por Grabar",
+      "formato": "Formato Dinámico",
+      "objetivo": "VENTA",
+      "actor": "Jennil",
+      "ideaGanadora": "Las 3 Mejores Tarjetas de Crédito de Negocios para Viajar Gratis en Primera Clase",
+      "linkReferencia": "",
+      "gancho": "Este boleto a Europa en Business Class me costó solo $11 dólares en impuestos. Te muestro cómo.",
+      "historia": "Estrategia de transferencia de puntos de Chase Ink y Amex Business Platinum hacia aerolíneas asociadas optimizando bonos de bienvenida.",
+      "moraleja": "Convierte los gastos operativos habituales de tu empresa en viajes de lujo totalmente costeados con puntos.",
+      "cta": "Escribe VIAJE en comentarios y te comparto la comparativa de tarjetas.",
+      "contextoAdicional": "Lounge VIP de aeropuerto con pasaporte y laptop",
+      "attachments": [],
+      "completed": false,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-07T13:55:04.486Z"
+    },
+    {
+      "id": "script-3",
+      "client": "Natalia",
+      "number": 6,
+      "status": "Publicado",
+      "formato": "Formato Vlog",
+      "objetivo": "SEGUIDORES",
+      "actor": "Natalia",
+      "ideaGanadora": "Cómo no engordar en navidad comiendo lo que quieras",
+      "linkReferencia": "",
+      "gancho": "Cómo no engordar en navidad comiendo lo que quieras.",
+      "historia": "El año pasado este era yo el día 24 de diciembre y este era yo el día 7 de Enero después de 7 cenas de navidad. Exactamente la misma composición corporal.",
+      "moraleja": "La clave no es pasar hambre, es controlar los macros principales durante los días entre celebraciones.",
+      "cta": "Comenta NAVIDAD y te envío mi guía gratis de nutrición flexible.",
+      "contextoAdicional": "En la cocina con comida de navidad encima",
+      "attachments": [],
+      "completed": true,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-13T01:44:41.231Z"
+    },
+    {
+      "id": "script-1789481120131",
+      "client": "Jennil",
+      "number": 7,
+      "status": "Idea",
+      "formato": "Hablando a cámara",
+      "objetivo": "VIRAL",
+      "actor": "Jennil",
+      "ideaGanadora": "estar pendiente",
+      "linkReferencia": "",
+      "gancho": "estar pendiente",
+      "historia": "Pendiente de redactar historia...",
+      "moraleja": "Pendiente de redactar moraleja...",
+      "cta": "Pendiente de redactar CTA...",
+      "contextoAdicional": "",
+      "attachments": [],
+      "completed": false,
+      "updatedAt": "2026-09-15T20:29:29.855Z",
+      "createdAt": "2026-09-15T14:05:20.131Z"
+    }
+  ],
+  "notes": {
+    "Jennil": [],
+    "Natalia": []
+  },
+  "viralEvaluations": [],
+  "calendarEvents": [
+    {
+      "id": "c1",
+      "title": "Grabación de Reels",
+      "date": "2026-09-16"
+    },
+    {
+      "id": "c2",
+      "title": "Publicación de Contenido",
+      "date": "2026-09-17"
+    }
+  ],
+  "notificationEmails": {
+    "primary": "jennilandresmartinezgomez777@gmail.com",
+    "secondary": "ncolorado2511@outlook.com"
+  },
+  "deletedScripts": [],
+  "challengeStartDate": "2026-09-13",
+  "updatedAt": "2026-09-15T20:29:29.855Z"
+};
+let channelsState = {};
 
 function mergeAppData(local, remote) {
-  if (!remote || typeof remote !== 'object') return local || {};
-  if (!local || typeof local !== 'object') return remote || {};
+  if (!remote || typeof remote !== 'object') return local || DEFAULT_INITIAL_DATA;
+  if (!local || typeof local !== 'object') return remote || DEFAULT_INITIAL_DATA;
 
   const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
   const now = Date.now();
@@ -26,21 +209,25 @@ function mergeAppData(local, remote) {
   });
   const mergedDeletedScripts = Array.from(deletedMap.values());
   const deletedIdsSet = new Set(mergedDeletedScripts.map(s => String(s.id)));
+  deletedIdsSet.add('s1');
+  deletedIdsSet.add('s2');
+  deletedIdsSet.add('test_1');
 
   const scriptsMap = new Map();
   (remote.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
+    if (s && s.id && !deletedIdsSet.has(String(s.id)) && (s.ideaGanadora || s.gancho || s.title)) {
       scriptsMap.set(String(s.id), s);
     }
   });
   (local.scripts || []).forEach(s => {
-    if (s && s.id && !deletedIdsSet.has(String(s.id))) {
+    if (s && s.id && !deletedIdsSet.has(String(s.id)) && (s.ideaGanadora || s.gancho || s.title)) {
       const existing = scriptsMap.get(String(s.id));
       if (!existing || (s.updatedAt && (!existing.updatedAt || s.updatedAt >= existing.updatedAt))) {
         scriptsMap.set(String(s.id), s);
       }
     }
   });
+  const mergedScripts = Array.from(scriptsMap.values());
 
   const calMap = new Map();
   (remote.calendarEvents || []).forEach(c => {
@@ -78,36 +265,19 @@ function mergeAppData(local, remote) {
     mergedNotes[c] = Array.from(notesMap.values());
   });
 
-  const mergedEmails = {
-    primary: (local.notificationEmails && local.notificationEmails.primary) || (remote.notificationEmails && remote.notificationEmails.primary) || '',
-    secondary: (local.notificationEmails && local.notificationEmails.secondary) || (remote.notificationEmails && remote.notificationEmails.secondary) || ''
-  };
-
-  const evalMap = new Map();
-  (remote.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
-  (local.viralEvaluations || []).forEach(e => { if (e) evalMap.set(e.id || JSON.stringify(e), e); });
-
   return {
     clients: mergedClients,
-    scripts: Array.from(scriptsMap.values()),
+    scripts: mergedScripts.length > 0 ? mergedScripts : DEFAULT_INITIAL_DATA.scripts,
     deletedScripts: mergedDeletedScripts,
     notes: mergedNotes,
     calendarEvents: Array.from(calMap.values()),
-    viralEvaluations: Array.from(evalMap.values()),
-    notificationEmails: mergedEmails,
+    viralEvaluations: (local.viralEvaluations || remote.viralEvaluations || []),
+    notificationEmails: local.notificationEmails || remote.notificationEmails || DEFAULT_INITIAL_DATA.notificationEmails,
     aiBrain: { ...(remote.aiBrain || {}), ...(local.aiBrain || {}) },
     challengeStartDate: local.challengeStartDate || remote.challengeStartDate || '2026-09-13',
     updatedAt: new Date().toISOString()
   };
 }
-
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-
-const PORT = 3000;
-const OLLAMA_HOST = 'http://127.0.0.1:11434';
-const DIR = __dirname;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -120,101 +290,10 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml'
 };
 
-async function extractLinkMetadata(targetUrl) {
-  try {
-    const urlObj = new URL(targetUrl);
-    const host = urlObj.hostname.toLowerCase();
-
-    // 1. YouTube
-    if (host.includes('youtube.com') || host.includes('youtu.be')) {
-      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`;
-      const res = await fetch(oembedUrl);
-      if (res.ok) {
-        const data = await res.json();
-        return {
-          success: true,
-          platform: 'YouTube',
-          title: data.title || '',
-          author: data.author_name || '',
-          description: `Video de YouTube: "${data.title}" por ${data.author_name}`
-        };
-      }
-    }
-
-    // 2. TikTok
-    if (host.includes('tiktok.com')) {
-      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(targetUrl)}`;
-      const res = await fetch(oembedUrl);
-      if (res.ok) {
-        const data = await res.json();
-        return {
-          success: true,
-          platform: 'TikTok',
-          title: data.title || '',
-          author: data.author_name || '',
-          description: `Video de TikTok: "${data.title}" por ${data.author_name}`
-        };
-      }
-    }
-
-    // 3. Instagram
-    if (host.includes('instagram.com')) {
-      try {
-        const res = await fetch(targetUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-        const html = await res.text();
-        const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i);
-        const ogDesc = html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i);
-        
-        if (ogDesc && ogDesc[1] && !ogDesc[1].toLowerCase().includes('create an account')) {
-          return {
-            success: true,
-            platform: 'Instagram',
-            title: ogTitle ? ogTitle[1] : 'Reel de Instagram',
-            description: ogDesc[1]
-          };
-        }
-      } catch (e) {}
-
-      return {
-        success: false,
-        platform: 'Instagram',
-        requiresManualText: true,
-        message: 'Instagram protege los reels contra bots directos. Escribe abajo en una frase de qué trata el video para que la IA lo analice con 100% de precisión.'
-      };
-    }
-
-    // 4. Generic Web Page
-    const res = await fetch(targetUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-    });
-    const html = await res.text();
-    const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-    const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i) ||
-                      html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i);
-    
-    return {
-      success: true,
-      platform: 'Web',
-      title: titleMatch ? titleMatch[1].trim() : '',
-      description: descMatch ? descMatch[1].trim() : (titleMatch ? titleMatch[1].trim() : '')
-    };
-  } catch (err) {
-    return {
-      success: false,
-      error: err.message
-    };
-  }
-}
-
 const server = http.createServer(async (req, res) => {
-  // CORS Headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Origin, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Bypass-Tunnel-Reminder, X-Requested-With');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -222,183 +301,106 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Sync Data endpoint (PC <-> iPad <-> iPhone)
-  if (req.url.startsWith('/api/sync')) {
-    const syncFilePath = path.join(__dirname, 'sync-data.json');
+  const urlPath = req.url.split('?')[0];
 
+  // API SYNC
+  if (urlPath === '/api/sync') {
     if (req.method === 'POST' || req.method === 'PUT') {
-      try {
-        let body = '';
-        body = await new Promise((resolve) => {
-          let chunks = [];
-          req.on('data', chunk => chunks.push(chunk));
-          req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-        });
-
-        const parsed = JSON.parse(body || '{}');
-        if (parsed) {
-          let existing = {};
+      let bodyStr = '';
+      req.on('data', chunk => { bodyStr += chunk; });
+      req.on('end', () => {
+        try {
+          const body = JSON.parse(bodyStr);
+          let syncDataPathFile = path.join(DIR, 'sync-data.json');
+          let diskData = DEFAULT_INITIAL_DATA;
           try {
-            if (fs.existsSync(syncFilePath)) {
-              existing = JSON.parse(fs.readFileSync(syncFilePath, 'utf8') || '{}');
-            }
+            if (fs.existsSync(syncDataPathFile)) diskData = JSON.parse(fs.readFileSync(syncDataPathFile, 'utf8'));
           } catch(e) {}
-          const mergedData = mergeAppData(parsed, existing);
-          mergedData.updatedAt = new Date().toISOString();
-          fs.writeFileSync(syncFilePath, JSON.stringify(mergedData, null, 2), 'utf8');
 
-          // Relay to Vercel cloud so mobile/iPad devices stay synchronized in real-time
-          fetch('https://content-script-studio.vercel.app/api/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(parsed)
-          }).catch(e => console.warn('Vercel sync relay note:', e.message));
+          const merged = mergeAppData(body, diskData);
+          try {
+            fs.writeFileSync(syncDataPathFile, JSON.stringify(merged, null, 2));
+          } catch(e) {}
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ 
-            success: true, 
-            message: 'Datos sincronizados y guardados en el PC y la Nube', 
-            count: Array.isArray(parsed.scripts) ? parsed.scripts.length : 0,
-            updatedAt: parsed.updatedAt 
-          }));
-          return;
+          res.end(JSON.stringify({ success: true, data: merged }));
+        } catch(e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
         }
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Payload inválido' }));
-        return;
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
-        return;
-      }
+      });
+      return;
     }
 
     if (req.method === 'GET') {
+      let syncDataPathFile = path.join(DIR, 'sync-data.json');
+      let dataToSend = DEFAULT_INITIAL_DATA;
       try {
-        if (fs.existsSync(syncFilePath)) {
-          const raw = fs.readFileSync(syncFilePath, 'utf8');
-          res.writeHead(200, { 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-          });
-          res.end(raw);
-          return;
-        } else {
-          const empty = { clients: ['Jennil'], scripts: [], notes: { Jennil: [] }, viralEvaluations: [], updatedAt: new Date().toISOString() };
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(empty));
-          return;
-        }
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
-        return;
-      }
-    }
-  }
-
-  // Link Metadata Extractor endpoint
-  if (req.url.startsWith('/api/extract-link')) {
-    let body = '';
-    if (req.method === 'POST') {
-      body = await new Promise((resolve) => {
-        let chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
-        req.on('end', () => resolve(Buffer.concat(chunks).toString()));
-      });
-    }
-
-    try {
-      const parsed = JSON.parse(body || '{}');
-      const url = parsed.url;
-      if (!url) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'URL is required' }));
-        return;
-      }
-
-      const meta = await extractLinkMetadata(url);
+        if (fs.existsSync(syncDataPathFile)) dataToSend = JSON.parse(fs.readFileSync(syncDataPathFile, 'utf8'));
+      } catch(e) {}
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(meta));
-      return;
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
+      res.end(JSON.stringify(dataToSend));
       return;
     }
   }
 
-  // Ollama Proxy route: handles /api/ollama/*, /api/ollama/api/*, /ollama/*
-  if (req.url.startsWith('/api/ollama') || req.url.startsWith('/ollama')) {
-    let cleanSub = req.url.replace(/^\/(api\/)?ollama\/?/, '');
-    if (cleanSub.startsWith('api/')) cleanSub = cleanSub.substring(4);
-    if (!cleanSub.startsWith('/')) cleanSub = '/' + cleanSub;
+  // OLLAMA PROXY
+  if (urlPath.startsWith('/api/ollama')) {
+    const subRoute = urlPath.replace('/api/ollama', '') || '/tags';
+    const targetUrl = OLLAMA_HOST + '/api' + subRoute;
 
-    const targetUrl = `${OLLAMA_HOST}/api${cleanSub}`;
-    
-    try {
-      let body = null;
-      if (req.method === 'POST') {
-        body = await new Promise((resolve) => {
-          let chunks = [];
-          req.on('data', chunk => chunks.push(chunk));
-          req.on('end', () => resolve(Buffer.concat(chunks)));
-        });
+    let bodyData = [];
+    req.on('data', chunk => bodyData.push(chunk));
+    req.on('end', async () => {
+      try {
+        const bodyBuf = Buffer.concat(bodyData);
+        const options = {
+          method: req.method,
+          headers: { 'Content-Type': 'application/json' }
+        };
+        if (bodyBuf.length > 0 && req.method !== 'GET') {
+          options.body = bodyBuf;
+        }
+
+        const ollamaRes = await fetch(targetUrl, options);
+        const data = await ollamaRes.text();
+        res.writeHead(ollamaRes.status, { 'Content-Type': 'application/json' });
+        res.end(data);
+      } catch (err) {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Ollama proxy error', details: err.message }));
       }
-
-      const forwardRes = await fetch(targetUrl, {
-        method: req.method,
-        headers: { 'Content-Type': 'application/json' },
-        body: body
-      });
-
-      const data = await forwardRes.arrayBuffer();
-      res.writeHead(forwardRes.status, {
-        'Content-Type': forwardRes.headers.get('content-type') || 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(Buffer.from(data));
-      return;
-    } catch (err) {
-      res.writeHead(502, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'No se pudo conectar con Ollama', details: err.message }));
-      return;
-    }
+    });
+    return;
   }
 
-  // Static File Server
-  let reqPath = req.url.split('?')[0];
-  if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
-
-  const filePath = path.join(DIR, reqPath);
+  // STATIC FILES
+  let filePath = path.join(DIR, urlPath === '/' ? 'index.html' : urlPath);
   const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
       if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('404 Not Found');
+        fs.readFile(path.join(DIR, 'index.html'), (e, fallback) => {
+          if (e) {
+            res.writeHead(404);
+            res.end('Not Found');
+          } else {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(fallback);
+          }
+        });
       } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end(`500 Server Error: ${err.code}`);
+        res.writeHead(500);
+        res.end('Server Error: ' + err.code);
       }
     } else {
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Access-Control-Allow-Origin': '*'
-      });
+      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
       res.end(content);
     }
   });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`===================================================`);
-  console.log(` BLEX STUDIO SERVIDOR ACTIVO`);
-  console.log(` - Acceso Local (PC): http://localhost:${PORT}`);
-  console.log(` - Acceso iPad / iPhone: http://0.0.0.0:${PORT}`);
-  console.log(` - Ollama Host Proxy: ${OLLAMA_HOST}`);
-  console.log(`===================================================`);
+  console.log('🚀 BLEX STUDIO Server running at http://localhost:' + PORT);
 });
