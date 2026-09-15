@@ -2270,10 +2270,17 @@
               </button>
             </div>
 
+            <!-- Notification Hub / Settings -->
+            <button type="button" onclick="openNotificationHubModal()" class="bg-purple-950/70 hover:bg-purple-900/80 text-purple-300 text-xs font-bold px-3 py-2 rounded-xl border border-purple-500/40 hover:border-purple-400 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Configuración de Notificaciones en Celular, Gmail y Alarmas">
+              <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
+              <span class="hidden sm:inline">Alarmas & Notificaciones</span>
+              <span class="sm:hidden">🔔 Alarmas</span>
+            </button>
+
             <!-- Export to iPhone / iCal -->
             <button type="button" onclick="exportAllCalendarToICalendar()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 hover:border-cyan-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Descargar archivo de calendario para sincronizar alarmas en iPhone / iPad / Google">
               <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-              <span class="hidden sm:inline">Alarmas en iPhone / Google (.ics)</span>
+              <span class="hidden sm:inline">Sincronizar Móvil (.ics)</span>
               <span class="sm:hidden">.ICS</span>
             </button>
 
@@ -3543,6 +3550,25 @@
 
       </form>
 
+      <!-- Mobile Alarm & Google Sync Quick Options -->
+      <div class="px-6 py-3 bg-purple-950/20 border-t border-purple-500/30 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+            <i data-lucide="bell-plus" class="w-3.5 h-3.5 text-purple-400"></i>
+            <span>Sincronización Directa de Alarmas</span>
+          </span>
+          <span class="text-[10px] text-slate-400">Suena en tu celular aunque esté suspendido</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button type="button" onclick="saveAndOpenGoogleCalendar()" class="bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold px-3 py-2 rounded-lg border border-cyan-500/30 hover:border-cyan-400 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i> Abrir en Google Calendar / Gmail
+          </button>
+          <button type="button" onclick="saveAndDownloadIPhoneAlarm()" class="bg-slate-900 hover:bg-slate-800 text-purple-300 font-bold px-3 py-2 rounded-lg border border-purple-500/30 hover:border-purple-400 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Alarma iPhone / Apple Cal (.ics)
+          </button>
+        </div>
+      </div>
+
       <!-- Modal Footer -->
       <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between gap-3">
         <div>
@@ -3596,6 +3622,167 @@
       <div id="attPreviewContent" class="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-950/60 min-h-[300px]">
         <!-- Injected dynamically -->
       </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: NOTIFICATION & ALARM HUB (GMAIL, IPHONE, GOOGLE CALENDAR) -->
+  <div id="notificationHubModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-3 sm:p-4 hidden" onclick="closeNotificationHubModal(event)">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="px-5 sm:px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
+            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-white leading-snug">Centro de Notificaciones & Alarmas</h3>
+            <p class="text-xs text-slate-400">Configuración para recibir alertas en Celular (iPhone/Android), Gmail y Navegador</p>
+          </div>
+        </div>
+        <button onclick="closeNotificationHubModal()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer" title="Cerrar">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs sm:text-sm text-slate-300">
+
+        <!-- CANAL 1: ALARMAS NATIVAS EN CELULAR (100% GARANTIZADAS) -->
+        <div class="bg-slate-950 border border-purple-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+          <div class="absolute top-0 right-0 px-2.5 py-0.5 bg-purple-600 text-[10px] font-black uppercase tracking-wider text-white rounded-bl-lg">
+            ⭐ Recomendado
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1 pr-16">
+              <h4 class="text-sm font-bold text-white">1. Alarmas Nativas en Celular (iPhone / iPad / Android)</h4>
+              <p class="text-xs text-slate-400">
+                La forma 100% infalible para que tu celular <strong>suene y vibre en pantalla bloqueada</strong> aunque el navegador esté cerrado o el celular esté suspendido.
+              </p>
+            </div>
+          </div>
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+            <p class="text-slate-300 font-medium">👉 <strong>¿Cómo funciona?</strong> Al guardar o programar cualquier contenido, tocas <em>"Sincronizar con Alarma Móvil"</em> o descargas el archivo <code class="text-cyan-300">.ics</code>. Tu iPhone o Android lo abrirá de inmediato y programará la alarma con sonido a la hora elegida.</p>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button type="button" onclick="exportAllCalendarToICalendar()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs shadow">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Sincronizar Todo mi Calendario (.ics)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CANAL 2: NOTIFICACIONES A TU CORREO GMAIL -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-white">2. Recordatorios a tu Correo Gmail</h4>
+              <p class="text-xs text-slate-400">
+                Recibe avisos de publicación e invitaciones de Google Calendar directo en tu bandeja de entrada de Gmail.
+              </p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-400">Tu dirección de Gmail para recordatorios:</label>
+            <div class="flex items-center gap-2">
+              <input type="email" id="userNotificationEmail" placeholder="ejemplo@gmail.com" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none focus:ring-2 focus:ring-rose-500">
+              <button type="button" onclick="saveUserNotificationEmail()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl transition cursor-pointer text-xs border border-slate-700">
+                Guardar
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500">💡 Al programar una actividad, podrás pulsar <em>"Abrir en Google Calendar"</em> y Google te enviará alertas por correo y notificaciones push automáticamente a todos tus dispositivos vinculados a tu Gmail.</p>
+          </div>
+        </div>
+
+        <!-- CANAL 3: NOTIFICACIONES PUSH DEL NAVEGADOR & SONIDO -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <i data-lucide="bell" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-sm font-bold text-white">3. Notificaciones Push en Plataforma & Alarma Sonora</h4>
+              <p class="text-xs text-slate-400">
+                Aviso visual en pantalla y sonido sintetizado cuando tengas la plataforma abierta en tu PC, iPad o Celular.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900/90 rounded-xl border border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400">Estado del permiso:</span>
+              <span id="pushPermissionBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Verificando...
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="requestNotificationPermission(true)" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3 py-1.5 rounded-lg transition cursor-pointer text-xs">
+                Activar Permiso
+              </button>
+              <button type="button" onclick="testStudioAlarmNotification()" class="bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold px-3 py-1.5 rounded-lg transition cursor-pointer text-xs border border-purple-500/30 flex items-center gap-1">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Probar Sonido & Alerta
+              </button>
+            </div>
+          </div>
+
+          <!-- iPhone Safari PWA Tip -->
+          <div class="p-3 bg-purple-950/30 border border-purple-500/20 rounded-xl space-y-1.5 text-xs text-slate-300">
+            <div class="font-bold text-purple-300 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i> Para usuarios de iPhone / iPad:
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Apple exige que para recibir notificaciones push en iOS, abras la web en <strong>Safari</strong>, toques el botón de compartir (<i data-lucide="share" class="w-3 h-3 inline"></i>) y elijas <strong>"Agregar a pantalla de inicio"</strong>. Luego abres la app desde tu pantalla de inicio y aceptas el permiso de notificaciones.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-end">
+        <button type="button" onclick="closeNotificationHubModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-5 py-2 rounded-xl transition text-xs cursor-pointer">
+          Entendido / Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: IN-APP ALARM ALERT BANNER -->
+  <div id="inAppAlarmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[10000] flex items-center justify-center p-4 hidden">
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-purple-500/60 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-purple-950/80 text-center space-y-4">
+      <div class="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-400/50 text-purple-300 flex items-center justify-center mx-auto text-3xl animate-bounce">
+        🔔
+      </div>
+      <div>
+        <span class="text-xs font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-3 py-1 rounded-full border border-cyan-500/30">
+          ¡HORA DE CONTENIDO!
+        </span>
+        <h3 id="alarmModalTitle" class="text-xl font-black text-white mt-3 leading-snug">
+          Título de la Actividad
+        </h3>
+        <p id="alarmModalMeta" class="text-xs text-purple-300 mt-1 font-medium">
+          Cliente: Jennil · 19:00 · Instagram
+        </p>
+      </div>
+      <div id="alarmModalNotesBox" class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-300 text-left max-h-24 overflow-y-auto hidden">
+        <p id="alarmModalNotes"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button id="btnAlarmMarkDone" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar Hecho
+        </button>
+        <button id="btnAlarmSnooze" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-3 rounded-xl text-xs transition border border-slate-700 cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="clock" class="w-4 h-4"></i> Posponer 15m
+        </button>
+      </div>
+      <button type="button" onclick="closeInAppAlarmModal()" class="w-full text-slate-400 hover:text-white text-xs py-1.5 transition">
+        Cerrar aviso
+      </button>
     </div>
   </div>
 

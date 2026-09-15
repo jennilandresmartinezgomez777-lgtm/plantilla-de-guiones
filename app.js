@@ -10975,8 +10975,13 @@ function renderCalendarListView() {
           <span>${isCompleted ? 'Completado' : 'Marcar Hecho'}</span>
         </button>
 
+        <!-- Open in Google Calendar -->
+        <button onclick="openInGoogleCalendar('${ev.id}')" title="Abrir en Google Calendar / Notificar por Gmail" class="p-2 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
+          <i data-lucide="globe" class="w-4 h-4"></i>
+        </button>
+
         <!-- Download iCal / Alarm for iPhone -->
-        <button onclick="exportEventToICalendar('${ev.id}')" title="Descargar recordatorio para iPhone / Apple Calendar / Google" class="p-2 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
+        <button onclick="exportEventToICalendar('${ev.id}')" title="Descargar alarma nativa para iPhone / iPad / Apple Calendar" class="p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
         </button>
 
@@ -11226,13 +11231,244 @@ function toggleCalendarEventStatus(eventId) {
   }
 }
 
-// NOTIFICATIONS & iCAL EXPORT ENGINE (.ICS for iPhone & Google)
-function requestNotificationPermission() {
-  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-    Notification.requestPermission();
+// =========================================================================
+// NOTIFICATIONS, GMAIL & MULTI-CHANNEL ALARM ENGINE (iPhone / Google / Web)
+// =========================================================================
+
+// Synthesizer Audio Chime (Web Audio API - Works everywhere without external audio files)
+function playChimeSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Pleasant bright chime chord)
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.11);
+      gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.11);
+      gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + idx * 0.11 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.11 + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.11);
+      osc.stop(ctx.currentTime + idx * 0.11 + 0.45);
+    });
+  } catch (e) {
+    console.warn('Audio chime note:', e);
   }
 }
 
+// Request and Check Notification Permissions
+function requestNotificationPermission(showFeedback = false) {
+  if (typeof Notification !== 'undefined') {
+    Notification.requestPermission().then(permission => {
+      updatePushPermissionBadge();
+      if (showFeedback) {
+        if (permission === 'granted') {
+          showToastNotification('🔔 ¡Notificaciones activadas con éxito!', 'check-circle');
+          testStudioAlarmNotification();
+        } else if (permission === 'denied') {
+          showToastNotification('⚠️ Permiso denegado en el navegador. Revisa la configuración del sitio.', 'alert-circle');
+        }
+      }
+    });
+  } else {
+    if (showFeedback) {
+      showToastNotification('ℹ️ Este navegador no soporta notificaciones push web.', 'info');
+    }
+  }
+}
+
+function updatePushPermissionBadge() {
+  const badge = document.getElementById('pushPermissionBadge');
+  if (!badge) return;
+
+  if (typeof Notification === 'undefined') {
+    badge.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700';
+    badge.textContent = 'No soportado';
+    return;
+  }
+
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    badge.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+    badge.textContent = '✅ Activo / Permitido';
+  } else if (perm === 'denied') {
+    badge.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40';
+    badge.textContent = '❌ Bloqueado en Navegador';
+  } else {
+    badge.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40';
+    badge.textContent = '🟡 Pendiente de Aprobación';
+  }
+}
+
+// Notification Hub Modal
+function openNotificationHubModal() {
+  const modal = document.getElementById('notificationHubModal');
+  if (!modal) return;
+
+  // Load saved Gmail
+  const emailInput = document.getElementById('userNotificationEmail');
+  if (emailInput) {
+    emailInput.value = localStorage.getItem('blex_user_email') || '';
+  }
+
+  updatePushPermissionBadge();
+  modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeNotificationHubModal(e = null) {
+  if (e && e.target !== e.currentTarget) return;
+  const modal = document.getElementById('notificationHubModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveUserNotificationEmail() {
+  const emailInput = document.getElementById('userNotificationEmail');
+  if (!emailInput) return;
+  const email = emailInput.value.trim();
+  if (email && !email.includes('@')) {
+    showToastNotification('⚠️ Por favor escribe un correo electrónico válido', 'alert-circle');
+    return;
+  }
+  localStorage.setItem('blex_user_email', email);
+  showToastNotification(email ? `📧 Correo guardado: ${email}` : 'Correo eliminado.', 'check-circle');
+}
+
+// Google Calendar URL Generator
+function buildGoogleCalendarUrl(ev) {
+  if (!ev || !ev.date) return '#';
+  const dateClean = ev.date.replace(/-/g, '');
+  const timeClean = (ev.time || '19:00').replace(':', '') + '00';
+  const start = `${dateClean}T${timeClean}`;
+
+  const startDate = new Date(`${ev.date}T${ev.time || '19:00'}:00`);
+  const endDate = new Date(startDate.getTime() + 60 * 60000);
+  const endHour = String(endDate.getHours()).padStart(2, '0');
+  const endMin = String(endDate.getMinutes()).padStart(2, '0');
+  const end = `${dateClean}T${endHour}${endMin}00`;
+
+  const title = encodeURIComponent(`[${ev.client}] ${ev.title}`);
+  const userEmail = localStorage.getItem('blex_user_email') || '';
+  const details = encodeURIComponent(`Tipo de Actividad: ${ev.type}\nCliente: ${ev.client}\nPlataforma: ${ev.platform || 'General'}\nNotas: ${ev.notes || 'Sin notas'}\n\nOrganizado desde BLEX Content Script Studio`);
+
+  let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+  if (userEmail) {
+    url += `&add=${encodeURIComponent(userEmail)}`;
+  }
+  return url;
+}
+
+function openInGoogleCalendar(eventId) {
+  const ev = (state.calendarEvents || []).find(e => e.id === eventId);
+  if (!ev) return;
+  const url = buildGoogleCalendarUrl(ev);
+  window.open(url, '_blank');
+}
+
+function saveAndOpenGoogleCalendar() {
+  saveCalendarEvent();
+  const latestEvent = state.calendarEvents[state.calendarEvents.length - 1];
+  if (latestEvent) {
+    const url = buildGoogleCalendarUrl(latestEvent);
+    window.open(url, '_blank');
+  }
+}
+
+function saveAndDownloadIPhoneAlarm() {
+  saveCalendarEvent();
+  const latestEvent = state.calendarEvents[state.calendarEvents.length - 1];
+  if (latestEvent) {
+    exportEventToICalendar(latestEvent.id);
+  }
+}
+
+// In-App Alarm Alert Popup Modal
+function showInAppAlarmModal(ev) {
+  const modal = document.getElementById('inAppAlarmModal');
+  const titleEl = document.getElementById('alarmModalTitle');
+  const metaEl = document.getElementById('alarmModalMeta');
+  const notesBox = document.getElementById('alarmModalNotesBox');
+  const notesEl = document.getElementById('alarmModalNotes');
+  const btnDone = document.getElementById('btnAlarmMarkDone');
+  const btnSnooze = document.getElementById('btnAlarmSnooze');
+
+  if (!modal) return;
+
+  playChimeSound();
+
+  if (titleEl) titleEl.textContent = ev.title || 'Actividad Programada';
+  if (metaEl) metaEl.textContent = `Cliente: ${ev.client} · ⏰ ${ev.time || '19:00'} · ${ev.platform || 'General'}`;
+
+  if (notesBox && notesEl) {
+    if (ev.notes) {
+      notesEl.textContent = ev.notes;
+      notesBox.classList.remove('hidden');
+    } else {
+      notesBox.classList.add('hidden');
+    }
+  }
+
+  if (btnDone) {
+    btnDone.onclick = () => {
+      if (ev.id) toggleCalendarEventStatus(ev.id);
+      closeInAppAlarmModal();
+      showToastNotification('🎉 ¡Actividad marcada como completada!', 'check-circle');
+    };
+  }
+
+  if (btnSnooze) {
+    btnSnooze.onclick = () => {
+      closeInAppAlarmModal();
+      showToastNotification('⏰ Alarma pospuesta por 15 minutos.', 'clock');
+      // Set a temporary 15 min reminder
+      setTimeout(() => {
+        showInAppAlarmModal(ev);
+      }, 15 * 60000);
+    };
+  }
+
+  modal.classList.remove('hidden');
+  refreshLucideIcons();
+}
+
+function closeInAppAlarmModal() {
+  const modal = document.getElementById('inAppAlarmModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Test Alarm & Sound System
+function testStudioAlarmNotification() {
+  playChimeSound();
+
+  const sampleEvent = {
+    id: 'test-sample',
+    title: '🚀 ¡Prueba de Alarma BLEX Studio!',
+    client: (state.clients && state.clients[0]) || 'Jennil',
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    platform: 'Instagram Reels',
+    notes: '¡Esta es una prueba exitosa! Tu sonido de alerta y notificación visual están funcionando a la perfección.'
+  };
+
+  // Push notification if permitted
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      new Notification('🔔 BLEX Studio - Alarma de Prueba', {
+        body: '¡Sonido y notificaciones activados y funcionando correctamente!',
+        icon: 'logo.png'
+      });
+    } catch (e) {}
+  }
+
+  // Open in-app popup
+  showInAppAlarmModal(sampleEvent);
+  showToastNotification('🔊 Alarma de prueba ejecutada con éxito', 'volume-2');
+}
+
+// Background upcoming notification scheduler check
 function checkUpcomingNotifications() {
   if (!state.calendarEvents || state.calendarEvents.length === 0) return;
   const now = new Date();
@@ -11255,7 +11491,7 @@ function checkUpcomingNotifications() {
 
     const diffMinutes = (now - targetTime) / 60000;
 
-    // Trigger if within -1 to +5 minutes window
+    // Trigger if within 0 to 5 minutes window
     if (diffMinutes >= 0 && diffMinutes <= 5) {
       ev.notified = true;
       saveState();
@@ -11279,7 +11515,8 @@ function triggerAlarmNotification(ev) {
     } catch (e) {}
   }
 
-  // Visual Toast / Alert in platform
+  // In-App Alarm Popup with Chime Sound
+  showInAppAlarmModal(ev);
   showToastNotification(`🔔 ${ev.title} (${ev.client} - ${ev.time})`, 'bell');
 }
 
@@ -11324,7 +11561,7 @@ function generateAndDownloadICS(eventsList, filename) {
 
     const uid = (ev.id || 'event-' + Date.now()) + '@content-script-studio.vercel.app';
     const summary = `[${ev.client}] ${ev.title}`;
-    const description = `Tipo: ${ev.type}\nPlataforma: ${ev.platform || 'N/A'}\nNotas: ${ev.notes || 'Sin notas'}`;
+    const description = `Tipo: ${ev.type}\nPlataforma: ${ev.platform || 'N/A'}\nNotas: ${ev.notes || 'Sin notas'}\n\nOrganizado en BLEX Content Script Studio`;
 
     icsContent.push('BEGIN:VEVENT');
     icsContent.push(`UID:${uid}`);
@@ -11362,6 +11599,5 @@ function generateAndDownloadICS(eventsList, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToastNotification('📅 Archivo de calendario descargado para iPhone/Google', 'download');
+  showToastNotification('📅 Archivo de calendario descargado con alarma para iPhone/Google', 'download');
 }
-
