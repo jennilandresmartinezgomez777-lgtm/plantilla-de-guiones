@@ -2289,12 +2289,7 @@
               <span class="sm:hidden">🔔 Alarmas</span>
             </button>
 
-            <!-- Export to iPhone / iCal -->
-            <button type="button" onclick="exportAllCalendarToICalendar()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 hover:border-cyan-500/40 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="Descargar archivo de calendario para sincronizar alarmas en iPhone / iPad / Google">
-              <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-              <span class="hidden sm:inline">📲 Conectar mis 2 Celulares & iPad</span>
-              <span class="sm:hidden">.ICS</span>
-            </button>
+
 
             <!-- Add Event Button -->
             <button type="button" onclick="openNewCalendarEventModal()" class="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-brand-900/50 cursor-pointer">
@@ -3562,24 +3557,7 @@
 
       </form>
 
-      <!-- Mobile Alarm & Google Sync Quick Options -->
-      <div class="px-6 py-3 bg-purple-950/20 border-t border-purple-500/30 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-            <i data-lucide="bell-plus" class="w-3.5 h-3.5 text-purple-400"></i>
-            <span>Sincronización Directa de Alarmas</span>
-          </span>
-          <span class="text-[10px] text-slate-400">Suena en tu celular aunque esté suspendido</span>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button type="button" onclick="saveAndOpenGoogleCalendar()" class="bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold px-3 py-2 rounded-lg border border-cyan-500/30 hover:border-cyan-400 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-            <i data-lucide="globe" class="w-3.5 h-3.5"></i> Abrir en Google Calendar / Gmail
-          </button>
-          <button type="button" onclick="saveAndDownloadIPhoneAlarm()" class="bg-slate-900 hover:bg-slate-800 text-purple-300 font-bold px-3 py-2 rounded-lg border border-purple-500/30 hover:border-purple-400 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Alarma iPhone / Apple Cal (.ics)
-          </button>
-        </div>
-      </div>
+
 
       <!-- Modal Footer -->
       <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between gap-3">
@@ -3660,31 +3638,7 @@
       <!-- Modal Body -->
       <div class="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs sm:text-sm text-slate-300">
 
-        <!-- CANAL 1: ALARMAS NATIVAS EN CELULAR (100% GARANTIZADAS) -->
-        <div class="bg-slate-950 border border-purple-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
-          <div class="absolute top-0 right-0 px-2.5 py-0.5 bg-purple-600 text-[10px] font-black uppercase tracking-wider text-white rounded-bl-lg">
-            ⭐ Recomendado
-          </div>
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-              <i data-lucide="smartphone" class="w-4 h-4"></i>
-            </div>
-            <div class="space-y-1 pr-16">
-              <h4 class="text-sm font-bold text-white">1. Alarmas Nativas en Celular (iPhone / iPad / Android)</h4>
-              <p class="text-xs text-slate-400">
-                La forma 100% infalible para que tu celular <strong>suene y vibre en pantalla bloqueada</strong> aunque el navegador esté cerrado o el celular esté suspendido.
-              </p>
-            </div>
-          </div>
-          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
-            <p class="text-slate-300 font-medium">👉 <strong>¿Cómo funciona?</strong> Al guardar o programar cualquier contenido, tocas <em>"Sincronizar con Alarma Móvil"</em> o descargas el archivo <code class="text-cyan-300">.ics</code>. Tu iPhone o Android lo abrirá de inmediato y programará la alarma con sonido a la hora elegida.</p>
-            <div class="flex flex-wrap gap-2 pt-1">
-              <button type="button" onclick="exportAllCalendarToICalendar()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs shadow">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i> Sincronizar Todo mi Calendario (.ics)
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         <!-- CANAL 2: NOTIFICACIONES A 2 CORREOS GMAIL (TÚ + ESPOSA) -->
         <div class="bg-slate-950 border border-rose-500/30 rounded-2xl p-4 space-y-3">

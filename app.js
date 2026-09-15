@@ -11040,10 +11040,7 @@ function renderCalendarListView() {
           <i data-lucide="globe" class="w-4 h-4"></i>
         </button>
 
-        <!-- Download iCal / Alarm for iPhone -->
-        <button onclick="exportEventToICalendar('${ev.id}')" title="Descargar alarma nativa para iPhone / iPad / Apple Calendar" class="p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
-          <i data-lucide="smartphone" class="w-4 h-4"></i>
-        </button>
+
 
         <!-- Edit -->
         <button onclick="openEditCalendarEventModal('${ev.id}')" title="Editar Actividad" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl border border-slate-800 transition cursor-pointer">
