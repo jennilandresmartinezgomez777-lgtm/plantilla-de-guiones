@@ -1117,22 +1117,43 @@ document.addEventListener('DOMContentLoaded', () => {
 function saveState() {
   const nowISO = new Date().toISOString();
   state.updatedAt = nowISO;
-  localStorage.setItem('css_clients', JSON.stringify(state.clients));
-  localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
-  localStorage.setItem('css_notes', JSON.stringify(state.notes));
-  localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
-  localStorage.setItem('css_updated_at', nowISO);
-  if (state.challengeStartDate) {
-    localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+
+  try {
+    localStorage.setItem('css_clients', JSON.stringify(state.clients));
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+    localStorage.setItem('css_notes', JSON.stringify(state.notes));
+    localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+    localStorage.setItem('css_updated_at', nowISO);
+    if (state.challengeStartDate) {
+      localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
+    }
+  } catch (err) {
+    console.warn("Local storage quota exceeded, optimizing storage:", err);
+    try {
+      // Prune heavy attachments for localStorage while keeping in memory & cloud
+      const cleanScripts = state.scripts.map(s => {
+        if (s.attachments && s.attachments.length > 0) {
+          return {
+            ...s,
+            attachments: s.attachments.map(a => ({ id: a.id, name: a.name, size: a.size, type: a.type }))
+          };
+        }
+        return s;
+      });
+      localStorage.setItem('css_scripts', JSON.stringify(cleanScripts));
+      localStorage.setItem('css_updated_at', nowISO);
+    } catch (e2) {
+      console.warn("Storage fallback exception:", e2);
+    }
   }
 
-  // Automatic background push to Cloud 1 sec after changes (PC uploads changes automatically)
+  // Automatic background push to Cloud / Server immediately
   clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(() => {
     if (typeof saveStateToCloud === 'function') {
       saveStateToCloud(true);
     }
-  }, 1000);
+  }, 600);
 }
 
 function renderChallengeCountdown() {
@@ -3392,33 +3413,52 @@ function closeFocusModal() {
   if (focusModal) focusModal.classList.add('hidden');
 }
 
-function handleScriptSubmit(e) {
-  e.preventDefault();
 
-  const clientName = document.getElementById('formClient').value.trim();
+function submitScriptFormManually() {
+  const formClientEl = document.getElementById('formClient');
+  const formIdeaEl = document.getElementById('formIdeaGanadora');
+  
+  let clientName = formClientEl ? formClientEl.value.trim() : '';
+  if (!clientName) {
+    clientName = state.activeClient !== 'ALL' ? state.activeClient : (state.clients[0] || 'Jennil');
+    if (formClientEl) formClientEl.value = clientName;
+  }
+
   if (clientName && !state.clients.includes(clientName)) {
     state.clients.push(clientName);
-    saveState();
     renderClientSelect();
   }
 
+  const ideaGanadora = formIdeaEl ? formIdeaEl.value.trim() : '';
+  if (!ideaGanadora) {
+    if (formIdeaEl) {
+      formIdeaEl.focus();
+      formIdeaEl.classList.add('ring-2', 'ring-amber-500');
+      setTimeout(() => formIdeaEl.classList.remove('ring-2', 'ring-amber-500'), 2500);
+    }
+    showToastNotification('⚠️ Por favor escribe la Idea Ganadora del guión', 'alert-circle');
+    return;
+  }
+
   const existingScript = state.editingScriptId ? state.scripts.find(s => s.id === state.editingScriptId) : null;
+  const numInput = document.getElementById('formNumber');
+  const scriptNumber = numInput ? parseInt(numInput.value, 10) || getNextScriptNumber() : getNextScriptNumber();
 
   const scriptData = {
-    id: state.editingScriptId || 'script-' + Date.now(),
+    id: state.editingScriptId || ('script-' + Date.now()),
     client: clientName,
-    number: parseInt(document.getElementById('formNumber').value) || getNextScriptNumber(),
-    status: document.getElementById('formStatus').value,
-    formato: normalizeScriptFormat(document.getElementById('formFormato').value),
-    objetivo: document.getElementById('formObjetivo').value,
-    actor: document.getElementById('formActor').value.trim(),
-    ideaGanadora: document.getElementById('formIdeaGanadora').value.trim(),
-    linkReferencia: document.getElementById('formLinkReferencia').value.trim(),
-    gancho: document.getElementById('formGancho').value.trim(),
-    historia: document.getElementById('formHistoria').value.trim(),
-    moraleja: document.getElementById('formMoraleja').value.trim(),
-    cta: document.getElementById('formCTA').value.trim(),
-    contextoAdicional: document.getElementById('formContextoAdicional').value.trim(),
+    number: scriptNumber,
+    status: document.getElementById('formStatus') ? document.getElementById('formStatus').value : 'Por Grabar',
+    formato: normalizeScriptFormat(document.getElementById('formFormato') ? document.getElementById('formFormato').value : 'Hablando a cámara'),
+    objetivo: document.getElementById('formObjetivo') ? document.getElementById('formObjetivo').value : 'VENTA',
+    actor: document.getElementById('formActor') ? document.getElementById('formActor').value.trim() : clientName,
+    ideaGanadora: ideaGanadora,
+    linkReferencia: document.getElementById('formLinkReferencia') ? document.getElementById('formLinkReferencia').value.trim() : '',
+    gancho: document.getElementById('formGancho') ? document.getElementById('formGancho').value.trim() : '',
+    historia: document.getElementById('formHistoria') ? document.getElementById('formHistoria').value.trim() : '',
+    moraleja: document.getElementById('formMoraleja') ? document.getElementById('formMoraleja').value.trim() : '',
+    cta: document.getElementById('formCTA') ? document.getElementById('formCTA').value.trim() : '',
+    contextoAdicional: document.getElementById('formContextoAdicional') ? document.getElementById('formContextoAdicional').value.trim() : '',
     attachments: scriptPendingAttachments || [],
     views: existingScript ? (existingScript.views || 0) : 0,
     comments: existingScript ? (existingScript.comments || 0) : 0,
@@ -3439,6 +3479,63 @@ function handleScriptSubmit(e) {
   saveState();
   closeModal();
   renderAll();
+  showToastNotification('✓ ¡Guión #' + scriptData.number + ' guardado con éxito!');
+}
+
+function submitQuickIdeaManually() {
+  const clientEl = document.getElementById('quickIdeaClient');
+  const titleEl = document.getElementById('quickIdeaTitle');
+  const linkEl = document.getElementById('quickIdeaLink');
+  const notesEl = document.getElementById('quickIdeaNotes');
+
+  const clientName = clientEl ? clientEl.value.trim() : (state.clients[0] || 'Jennil');
+  const title = titleEl ? titleEl.value.trim() : '';
+  const link = linkEl ? linkEl.value.trim() : '';
+  const notes = notesEl ? notesEl.value.trim() : '';
+
+  if (!title) {
+    if (titleEl) {
+      titleEl.focus();
+      titleEl.classList.add('ring-2', 'ring-amber-500');
+      setTimeout(() => titleEl.classList.remove('ring-2', 'ring-amber-500'), 2500);
+    }
+    showToastNotification('⚠️ Por favor escribe la idea ganadora', 'alert-circle');
+    return;
+  }
+
+  const nextNum = getNextScriptNumber();
+  const newScript = {
+    id: 'script-' + Date.now(),
+    client: clientName,
+    number: nextNum,
+    status: 'Idea',
+    ideaGanadora: title,
+    linkReferencia: link,
+    gancho: notes || title,
+    historia: notes ? ('Notas: ' + notes) : 'Pendiente de redactar historia...',
+    moraleja: 'Pendiente de redactar moraleja...',
+    cta: 'Pendiente de redactar CTA...',
+    formato: 'Hablando a cámara',
+    objetivo: 'VIRAL',
+    actor: clientName,
+    contextoAdicional: notes ? ('Idea rápida: ' + notes) : '',
+    attachments: quickIdeaPendingAttachments || [],
+    completed: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  state.scripts.push(newScript);
+  saveState();
+  closeQuickIdeaModal();
+  state.activeStatus = 'Idea';
+  renderAll();
+  showToastNotification('💡 ¡Idea #' + nextNum + ' guardada con éxito!');
+}
+
+function handleScriptSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  submitScriptFormManually();
 }
 
 // QUICK IDEA CAPTURE LOGIC
@@ -3473,44 +3570,8 @@ function closeQuickIdeaModal() {
 }
 
 function handleQuickIdeaSubmit(e) {
-  e.preventDefault();
-
-  const clientName = quickIdeaClient ? quickIdeaClient.value.trim() : (state.clients[0] || 'Jennil');
-  const title = quickIdeaTitle ? quickIdeaTitle.value.trim() : '';
-  const link = quickIdeaLink ? quickIdeaLink.value.trim() : '';
-  const notes = quickIdeaNotes ? quickIdeaNotes.value.trim() : '';
-
-  if (!title) return;
-
-  const newScript = {
-    id: 'script-' + Date.now(),
-    client: clientName,
-    number: getNextScriptNumber(),
-    status: 'Idea',
-    ideaGanadora: title,
-    linkReferencia: link,
-    gancho: notes || title,
-    historia: notes ? `Notas: ${notes}` : 'Pendiente de redactar historia...',
-    moraleja: 'Pendiente de redactar moraleja...',
-    cta: 'Pendiente de redactar CTA...',
-    formato: 'Hablando a cámara',
-    objetivo: 'VIRAL',
-    actor: clientName,
-    contextoAdicional: notes ? `Idea rápida: ${notes}` : '',
-    attachments: quickIdeaPendingAttachments || [],
-    completed: false,
-    createdAt: new Date().toISOString()
-  };
-
-  state.scripts.push(newScript);
-  saveState();
-  closeQuickIdeaModal();
-
-  // Set filter to 'Idea' status to highlight the newly saved idea
-  state.activeStatus = 'Idea';
-  if (statusFilterSelect) statusFilterSelect.value = 'Idea';
-
-  renderAll();
+  if (e && e.preventDefault) e.preventDefault();
+  submitQuickIdeaManually();
 }
 
 function updateScriptStatus(scriptId, newStatus) {
