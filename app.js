@@ -1128,20 +1128,25 @@ function saveState() {
   state.updatedAt = nowISO;
 
   try {
-    localStorage.setItem('css_clients', JSON.stringify(state.clients));
-    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
-    localStorage.setItem('css_notes', JSON.stringify(state.notes));
-    localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+    localStorage.setItem('css_clients', JSON.stringify(state.clients || ['Jennil', 'Natalia']));
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts || []));
+    localStorage.setItem('css_notes', JSON.stringify(state.notes || {}));
+    localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations || []));
+    localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
     localStorage.setItem('css_updated_at', nowISO);
     if (state.challengeStartDate) {
       localStorage.setItem('css_challenge_start_date', state.challengeStartDate);
-    localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
+    }
+    if (state.notificationEmails) {
+      localStorage.setItem('css_notification_emails', JSON.stringify(state.notificationEmails));
+    }
+    if (state.aiBrain) {
+      localStorage.setItem('css_ai_brain', JSON.stringify(state.aiBrain));
     }
   } catch (err) {
     console.warn("Local storage quota exceeded, optimizing storage:", err);
     try {
-      // Prune heavy attachments for localStorage while keeping in memory & cloud
-      const cleanScripts = state.scripts.map(s => {
+      const cleanScripts = (state.scripts || []).map(s => {
         if (s.attachments && s.attachments.length > 0) {
           return {
             ...s,
@@ -1151,6 +1156,7 @@ function saveState() {
         return s;
       });
       localStorage.setItem('css_scripts', JSON.stringify(cleanScripts));
+      localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
       localStorage.setItem('css_updated_at', nowISO);
     } catch (e2) {
       console.warn("Storage fallback exception:", e2);
@@ -1163,7 +1169,7 @@ function saveState() {
     if (typeof saveStateToCloud === 'function') {
       saveStateToCloud(true);
     }
-  }, 600);
+  }, 500);
 }
 
 function renderChallengeCountdown() {
@@ -2553,27 +2559,48 @@ async function forceSyncAllNow() {
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Sincronizando...</span>';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Sincronizando Todo...</span>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   try {
     const remoteData = await fetchLatestCloudData();
     if (remoteData && Array.isArray(remoteData.scripts)) {
+      // Merge Scripts by ID (latest updated wins)
       const mergedMap = new Map();
       (remoteData.scripts || []).forEach(s => mergedMap.set(s.id, s));
       (state.scripts || []).forEach(s => mergedMap.set(s.id, s));
-      
       const mergedScripts = Array.from(mergedMap.values());
-      const mergedClients = Array.from(new Set([...(remoteData.clients || ['Jennil']), ...(state.clients || ['Jennil'])]));
+
+      // Merge Calendar Events by ID
+      const calMap = new Map();
+      (remoteData.calendarEvents || []).forEach(c => calMap.set(c.id, c));
+      (state.calendarEvents || []).forEach(c => calMap.set(c.id, c));
+      const mergedCal = Array.from(calMap.values());
+
+      // Merge Clients
+      const mergedClients = Array.from(new Set([...(remoteData.clients || ['Jennil', 'Natalia']), ...(state.clients || ['Jennil', 'Natalia'])]));
+      
+      // Merge Notes
       const mergedNotes = { ...(remoteData.notes || {}), ...(state.notes || {}) };
+      
+      // Merge Evals
       const mergedEvals = [...(remoteData.viralEvaluations || []), ...(state.viralEvaluations || [])];
+
+      // Merge Emails
+      const mergedEmails = {
+        primary: (state.notificationEmails && state.notificationEmails.primary) || (remoteData.notificationEmails && remoteData.notificationEmails.primary) || localStorage.getItem('blex_user_email') || '',
+        secondary: (state.notificationEmails && state.notificationEmails.secondary) || (remoteData.notificationEmails && remoteData.notificationEmails.secondary) || localStorage.getItem('blex_partner_email') || ''
+      };
 
       const mergedPayload = {
         clients: mergedClients,
         scripts: mergedScripts,
         notes: mergedNotes,
         viralEvaluations: mergedEvals,
+        calendarEvents: mergedCal,
+        notificationEmails: mergedEmails,
+        aiBrain: { ...(remoteData.aiBrain || {}), ...(state.aiBrain || {}) },
         challengeStartDate: state.challengeStartDate || remoteData.challengeStartDate || '2026-09-13',
         updatedAt: new Date().toISOString()
       };
@@ -2581,11 +2608,11 @@ async function forceSyncAllNow() {
       applyCloudData(mergedPayload, null, false);
       await saveStateToCloud(true);
     } else {
-      await saveStateToCloud(true);
+      await saveStateToCloud(false);
     }
 
     updateSyncModalDetails();
-    showToastNotification('⚡ ¡Sincronización en tiempo real completada!');
+    showToastNotification('⚡ ¡Sincronización total completada entre todos los dispositivos!');
   } catch (e) {
     console.warn('forceSyncAllNow error:', e);
     showToastNotification('⚠️ Sincronizado localmente', 'warning');
@@ -2697,27 +2724,58 @@ function applyCloudData(data, channel = null, isSilent = false) {
   if (Array.isArray(data.viralEvaluations)) state.viralEvaluations = data.viralEvaluations;
   if (Array.isArray(data.calendarEvents)) state.calendarEvents = data.calendarEvents;
   if (data.challengeStartDate) state.challengeStartDate = data.challengeStartDate;
-  
+  if (data.updatedAt) state.updatedAt = data.updatedAt;
+
+  if (data.notificationEmails && typeof data.notificationEmails === 'object') {
+    state.notificationEmails = data.notificationEmails;
+    if (data.notificationEmails.primary) localStorage.setItem('blex_user_email', data.notificationEmails.primary);
+    if (data.notificationEmails.secondary) localStorage.setItem('blex_partner_email', data.notificationEmails.secondary);
+  }
+
+  if (data.aiBrain && typeof data.aiBrain === 'object') {
+    state.aiBrain = data.aiBrain;
+  }
+
   // Ensure default clients Jennil and Natalia
   if (!state.clients.includes("Jennil")) state.clients.unshift("Jennil");
   if (!state.clients.includes("Natalia")) state.clients.push("Natalia");
 
-  saveState();
+  try {
+    localStorage.setItem('css_clients', JSON.stringify(state.clients));
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+    localStorage.setItem('css_notes', JSON.stringify(state.notes));
+    localStorage.setItem('css_viral_evaluations', JSON.stringify(state.viralEvaluations));
+    localStorage.setItem('css_calendar_events', JSON.stringify(state.calendarEvents || []));
+    if (state.updatedAt) localStorage.setItem('css_updated_at', state.updatedAt);
+  } catch(e) {}
+
   renderAll();
+  if (typeof renderCalendarView === 'function') renderCalendarView();
+  if (typeof updateCloudStatusBadge === 'function') updateCloudStatusBadge(true);
+
   if (!isSilent) {
-    showToastNotification(`🎉 ¡${state.scripts.length} guiones y calendario sincronizados!`);
+    showToastNotification(`🎉 ¡Sincronizado al 100%! (${state.scripts.length} guiones, ${(state.calendarEvents || []).length} actividades y correos)`);
   }
 }
 
 function getFullAppStateJSON() {
+  const email1 = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
+  const email2 = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
+
   return JSON.stringify({
-    clients: state.clients,
-    scripts: state.scripts,
-    notes: state.notes,
-    viralEvaluations: state.viralEvaluations,
-    calendarEvents: state.calendarEvents,
-    challengeStartDate: state.challengeStartDate,
+    clients: state.clients || ['Jennil', 'Natalia'],
+    scripts: state.scripts || [],
+    notes: state.notes || { Jennil: [], Natalia: [] },
+    viralEvaluations: state.viralEvaluations || [],
+    calendarEvents: state.calendarEvents || [],
+    notificationEmails: {
+      primary: email1,
+      secondary: email2
+    },
+    aiBrain: state.aiBrain || {},
+    challengeStartDate: state.challengeStartDate || '2026-09-13',
     tpStateScripts: (typeof tpState !== 'undefined' && tpState && tpState.scripts) ? tpState.scripts : null,
+    updatedAt: state.updatedAt || new Date().toISOString(),
     exportedAt: new Date().toISOString()
   });
 }

@@ -4,12 +4,9 @@ const path = require('path');
 let channelsState = {};
 
 module.exports = async (req, res) => {
-  // Prevent aggressive browser caching
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -22,7 +19,6 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  // Get channel name from query param or default to 'default'
   let channel = 'default';
   if (req.query && req.query.channel) {
     channel = String(req.query.channel).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'default';
@@ -39,7 +35,17 @@ module.exports = async (req, res) => {
       }
       if (body && Array.isArray(body.scripts)) {
         const syncObj = {
-          data: body,
+          data: {
+            clients: Array.isArray(body.clients) ? body.clients : ['Jennil', 'Natalia'],
+            scripts: body.scripts,
+            notes: body.notes || { Jennil: [], Natalia: [] },
+            viralEvaluations: body.viralEvaluations || [],
+            calendarEvents: body.calendarEvents || [],
+            notificationEmails: body.notificationEmails || {},
+            aiBrain: body.aiBrain || {},
+            challengeStartDate: body.challengeStartDate || '2026-09-13',
+            updatedAt: body.updatedAt || new Date().toISOString()
+          },
           channel: channel,
           updatedAt: body.updatedAt || new Date().toISOString()
         };
@@ -48,14 +54,13 @@ module.exports = async (req, res) => {
         // Attempt persistent temp cache
         try {
           fs.writeFileSync(tmpFilePath, JSON.stringify(syncObj));
-        } catch (e) {
-          // ignore temp write errors
-        }
+        } catch (e) {}
 
         return res.status(200).json({ 
           success: true, 
           channel: channel,
           count: body.scripts.length, 
+          calendarCount: (body.calendarEvents || []).length,
           updatedAt: syncObj.updatedAt 
         });
       }
@@ -81,9 +86,7 @@ module.exports = async (req, res) => {
           return res.status(200).json(parsed.data);
         }
       }
-    } catch (e) {
-      // fallback
-    }
+    } catch (e) {}
 
     // 3. Static fallback for default channel
     if (channel === 'default') {
@@ -94,16 +97,16 @@ module.exports = async (req, res) => {
           const staticData = JSON.parse(fileContent);
           return res.status(200).json(staticData);
         }
-      } catch (e) {
-        // fallback
-      }
+      } catch (e) {}
     }
 
     return res.status(200).json({ 
-      clients: ['Jennil'], 
+      clients: ['Jennil', 'Natalia'], 
       scripts: [], 
-      notes: { Jennil: [] }, 
-      viralEvaluations: [], 
+      notes: { Jennil: [], Natalia: [] }, 
+      viralEvaluations: [],
+      calendarEvents: [],
+      notificationEmails: {},
       updatedAt: new Date().toISOString() 
     });
   }
