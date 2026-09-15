@@ -11311,10 +11311,14 @@ function openNotificationHubModal() {
   const modal = document.getElementById('notificationHubModal');
   if (!modal) return;
 
-  // Load saved Gmail
-  const emailInput = document.getElementById('userNotificationEmail');
-  if (emailInput) {
-    emailInput.value = localStorage.getItem('blex_user_email') || '';
+  // Load saved Gmails (Primary + Wife)
+  const email1Input = document.getElementById('userNotificationEmail');
+  const email2Input = document.getElementById('partnerNotificationEmail');
+  if (email1Input) {
+    email1Input.value = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
+  }
+  if (email2Input) {
+    email2Input.value = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
   }
 
   updatePushPermissionBadge();
@@ -11328,16 +11332,44 @@ function closeNotificationHubModal(e = null) {
   if (modal) modal.classList.add('hidden');
 }
 
-function saveUserNotificationEmail() {
-  const emailInput = document.getElementById('userNotificationEmail');
-  if (!emailInput) return;
-  const email = emailInput.value.trim();
-  if (email && !email.includes('@')) {
-    showToastNotification('⚠️ Por favor escribe un correo electrónico válido', 'alert-circle');
+function saveUserNotificationEmails() {
+  const email1Input = document.getElementById('userNotificationEmail');
+  const email2Input = document.getElementById('partnerNotificationEmail');
+
+  const email1 = email1Input ? email1Input.value.trim() : '';
+  const email2 = email2Input ? email2Input.value.trim() : '';
+
+  if (email1 && !email1.includes('@')) {
+    showToastNotification('⚠️ El correo principal no tiene un formato válido (@)', 'alert-circle');
     return;
   }
-  localStorage.setItem('blex_user_email', email);
-  showToastNotification(email ? `📧 Correo guardado: ${email}` : 'Correo eliminado.', 'check-circle');
+  if (email2 && !email2.includes('@')) {
+    showToastNotification('⚠️ El correo de tu esposa no tiene un formato válido (@)', 'alert-circle');
+    return;
+  }
+
+  localStorage.setItem('blex_user_email', email1);
+  localStorage.setItem('blex_partner_email', email2);
+
+  if (!state.notificationEmails) state.notificationEmails = {};
+  state.notificationEmails = {
+    primary: email1,
+    secondary: email2
+  };
+  saveState();
+
+  let msg = '📧 Correos configurados: ';
+  if (email1 && email2) msg += `${email1} y ${email2}`;
+  else if (email1) msg += email1;
+  else if (email2) msg += email2;
+  else msg = 'Correos eliminados.';
+
+  showToastNotification(msg, 'check-circle');
+}
+
+// Alias for backwards compatibility
+function saveUserNotificationEmail() {
+  saveUserNotificationEmails();
 }
 
 // Google Calendar URL Generator
@@ -11354,12 +11386,16 @@ function buildGoogleCalendarUrl(ev) {
   const end = `${dateClean}T${endHour}${endMin}00`;
 
   const title = encodeURIComponent(`[${ev.client}] ${ev.title}`);
-  const userEmail = localStorage.getItem('blex_user_email') || '';
+  const userEmail = localStorage.getItem('blex_user_email') || (state.notificationEmails && state.notificationEmails.primary) || '';
+  const partnerEmail = localStorage.getItem('blex_partner_email') || (state.notificationEmails && state.notificationEmails.secondary) || '';
   const details = encodeURIComponent(`Tipo de Actividad: ${ev.type}\nCliente: ${ev.client}\nPlataforma: ${ev.platform || 'General'}\nNotas: ${ev.notes || 'Sin notas'}\n\nOrganizado desde BLEX Content Script Studio`);
 
   let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
   if (userEmail) {
     url += `&add=${encodeURIComponent(userEmail)}`;
+  }
+  if (partnerEmail) {
+    url += `&add=${encodeURIComponent(partnerEmail)}`;
   }
   return url;
 }

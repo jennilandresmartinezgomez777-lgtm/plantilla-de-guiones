@@ -3686,28 +3686,49 @@
           </div>
         </div>
 
-        <!-- CANAL 2: NOTIFICACIONES A TU CORREO GMAIL -->
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <!-- CANAL 2: NOTIFICACIONES A 2 CORREOS GMAIL (TÚ + ESPOSA) -->
+        <div class="bg-slate-950 border border-rose-500/30 rounded-2xl p-4 space-y-3">
           <div class="flex items-start gap-3">
             <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
               <i data-lucide="mail" class="w-4 h-4"></i>
             </div>
             <div class="space-y-1">
-              <h4 class="text-sm font-bold text-white">2. Recordatorios a tu Correo Gmail</h4>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-white">2. Recordatorios a 2 Correos Gmail (Tú + Tu Esposa)</h4>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Doble Notificación</span>
+              </div>
               <p class="text-xs text-slate-400">
-                Recibe avisos de publicación e invitaciones de Google Calendar directo en tu bandeja de entrada de Gmail.
+                Reciban avisos de publicación e invitaciones automáticas de Google Calendar ambos en su bandeja de Gmail.
               </p>
             </div>
           </div>
-          <div class="space-y-2">
-            <label class="block text-xs font-semibold text-slate-400">Tu dirección de Gmail para recordatorios:</label>
-            <div class="flex items-center gap-2">
-              <input type="email" id="userNotificationEmail" placeholder="ejemplo@gmail.com" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none focus:ring-2 focus:ring-rose-500">
-              <button type="button" onclick="saveUserNotificationEmail()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl transition cursor-pointer text-xs border border-slate-700">
-                Guardar
+
+          <div class="space-y-3 pt-1">
+            <!-- Correo 1: Principal -->
+            <div>
+              <label class="block text-xs font-semibold text-rose-300 mb-1 flex items-center gap-1">
+                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                <span>1. Tu Correo Principal (Gmail):</span>
+              </label>
+              <input type="email" id="userNotificationEmail" placeholder="tucorreo@gmail.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none focus:ring-2 focus:ring-rose-500">
+            </div>
+
+            <!-- Correo 2: Esposa -->
+            <div>
+              <label class="block text-xs font-semibold text-pink-300 mb-1 flex items-center gap-1">
+                <i data-lucide="heart" class="w-3.5 h-3.5 text-pink-400"></i>
+                <span>2. Correo de tu Esposa (Gmail):</span>
+              </label>
+              <input type="email" id="partnerNotificationEmail" placeholder="correoesposa@gmail.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none focus:ring-2 focus:ring-pink-500">
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <button type="button" onclick="saveUserNotificationEmails()" class="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold px-4 py-2 rounded-xl transition cursor-pointer text-xs shadow-md flex items-center gap-1.5">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> Guardar Ambos Correos
               </button>
             </div>
-            <p class="text-[11px] text-slate-500">💡 Al programar una actividad, podrás pulsar <em>"Abrir en Google Calendar"</em> y Google te enviará alertas por correo y notificaciones push automáticamente a todos tus dispositivos vinculados a tu Gmail.</p>
+
+            <p class="text-[11px] text-slate-500 leading-relaxed">💡 Al tocar <em>"Abrir en Google Calendar / Gmail"</em> en cualquier actividad, Google los añadirá a ambos automáticamente como invitados y les enviará la alarma a ambos celulares y correos.</p>
           </div>
         </div>
 
