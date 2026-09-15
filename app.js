@@ -8489,6 +8489,16 @@ function resetWizard() {
 function goToWizardStep(stepNum) {
   wizardState.currentStep = stepNum;
 
+  // Capture whatever text the user has manually typed in any step before switching
+  const hookInput = document.getElementById('wizSelectedGancho');
+  if (hookInput && hookInput.value.trim()) wizardState.selectedHook = hookInput.value.trim();
+  const storyInput = document.getElementById('wizSelectedHistoria');
+  if (storyInput && storyInput.value.trim()) wizardState.selectedStory = storyInput.value.trim();
+  const moralInput = document.getElementById('wizSelectedMoraleja');
+  if (moralInput && moralInput.value.trim()) wizardState.selectedMoral = moralInput.value.trim();
+  const ctaInput = document.getElementById('wizSelectedCTA');
+  if (ctaInput && ctaInput.value.trim()) wizardState.selectedCTA = ctaInput.value.trim();
+
   // Update stepper buttons 0 through 5
   for (let i = 0; i <= 5; i++) {
     const pill = document.getElementById('wizStepPill' + i);
@@ -8496,17 +8506,13 @@ function goToWizardStep(stepNum) {
 
     if (pill) {
       if (i === stepNum) {
-        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer';
+        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md cursor-pointer ring-1 ring-purple-400/50';
         const sp = pill.querySelector('span:first-child');
-        if (sp) sp.className = 'w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]';
-      } else if (i < stepNum) {
-        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 cursor-pointer';
-        const sp = pill.querySelector('span:first-child');
-        if (sp) sp.className = 'w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]';
+        if (sp) sp.className = 'w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold';
       } else {
-        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50 cursor-pointer';
+        pill.className = 'flex-1 min-w-[125px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800/80 bg-slate-900/60 border border-slate-800 cursor-pointer';
         const sp = pill.querySelector('span:first-child');
-        if (sp) sp.className = 'w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]';
+        if (sp) sp.className = 'w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px] text-slate-400';
       }
     }
 
@@ -8516,7 +8522,17 @@ function goToWizardStep(stepNum) {
     }
   }
 
-  // If jumping to step 5, sync values
+  // Populate reference badges in steps if available
+  const badgeAngle = document.getElementById('wizBadgeChosenAngle');
+  if (badgeAngle && wizardState.strategyText) {
+    badgeAngle.innerText = wizardState.strategyText.slice(0, 90) + '...';
+  }
+  const badgeHook = document.getElementById('wizBadgeChosenHook');
+  if (badgeHook && wizardState.selectedHook) {
+    badgeHook.innerText = '"' + wizardState.selectedHook + '"';
+  }
+
+  // If jumping to step 5, sync values into final boxes
   if (stepNum === 5) {
     const finalHook = document.getElementById('wizFinalHook');
     const finalStory = document.getElementById('wizFinalStory');
@@ -9833,7 +9849,7 @@ async function generateWizardStep1Hooks() {
   populateGlobalHookDropdown();
 
   const allHooks = getHooksData();
-  const topic = wizardState.topic || '';
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '') || 'Crecimiento y Finanzas';
   const niche = wizardState.niche || 'Finanzas y Dinero';
   const strategy = wizardState.strategyText || (wizardState.strategy?.howToFlip) || 'Enfoque de alto valor y diferenciación';
   const intent = wizardState.userIntent || '';
@@ -10019,15 +10035,11 @@ function advanceWizardToStep2() {
   const hookInput = document.getElementById('wizSelectedGancho');
   const chosenHook = hookInput ? hookInput.value.trim() : wizardState.selectedHook;
 
-  if (!chosenHook) {
-    showToast('Por favor selecciona o escribe un gancho para continuar.', 'warning');
-    return;
+  if (chosenHook) {
+    wizardState.selectedHook = chosenHook;
+    const badge = document.getElementById('wizBadgeChosenHook');
+    if (badge) badge.innerText = '"' + chosenHook + '"';
   }
-
-  wizardState.selectedHook = chosenHook;
-
-  const badge = document.getElementById('wizBadgeChosenHook');
-  if (badge) badge.innerText = '"' + chosenHook + '"';
 
   goToWizardStep(2);
 
@@ -10038,8 +10050,8 @@ function advanceWizardToStep2() {
 
 // STEP 2: Generate 5 Stories
 async function generateWizardStep2Stories() {
-  const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '');
-  const topic = wizardState.topic || '';
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '') || 'Crecimiento y Finanzas';
+  const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '') || topic;
   const niche = wizardState.niche || 'Finanzas y Dinero';
   const strategy = wizardState.strategyText || '';
   const intent = wizardState.userIntent || '';
@@ -10160,12 +10172,10 @@ function advanceWizardToStep3() {
   const storyInput = document.getElementById('wizSelectedHistoria');
   const chosenStory = storyInput ? storyInput.value.trim() : wizardState.selectedStory;
 
-  if (!chosenStory) {
-    showToast('Por favor selecciona o redacta la historia/contexto para continuar.', 'warning');
-    return;
+  if (chosenStory) {
+    wizardState.selectedStory = chosenStory;
   }
 
-  wizardState.selectedStory = chosenStory;
   goToWizardStep(3);
 
   if (!wizardState.generatedMorals || wizardState.generatedMorals.length === 0) {
@@ -10175,9 +10185,9 @@ function advanceWizardToStep3() {
 
 // STEP 3: Generate 5 Morals / Lessons
 async function generateWizardStep3Morals() {
-  const hook = wizardState.selectedHook || '';
-  const story = wizardState.selectedStory || '';
-  const topic = wizardState.topic || '';
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '') || 'Crecimiento y Finanzas';
+  const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '') || topic;
+  const story = wizardState.selectedStory || (document.getElementById('wizSelectedHistoria') ? document.getElementById('wizSelectedHistoria').value.trim() : '') || topic;
   const niche = wizardState.niche || 'Finanzas y Dinero';
 
   const manualInput = document.getElementById('wizMoralManualContext');
@@ -10295,12 +10305,10 @@ function advanceWizardToStep4() {
   const moralInput = document.getElementById('wizSelectedMoraleja');
   const chosenMoral = moralInput ? moralInput.value.trim() : wizardState.selectedMoral;
 
-  if (!chosenMoral) {
-    showToast('Por favor selecciona o edita la moraleja antes de continuar.', 'warning');
-    return;
+  if (chosenMoral) {
+    wizardState.selectedMoral = chosenMoral;
   }
 
-  wizardState.selectedMoral = chosenMoral;
   goToWizardStep(4);
 
   if (!wizardState.generatedCTAs || wizardState.generatedCTAs.length === 0) {
@@ -10310,7 +10318,8 @@ function advanceWizardToStep4() {
 
 // STEP 4: Generate 5 CTAs
 async function generateWizardStep4CTAs() {
-  const hook = wizardState.selectedHook || '';
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '') || 'Crecimiento y Finanzas';
+  const hook = wizardState.selectedHook || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '') || topic;
   const niche = wizardState.niche || 'Finanzas y Dinero';
 
   const manualInput = document.getElementById('wizCtaManualContext');
@@ -10427,12 +10436,10 @@ function advanceWizardToFinalAssembly() {
   const ctaInput = document.getElementById('wizSelectedCTA');
   const chosenCTA = ctaInput ? ctaInput.value.trim() : wizardState.selectedCTA;
 
-  if (!chosenCTA) {
-    showToast('Por favor selecciona o redacta un CTA.', 'warning');
-    return;
+  if (chosenCTA) {
+    wizardState.selectedCTA = chosenCTA;
   }
 
-  wizardState.selectedCTA = chosenCTA;
   goToWizardStep(5);
 }
 

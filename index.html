@@ -310,9 +310,15 @@
           </div>
         </div>
 
-        <!-- Right: Fast Action Tools (Ideas with Counter, Notes with Counter, Sync 24/7) -->
+        <!-- Right: Fast Action Tools (AI Tools, Ideas with Counter, Notes with Counter, Sync 24/7) -->
         <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           
+          <!-- AI Studio Fast Access Button -->
+          <button id="btnAiStudioHeader" onclick="switchView('ai_studio')" title="Herramientas de IA - Creador de Reels & 64 Ganchos Virales" class="bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-300 hover:text-purple-200 font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm border border-purple-500/40 hover:border-purple-400 transition flex items-center gap-1 sm:gap-1.5 shadow-sm whitespace-nowrap cursor-pointer group active:scale-95">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400 group-hover:rotate-12 transition-transform"></i>
+            <span>IA</span>
+          </button>
+
           <!-- Quick Ideas Button with Counter Badge -->
           <button id="btnQuickIdea" onclick="openQuickIdeaModal()" title="Ideas de Contenido - Clic para ver / agregar" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm border border-amber-500/30 transition flex items-center gap-1 sm:gap-1.5 shadow-sm whitespace-nowrap cursor-pointer">
             <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i>
