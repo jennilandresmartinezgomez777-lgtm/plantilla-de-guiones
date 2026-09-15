@@ -8614,8 +8614,8 @@ function goToWizardStep(stepNum) {
   const ctaInput = document.getElementById('wizSelectedCTA');
   if (ctaInput && ctaInput.value.trim()) wizardState.selectedCTA = ctaInput.value.trim();
 
-  // Update stepper buttons 0 through 5
-  for (let i = 0; i <= 5; i++) {
+  // Update stepper buttons 0 through 6
+  for (let i = 0; i <= 6; i++) {
     const pill = document.getElementById('wizStepPill' + i);
     const view = document.getElementById('wizStepView' + i);
 
@@ -8658,6 +8658,13 @@ function goToWizardStep(stepNum) {
     if (finalStory) finalStory.value = wizardState.selectedStory || (document.getElementById('wizSelectedHistoria') ? document.getElementById('wizSelectedHistoria').value : '');
     if (finalMoral) finalMoral.value = wizardState.selectedMoral || (document.getElementById('wizSelectedMoraleja') ? document.getElementById('wizSelectedMoraleja').value : '');
     if (finalCTA) finalCTA.value = wizardState.selectedCTA || (document.getElementById('wizSelectedCTA') ? document.getElementById('wizSelectedCTA').value : '');
+  }
+
+  // If jumping to step 6, auto-generate if empty
+  if (stepNum === 6) {
+    if (!wizardState.generatedSpaces || wizardState.generatedSpaces.length === 0) {
+      generateWizardStep6Spaces();
+    }
   }
 
   if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
@@ -12017,4 +12024,226 @@ async function testEmailDispatch() {
   } catch (err) {
     showToastNotification('⚠️ No se pudo conectar con el servidor de correo.', 'alert-circle');
   }
+}
+
+
+// =========================================================================
+// STEP 6: 5 PRODUCTION & SPACE / ENVIRONMENT RECOMMENDATIONS
+// =========================================================================
+
+async function generateWizardStep6Spaces() {
+  const topic = wizardState.topic || (document.getElementById('aiWizardInputTopic') ? document.getElementById('aiWizardInputTopic').value.trim() : '') || 'Crecimiento, finanzas y mentalidad';
+  const hook = wizardState.selectedHook || (document.getElementById('wizFinalHook') ? document.getElementById('wizFinalHook').value.trim() : '') || (document.getElementById('wizSelectedGancho') ? document.getElementById('wizSelectedGancho').value.trim() : '') || topic;
+  const story = wizardState.selectedStory || (document.getElementById('wizFinalStory') ? document.getElementById('wizFinalStory').value.trim() : '') || (document.getElementById('wizSelectedHistoria') ? document.getElementById('wizSelectedHistoria').value.trim() : '') || '';
+  const niche = wizardState.niche || 'Finanzas y Dinero';
+  const client = wizardState.client || 'Jennil';
+
+  const manualInput = document.getElementById('wizSpaceManualContext');
+  const manualContext = manualInput ? manualInput.value.trim() : '';
+
+  const grid = document.getElementById('wizCardsGrid6');
+  if (grid) {
+    grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400 space-y-3 bg-slate-950/60 rounded-xl border border-slate-800"><div class="inline-block animate-spin w-8 h-8 border-4 border-pink-400 border-t-transparent rounded-full"></div><p class="text-sm font-bold text-white">Generando 5 recomendaciones de espacio, vestimenta y rodaje...</p><p class="text-xs text-slate-400">' + (manualContext ? 'Adaptando a tu idea: "' + manualContext + '"...' : 'Diseñando sets de alto impacto visual para retención.') + '</p></div>';
+  }
+
+  const prompt = [
+    'Actúa como el Director de Producción Audiovisual y Fotografía #1 para creadores top de Instagram Reels y TikTok.',
+    '',
+    (typeof getBrandDnaPromptSnippet === 'function' ? getBrandDnaPromptSnippet(client) : ''),
+    '',
+    'CONTEXTO DEL REEL:',
+    '- Creador / Talento: ' + client,
+    '- Tema central: "' + topic + '"',
+    '- Gancho de apertura: "' + hook + '"',
+    (story ? '- Historia / Contexto: "' + story.slice(0, 150) + '..."' : ''),
+    '- Nicho: ' + niche,
+    (manualContext ? '- GUÍA O LUGAR INDICADO POR EL USUARIO: "' + manualContext + '"' : ''),
+    '',
+    'TU TAREA (Paso 6): Proponer 5 OPCIONES DE PRODUCCIÓN Y ESPACIO variadas, estéticas y viables para grabar este reel con la máxima autoridad y retención visual.',
+    '',
+    'Cada opción debe incluir:',
+    '1. title: Nombre del concepto/set (ej: "Oficina Ejecutiva Minimalista", "Café Urbano con Luz Natural", "Set Dinámico en Movimiento (Carro o Calle)", "Cocina / Hogar Premium", "Estudio Oscuro con Luz Neon/Acento")',
+    '2. environment: Descripción del espacio, fondo y ambiente (20-30 palabras).',
+    '3. outfit: Vestimenta y estilo exacto recomendado (ropa, colores, accesorios).',
+    '4. camera: Ángulo, encuadre y movimiento de cámara sugerido.',
+    '5. lightingAndAudio: Iluminación y tipo de micrófono/audio recomendado.',
+    '6. propsAndEnergy: Props en mano (taza, celular, libreta) y energía de actuación/voz.',
+    '',
+    'Responde ÚNICAMENTE con un arreglo JSON válido de 5 objetos:',
+    '[',
+    '  {',
+    '    "title": "Concepto 1: Nombre",',
+    '    "environment": "Lugar y fondo",',
+    '    "outfit": "Vestimenta recomendada",',
+    '    "camera": "Encuadre y ángulo",',
+    '    "lightingAndAudio": "Luz y micrófono",',
+    '    "propsAndEnergy": "Accesorios y tono"',
+    '  }',
+    ']'
+  ].join('\n');
+
+  try {
+    const raw = await callOllama(prompt, 0.7);
+    let parsed = null;
+    try {
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch (e) {}
+
+    if (parsed && Array.isArray(parsed) && parsed.length >= 3) {
+      wizardState.generatedSpaces = parsed.slice(0, 5).map((sp, idx) => ({
+        title: sp.title || ('Opción ' + (idx + 1) + ': Set de Grabación'),
+        environment: sp.environment || 'Espacio limpio con buena iluminación natural y fondo ordenado.',
+        outfit: sp.outfit || 'Ropa casual elegante sin logos distractores.',
+        camera: sp.camera || 'Plano medio a la altura de los ojos en formato vertical 9:16.',
+        lightingAndAudio: sp.lightingAndAudio || 'Luz frontal suave y micrófono de solapa inalámbrico.',
+        propsAndEnergy: sp.propsAndEnergy || 'Teléfono en mano. Tono seguro y conversacional.'
+      }));
+      renderWizardStep6Cards(wizardState.generatedSpaces);
+    } else {
+      wizardState.generatedSpaces = getFallbackSpaces(topic, niche, hook, manualContext);
+      renderWizardStep6Cards(wizardState.generatedSpaces);
+    }
+  } catch (err) {
+    console.warn('Step 6 space error, using fallback:', err);
+    wizardState.generatedSpaces = getFallbackSpaces(topic, niche, hook, manualContext);
+    renderWizardStep6Cards(wizardState.generatedSpaces);
+  }
+}
+
+function renderWizardStep6Cards(spaces) {
+  const grid = document.getElementById('wizCardsGrid6');
+  if (!grid) return;
+
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+
+  grid.innerHTML = spaces.map((sp, idx) => {
+    const letter = letters[idx] || (idx + 1);
+    const isSelected = wizardState.selectedSpaceIndex === idx;
+
+    return '<div onclick="selectWizardSpace(' + idx + ')" id="wizSpaceCard_' + idx + '" class="p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3.5 ' + (isSelected ? 'bg-pink-950/40 border-pink-500 shadow-lg shadow-pink-950/50 ring-1 ring-pink-400/50' : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/70') + '">' +
+      '<div class="space-y-2.5">' +
+        '<div class="flex items-center justify-between">' +
+          '<div class="flex items-center gap-2">' +
+            '<span class="w-6 h-6 rounded-lg bg-pink-500/20 text-pink-300 font-black text-xs flex items-center justify-center border border-pink-500/30 shrink-0">' + letter + '</span>' +
+            '<h5 class="text-xs sm:text-sm font-bold text-white line-clamp-1">' + escapeHtml(sp.title) + '</h5>' +
+          '</div>' +
+          '<span class="text-[10px] font-bold text-pink-300 bg-pink-500/10 px-2 py-0.5 rounded border border-pink-500/20 shrink-0">Set ' + (idx + 1) + '</span>' +
+        '</div>' +
+
+        '<div class="space-y-2 text-xs text-slate-300 bg-slate-900/80 p-3 rounded-lg border border-slate-800/80">' +
+          '<p><strong class="text-pink-400">📍 Lugar & Ambiente:</strong> ' + escapeHtml(sp.environment) + '</p>' +
+          '<p><strong class="text-amber-400">👔 Vestimenta:</strong> ' + escapeHtml(sp.outfit) + '</p>' +
+          '<p><strong class="text-sky-400">🎥 Cámara & Encuadre:</strong> ' + escapeHtml(sp.camera) + '</p>' +
+          '<p><strong class="text-emerald-400">💡 Iluminación & Audio:</strong> ' + escapeHtml(sp.lightingAndAudio) + '</p>' +
+          '<p><strong class="text-purple-400">🎯 Props & Tono:</strong> ' + escapeHtml(sp.propsAndEnergy) + '</p>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-400">' +
+        '<span class="text-slate-400 italic">Toca para aplicar a tu plan</span>' +
+        '<span class="text-pink-400 font-bold shrink-0 ml-2">' + (isSelected ? '✓ Seleccionado' : 'Elegir') + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  if (wizardState.selectedSpaceIndex === undefined && spaces.length > 0) {
+    selectWizardSpace(0);
+  }
+
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
+}
+
+function selectWizardSpace(idx) {
+  const sp = (wizardState.generatedSpaces && wizardState.generatedSpaces[idx]) ? wizardState.generatedSpaces[idx] : null;
+  if (!sp) return;
+
+  wizardState.selectedSpaceIndex = idx;
+  wizardState.selectedSpace = sp;
+
+  const formattedPlan = [
+    '🎬 CONCEPTO DE SET: ' + sp.title,
+    '📍 ESPACIO & AMBIENTE: ' + sp.environment,
+    '👔 VESTIMENTA & ESTILO: ' + sp.outfit,
+    '🎥 ENCUADRE & CÁMARA: ' + sp.camera,
+    '💡 ILUMINACIÓN & AUDIO: ' + sp.lightingAndAudio,
+    '🎯 PROPS & ENERGÍA DE GRABACIÓN: ' + sp.propsAndEnergy
+  ].join('\n\n');
+
+  const textarea = document.getElementById('wizSelectedEspacio');
+  if (textarea) textarea.value = formattedPlan;
+
+  wizardState.generatedSpaces.forEach((_, i) => {
+    const card = document.getElementById('wizSpaceCard_' + i);
+    if (card) {
+      if (i === idx) {
+        card.className = 'p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3.5 bg-pink-950/40 border-pink-500 shadow-lg shadow-pink-950/50 ring-1 ring-pink-400/50';
+        const span = card.querySelector('.pt-2 span:last-child');
+        if (span) span.innerText = '✓ Seleccionado';
+      } else {
+        card.className = 'p-4 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-3.5 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900/70';
+        const span = card.querySelector('.pt-2 span:last-child');
+        if (span) span.innerText = 'Elegir';
+      }
+    }
+  });
+}
+
+function copySpacePlan() {
+  const plan = document.getElementById('wizSelectedEspacio') ? document.getElementById('wizSelectedEspacio').value.trim() : '';
+  if (!plan) {
+    showToast('No hay plan de espacio seleccionado.', 'warning');
+    return;
+  }
+  navigator.clipboard.writeText(plan).then(() => {
+    showToast('📋 ¡Plan de espacio y grabación copiado!', 'success');
+  }).catch(() => {
+    showToast('Copia el texto manualmente.', 'info');
+  });
+}
+
+function getFallbackSpaces(topic, niche, hook, manualContext) {
+  const t = topic || 'estrategia y finanzas';
+  return [
+    {
+      title: "1. Oficina Ejecutiva & Autoridad Tranquila",
+      environment: "Escritorio sobrio y despejado de madera oscura o blanco mate. Fondo con estantería minimalista o pared limpia con iluminación cálida.",
+      outfit: "Camisa de lino neutra remangada o polo negro de alta calidad. Reloj metálico clásico o pulsera discreta. Look de alta autoridad pero accesible.",
+      camera: "Plano medio vertical a la altura de los ojos. Ligero desenfoque de fondo (modo retrato o apertura f/1.8).",
+      lightingAndAudio: "Luz suave frontal a 45° más luz de acento cálida de fondo. Micrófono de solapa inalámbrico oculto en el cuello.",
+      propsAndEnergy: "Taza de café o tablet sobre la mesa. Voz firme, pausas estratégicas y seguridad absoluta."
+    },
+    {
+      title: "2. Cafetería Urbana & Luz Natural",
+      environment: "Mesa cerca de una ventana amplia con entrada de luz natural suave. Fondo con movimiento urbano sutil desenfocado.",
+      outfit: "Chaqueta o sobrecamisa casual sobre camiseta blanca o gris. Estilo moderno y dinámico.",
+      camera: "Cámara en mano o trípode de mesa con ligero dinamismo orgánico para dar sensación de cercanía y conversación real.",
+      lightingAndAudio: "Luz natural diurna rebotada. Micrófono inalámbrico con esponja antipop.",
+      propsAndEnergy: "Café en taza de cerámica o teléfono en mano. Tono confidencial, como compartiendo una verdad poco conocida a un amigo."
+    },
+    {
+      title: "3. En Movimiento / Auto (Estilo Dinámico)",
+      environment: "Interior del vehículo estacionado o en trayecto seguro con iluminación natural uniforme. Fondo con cristales limpios.",
+      outfit: "Gafas de sol en el cuello o puestas al inicio, camiseta monocromática de buen corte.",
+      camera: "Soporte de teléfono en el parabrisas a 45° o sostenido a pulso con plano semi-cerrado.",
+      lightingAndAudio: "Luz suave exterior a través de la ventana. Micrófono de solapa fijado en el cinturón de seguridad.",
+      propsAndEnergy: "Mano apoyada en el volante. Energía alta, ritmo rápido y contundente sin titubeos."
+    },
+    {
+      title: "4. Estudio Minimalista con Luz de Acento",
+      environment: "Fondo oscuro o gris carbón con una tira LED cálida o azul sutil en la pared posterior creando profundidad visual.",
+      outfit: "Camiseta o suéter cuello alto negro/carbón, proyectando estética premium y moderna.",
+      camera: "Cámara fija en trípode con encuadre perfectamente centrado y simétrico.",
+      lightingAndAudio: "Softbox grande frontal difuso (Key Light) + Rim Light trasero de recorte para separar del fondo. Audio nítido con micrófono de estudio o solapa.",
+      propsAndEnergy: "Postura erguida, mirada directa y penetrante a la lente. Tono de mentor que enseña un principio inquebrantable."
+    },
+    {
+      title: "5. Espacio Abierto / Ciudad o Terraza",
+      environment: "Terraza al atardecer (hora dorada) o calle con arquitectura moderna de fondo.",
+      outfit: "Estilo smart-casual urbano: blazer ligero sin corbata o polo con pantalones entallados.",
+      camera: "Cámara caminando hacia atrás mientras el creador avanza hacia ella (tracking shot).",
+      lightingAndAudio: "Luz cálida natural del atardecer. Micrófono inalámbrico con deadcat (protección contra viento).",
+      propsAndEnergy: "Gesticulación abierta con las manos. Energía inspiradora y motivacional para mover a la acción."
+    }
+  ];
 }

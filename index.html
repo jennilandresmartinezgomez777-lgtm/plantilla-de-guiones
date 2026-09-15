@@ -1601,6 +1601,10 @@
               <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">5</span>
               <span>Reel Final ✨</span>
             </button>
+            <button type="button" onclick="goToWizardStep(6)" id="wizStepPill6" class="flex-1 min-w-[130px] px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-white bg-slate-900/50 cursor-pointer">
+              <span class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center text-[10px]">6</span>
+              <span>📍 Espacio & Set 🎬</span>
+            </button>
           </div>
 
           <!-- STEP 0 CONTAINER: DIAGNÓSTICO & ESTRATEGIA VIRAL -->
@@ -1984,6 +1988,87 @@
                     </label>
                     <textarea id="wizFinalCTA" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-white focus:border-emerald-500 outline-none"></textarea>
                   </div>
+                </div>
+              </div>
+
+              <!-- Button to Step 6: Espacio & Set -->
+              <div class="flex justify-end pt-3 border-t border-slate-800">
+                <button type="button" onclick="goToWizardStep(6)" class="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-pink-950/40 cursor-pointer">
+                  <span>Paso 6: Ver Recomendaciones de Espacio & Grabación</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- STEP 6 CONTAINER: RECOMENDACIONES DE ESPACIO, AMBIENTE, VESTIMENTA & DETALLES DE GRABACIÓN -->
+          <div id="wizStepView6" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-pink-500/30 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+              
+              <!-- Header & Actions -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+                <div>
+                  <h4 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <span class="text-pink-400">🎬</span> Paso 6: Espacio, Set, Vestimenta & Detalles de Grabación (5 Opciones)
+                  </h4>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    La IA analiza tu tema, formato y guión para recomendarte 5 opciones completas de dónde, cómo y con qué grabar tu video.
+                  </p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" onclick="generateWizardStep6Spaces()" class="text-xs text-pink-300 hover:text-pink-200 bg-pink-500/15 hover:bg-pink-500/25 border border-pink-500/30 px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 font-bold cursor-pointer shadow-sm">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i> Regenerar 5 Espacios
+                  </button>
+                </div>
+              </div>
+
+              <!-- Manual Guidance Input for Location / Outfit -->
+              <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-pink-300 flex items-center gap-1.5">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-pink-400"></i>
+                    <span>¿Tienes un lugar o vestimenta específica en mente? (Opcional - Modo Guiado/Manual)</span>
+                  </label>
+                  <button type="button" onclick="generateWizardStep6Spaces()" class="text-[11px] font-bold bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> Aplicar mi idea
+                  </button>
+                </div>
+                <input type="text" id="wizSpaceManualContext" placeholder="Ej: Quiero grabarlo en mi carro mientras manejo, o en una cafetería moderna con un café..." class="w-full bg-slate-900 border border-slate-700 focus:border-pink-400 rounded-lg p-2.5 text-xs text-white outline-none">
+              </div>
+
+              <!-- 5 Options Grid -->
+              <div id="wizCardsGrid6" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                <!-- Injected via JS -->
+              </div>
+
+              <!-- Selected Space Details & Production Plan -->
+              <div class="bg-slate-950 border border-pink-500/30 p-4 rounded-xl space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold text-pink-300 flex items-center gap-1.5">
+                    <i data-lucide="clapperboard" class="w-4 h-4 text-pink-400"></i>
+                    <span>Plan de Grabación & Espacio Seleccionado:</span>
+                  </label>
+                  <span class="text-[10px] text-slate-500 font-normal">Edita cualquier detalle libremente para el rodaje</span>
+                </div>
+                <textarea id="wizSelectedEspacio" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs sm:text-sm text-white focus:border-pink-400 outline-none leading-relaxed" placeholder="Selecciona una opción de arriba o escribe tu propio plan de espacio, vestimenta y rodaje..."></textarea>
+              </div>
+
+              <!-- Navigation & Actions -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-800">
+                <button type="button" onclick="goToWizardStep(5)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                  <span>Volver a Reel Final</span>
+                </button>
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                  <button type="button" onclick="copySpacePlan()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="copy" class="w-3.5 h-3.5 text-pink-400"></i>
+                    <span>📋 Copiar Plan de Rodaje</span>
+                  </button>
+                  <button type="button" onclick="saveWizardToMatrix()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-950/40 cursor-pointer">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>📥 Guardar en Matriz</span>
+                  </button>
                 </div>
               </div>
 
