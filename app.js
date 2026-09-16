@@ -979,7 +979,7 @@ const INITIAL_SCRIPTS = [
     "rating": 0,
     "completed": false,
     "espacio": "",
-    "updatedAt": "2026-09-15T20:37:52.944Z",
+    "updatedAt": "2026-09-16T00:31:54.153Z",
     "createdAt": "2026-09-15T00:00:00.000Z"
   },
   {
@@ -1003,7 +1003,7 @@ const INITIAL_SCRIPTS = [
     "rating": 0,
     "completed": false,
     "espacio": "",
-    "updatedAt": "2026-09-15T20:37:52.945Z",
+    "updatedAt": "2026-09-16T00:31:54.153Z",
     "createdAt": "2026-09-15T01:00:00.000Z"
   },
   {
@@ -1027,7 +1027,7 @@ const INITIAL_SCRIPTS = [
     "rating": 0,
     "completed": false,
     "espacio": "",
-    "updatedAt": "2026-09-15T20:37:52.945Z",
+    "updatedAt": "2026-09-16T00:31:54.153Z",
     "createdAt": "2026-09-15T03:31:24.089Z"
   }
 ];
@@ -1221,6 +1221,24 @@ try {
   const ipadCleanKey = 'css_ipad_auto_clean_v_1789505865969';
   // Always clean state.scripts of any duplicated items
   if (Array.isArray(state.scripts)) {
+    state.scripts = deduplicateScripts(state.scripts);
+    localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
+  }
+} catch(e) {}
+
+
+// RESTORE 3 AUTHENTIC USER SCRIPTS ON REFRESH IF FEWER THAN 3
+try {
+  if (!Array.isArray(state.scripts) || state.scripts.length < 3) {
+    const existingTitles = new Set((state.scripts || []).map(s => (s.ideaGanadora || s.title || '').toLowerCase().trim()));
+    INITIAL_SCRIPTS.forEach(initS => {
+      const norm = (initS.ideaGanadora || '').toLowerCase().trim();
+      if (!existingTitles.has(norm)) {
+        if (!Array.isArray(state.scripts)) state.scripts = [];
+        state.scripts.push(JSON.parse(JSON.stringify(initS)));
+        existingTitles.add(norm);
+      }
+    });
     state.scripts = deduplicateScripts(state.scripts);
     localStorage.setItem('css_scripts', JSON.stringify(state.scripts));
   }
@@ -3149,12 +3167,13 @@ let isServerConnected = true;
 let syncPollingTimer = null;
 
 function getEffectiveServerUrl() {
-  const custom = localStorage.getItem('blex_server_url');
-  if (custom && custom.trim()) {
-    // Safety check: on HTTPS (e.g. Vercel), ignore custom localhost URLs to prevent Mixed Content blocking on iPhone/iPad
-    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:' && (custom.startsWith('http://localhost') || custom.startsWith('http://127.0.0.1'))) {
+  if (typeof window !== 'undefined' && window.location) {
+    if (window.location.protocol === 'https:' || (window.location.hostname && window.location.hostname.includes('vercel.app'))) {
       return window.location.origin;
     }
+  }
+  const custom = localStorage.getItem('blex_server_url');
+  if (custom && custom.trim()) {
     return custom.trim().replace(/\/+$/, '');
   }
   if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {

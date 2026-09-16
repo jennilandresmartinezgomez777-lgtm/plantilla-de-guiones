@@ -30,7 +30,7 @@ const DEFAULT_INITIAL_DATA = {
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.944Z",
+      "updatedAt": "2026-09-16T00:31:54.153Z",
       "createdAt": "2026-09-15T00:00:00.000Z"
     },
     {
@@ -54,7 +54,7 @@ const DEFAULT_INITIAL_DATA = {
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.945Z",
+      "updatedAt": "2026-09-16T00:31:54.153Z",
       "createdAt": "2026-09-15T01:00:00.000Z"
     },
     {
@@ -78,7 +78,7 @@ const DEFAULT_INITIAL_DATA = {
       "rating": 0,
       "completed": false,
       "espacio": "",
-      "updatedAt": "2026-09-15T20:37:52.945Z",
+      "updatedAt": "2026-09-16T00:31:54.153Z",
       "createdAt": "2026-09-15T03:31:24.089Z"
     }
   ],
@@ -105,7 +105,7 @@ const DEFAULT_INITIAL_DATA = {
     "secondary": "ncolorado2511@outlook.com"
   },
   "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-15T20:37:52.945Z"
+  "updatedAt": "2026-09-16T00:31:54.153Z"
 };
 
 function deduplicateScripts(scripts) {
