@@ -1547,99 +1547,176 @@
         <div id="aiPanelWizard" class="space-y-4">
           
           <!-- Top Configuration Card (Audio Transcriptor en Vivo + Nicho + Tema) -->
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-              <div>
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="text-amber-400">🎬</span> Asistente de Creación de Reel con Transcriptor en Vivo
-                </h3>
-                <p class="text-xs text-slate-400 mt-0.5">Escucha el audio de cualquier video en tiempo real o escribe tu idea, y la IA la transformará paso a paso.</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <button type="button" onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
-                </button>
-              </div>
-            </div>
+          <!-- ASISTENTE DE CREACIÓN DE REEL + BLEX IA CHAT INTERACTIVO -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            
+            <!-- LEFT COLUMN: Transcriptor / Idea y Selección de Enfoque (lg:col-span-7) -->
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between space-y-4">
+              <div class="space-y-3.5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                      <span class="text-amber-400">🎬</span> Asistente de Creación de Reel
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Escucha el audio de cualquier video o escribe tu idea, y créalo paso a paso.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                      <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
+                    </button>
+                  </div>
+                </div>
 
-            <!-- Top Row: Live Audio Transcribe Button & Niche Selector & Action Button -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
-              <!-- Live Audio Listening Button -->
-              <div class="md:col-span-4 space-y-1">
-                <label class="block text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                  <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400"></i> Transcriptor de Audio en Vivo
-                </label>
-                <button type="button" id="btnToggleLiveAudio" onclick="toggleAudioTranscription()" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-600 hover:from-purple-500 hover:to-sky-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer">
-                  <i data-lucide="mic" class="w-4 h-4 text-amber-300"></i>
-                  <span id="btnToggleLiveAudioText">🎙️ Escuchar Reel / Audio en Vivo</span>
-                </button>
-              </div>
+                <!-- Top Row: Live Audio Transcribe Button & Niche Selector -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                  <!-- Live Audio Listening Button -->
+                  <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                      <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-400"></i> Transcriptor de Audio en Vivo
+                    </label>
+                    <button type="button" id="btnToggleLiveAudio" onclick="toggleAudioTranscription()" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-600 hover:from-purple-500 hover:to-sky-500 text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-950/50 cursor-pointer">
+                      <i data-lucide="mic" class="w-4 h-4 text-amber-300"></i>
+                      <span id="btnToggleLiveAudioText">🎙️ Escuchar Audio en Vivo</span>
+                    </button>
+                  </div>
 
-              <!-- Niche / Focus Selector -->
-              <div class="md:col-span-5 space-y-1">
-                <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <i data-lucide="compass" class="w-3.5 h-3.5 text-emerald-400"></i> Enfoque / Área del Nicho
-                </label>
-                <select id="aiWizardNicheArea" onchange="toggleWizardCustomNiche(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-200 outline-none cursor-pointer focus:border-emerald-500">
-                  <option value="💰 Riqueza, Mentalidad & Psicología del Dinero">💰 Riqueza & Mentalidad del Dinero</option>
-                  <option value="⚠️ Errores Financieros Comunes y Trampas del Sistema">⚠️ Errores Financieros Comunes</option>
-                  <option value="📈 Hábitos del 1% y Productividad Radical">📈 Hábitos del 1% y Disciplina</option>
-                  <option value="🤯 Mitos Contraintuitivos sobre Dinero y Negocios">🤯 Mitos Contraintuitivos</option>
-                  <option value="🎯 Psicología de Ventas, Precios y Negociación">🎯 Ventas, Precios y Negociación</option>
-                  <option value="⏳ Libertad Financiera, Ingresos Pasivos y Tiempo">⏳ Libertad Financiera e Inversión</option>
-                  <option value="🧠 Desarrollo Personal, Foco y Crecimiento">🧠 Desarrollo Personal y Foco</option>
-                  <option value="🌐 General de Dinero & Crecimiento">🌐 General Dinero & Crecimiento</option>
-                  <option value="CUSTOM">✨ Otro enfoque personalizado...</option>
-                </select>
-              </div>
+                  <!-- Niche / Focus Selector -->
+                  <div class="sm:col-span-6 space-y-1">
+                    <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <i data-lucide="compass" class="w-3.5 h-3.5 text-emerald-400"></i> Enfoque / Área del Nicho
+                    </label>
+                    <select id="aiWizardNicheArea" onchange="toggleWizardCustomNiche(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-slate-200 outline-none cursor-pointer focus:border-emerald-500">
+                      <option value="💰 Riqueza, Mentalidad & Psicología del Dinero">💰 Riqueza & Mentalidad del Dinero</option>
+                      <option value="⚠️ Errores Financieros Comunes y Trampas del Sistema">⚠️ Errores Financieros Comunes</option>
+                      <option value="📈 Hábitos del 1% y Productividad Radical">📈 Hábitos del 1% y Disciplina</option>
+                      <option value="🤯 Mitos Contraintuitivos sobre Dinero y Negocios">🤯 Mitos Contraintuitivos</option>
+                      <option value="🎯 Psicología de Ventas, Precios y Negociación">🎯 Ventas, Precios y Negociación</option>
+                      <option value="⏳ Libertad Financiera, Ingresos Pasivos y Tiempo">⏳ Libertad Financiera e Inversión</option>
+                      <option value="🧠 Desarrollo Personal, Foco y Crecimiento">🧠 Desarrollo Personal y Foco</option>
+                      <option value="🌐 General de Dinero & Crecimiento">🌐 General Dinero & Crecimiento</option>
+                      <option value="CUSTOM">✨ Otro enfoque personalizado...</option>
+                    </select>
+                  </div>
 
-              <!-- Action Button -->
-              <div class="md:col-span-3">
-                <button type="button" id="btnStartWizard" onclick="startWizardProcess()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
-                  <i data-lucide="sparkles" class="w-4 h-4"></i>
-                  <span>Crear con IA</span>
-                </button>
-              </div>
+                  <!-- Dynamic Custom Niche Input -->
+                  <div id="aiWizardCustomNicheContainer" class="hidden sm:col-span-12 space-y-1 pt-1">
+                    <label class="block text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Describe tu enfoque personalizado:
+                    </label>
+                    <input type="text" id="aiWizardCustomNicheInput" class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:border-amber-400 outline-none placeholder:text-slate-600" placeholder="Ej: Trading para principiantes, bienes raíces sin capital, mentalidad estoica...">
+                  </div>
+                </div>
 
-              <!-- Dynamic Custom Niche Input (Visible when "CUSTOM" selected) -->
-              <div id="aiWizardCustomNicheContainer" class="hidden md:col-span-12 space-y-1 pt-1">
-                <label class="block text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Describe tu enfoque personalizado:
-                </label>
-                <input type="text" id="aiWizardCustomNicheInput" class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:border-amber-400 outline-none placeholder:text-slate-600" placeholder="Ej: Trading para principiantes, bienes raíces sin capital, mentalidad estoica para negocios...">
-              </div>
-            </div>
-
-            <!-- Listening Status Banner (Visible while recording) -->
-            <div id="aiAudioStatusBox" class="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-between gap-3 text-xs hidden">
-              <div class="flex items-center gap-2.5">
-                <span id="aiAudioPulseDot" class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
-                <span class="text-purple-200 font-bold">🔴 Escuchando audio del video en tiempo real... Reproduce el reel en tu celular o habla cerca del micrófono.</span>
-              </div>
-              <button type="button" onclick="toggleAudioTranscription()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded-lg transition text-xs shrink-0 cursor-pointer">
-                Detener
-              </button>
-            </div>
-
-            <!-- Topic / Transcribed Speech Textarea -->
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-400"></i>
-                  <span>Transcripción del Video o Idea Clave *</span>
-                </label>
-                <div class="flex items-center gap-2">
-                  <button type="button" id="btnPolishTranscript" onclick="polishTranscriptWithAi()" class="text-[11px] text-purple-300 hover:text-white bg-purple-950/60 hover:bg-purple-900 border border-purple-800 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer shadow-sm" title="Limpiar muletillas, corregir ortografía y redactar profesionalmente con la IA de tu PC">
-                    <i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i>
-                    <span>✨ Pulir con IA</span>
+                <!-- Listening Status Banner -->
+                <div id="aiAudioStatusBox" class="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-between gap-3 text-xs hidden">
+                  <div class="flex items-center gap-2.5">
+                    <span id="aiAudioPulseDot" class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
+                    <span class="text-purple-200 font-bold">🔴 Escuchando audio en tiempo real...</span>
+                  </div>
+                  <button type="button" onclick="toggleAudioTranscription()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1 rounded-lg transition text-xs shrink-0 cursor-pointer">
+                    Detener
                   </button>
-                  <button type="button" onclick="clearTranscribedAudio()" class="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer">
-                    <i data-lucide="trash-2" class="w-3 h-3"></i> Limpiar
+                </div>
+
+                <!-- Topic / Transcribed Speech Textarea -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>Transcripción del Video o Idea Clave *</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                      <button type="button" id="btnPolishTranscript" onclick="polishTranscriptWithAi()" class="text-[11px] text-purple-300 hover:text-white bg-purple-950/60 hover:bg-purple-900 border border-purple-800 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer shadow-sm" title="Limpiar muletillas, corregir ortografía y redactar profesionalmente">
+                        <i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i>
+                        <span>✨ Pulir con IA</span>
+                      </button>
+                      <button type="button" onclick="clearTranscribedAudio()" class="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i> Limpiar
+                      </button>
+                    </div>
+                  </div>
+                  <textarea id="aiWizardInputTopic" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600 leading-relaxed" placeholder="Presiona '🎙️ Escuchar Audio' o escribe/pega aquí directamente tu idea..."></textarea>
+                </div>
+              </div>
+
+              <!-- Bottom Action Button for Wizard -->
+              <div class="pt-2">
+                <button type="button" id="btnStartWizard" onclick="startWizardProcess()" class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-950/50 cursor-pointer">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>Crear Reel Paso a Paso con IA</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: BLEX IA Interactive Chat Assistant (lg:col-span-5) -->
+            <div class="lg:col-span-5 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between space-y-3 relative overflow-hidden">
+              
+              <!-- Subtle decorative glow -->
+              <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+              <!-- Header -->
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center text-slate-950 font-black text-sm shadow-md shadow-amber-500/20">
+                    🦁
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs sm:text-sm font-black text-white tracking-wide">BLEX IA</h4>
+                      <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        En línea
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">Asistente Director de Contenido y Producción</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button type="button" onclick="clearBlexIaChat()" class="text-[11px] text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 p-1.5 rounded-lg transition cursor-pointer" title="Limpiar conversación">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
-              <textarea id="aiWizardInputTopic" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:border-purple-500 outline-none placeholder:text-slate-600 leading-relaxed" placeholder="Presiona '🎙️ Escuchar Reel' arriba y reproduce el video en tu celular, o escribe/pega aquí directamente lo que dice el video o tu idea..."></textarea>
+
+              <!-- Chat Message Scroll Area -->
+              <div id="blexIaChatMessages" class="flex-1 min-h-[220px] max-h-[260px] overflow-y-auto space-y-2.5 pr-1.5 custom-scrollbar text-xs">
+                <!-- Initial Welcome message rendered by JS -->
+              </div>
+
+              <!-- Quick Action Chips -->
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 text-[10px]">
+                <button type="button" onclick="sendBlexIaQuickPrompt('💡 Dame 3 ganchos virales de alto impacto para mi idea')" class="bg-slate-800/90 hover:bg-amber-500/20 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 border border-slate-700 px-2.5 py-1 rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer">
+                  💡 3 Ganchos virales
+                </button>
+                <button type="button" onclick="sendBlexIaQuickPrompt('📅 Agendar rodaje para este viernes a las 3pm')" class="bg-slate-800/90 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 border border-slate-700 px-2.5 py-1 rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer">
+                  📅 Agendar Rodaje
+                </button>
+                <button type="button" onclick="sendBlexIaQuickPrompt('🧠 ¿Qué tono y ADN de marca tengo configurado?')" class="bg-slate-800/90 hover:bg-purple-500/20 hover:border-purple-500/40 text-slate-300 hover:text-purple-300 border border-slate-700 px-2.5 py-1 rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer">
+                  🧠 Ver Cerebro IA
+                </button>
+                <button type="button" onclick="sendBlexIaQuickPrompt('🪝 Recomiéndame 2 fórmulas de los 64 ganchos para retención')" class="bg-slate-800/90 hover:bg-sky-500/20 hover:border-sky-500/40 text-slate-300 hover:text-sky-300 border border-slate-700 px-2.5 py-1 rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer">
+                  🪝 64 Ganchos
+                </button>
+                <button type="button" onclick="sendBlexIaQuickPrompt('📝 Crear una nota: Recordar tomas de apoyo con ropa ejecutiva')" class="bg-slate-800/90 hover:bg-amber-500/20 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 border border-slate-700 px-2.5 py-1 rounded-lg transition whitespace-nowrap shrink-0 cursor-pointer">
+                  📝 Crear Nota
+                </button>
+              </div>
+
+              <!-- Input Area -->
+              <div class="relative flex items-center gap-1.5 pt-1">
+                <input type="text" id="blexIaChatInput" onkeydown="handleBlexIaKeydown(event)" placeholder="Escribe a BLEX IA (ej: 'anota rodaje el viernes', 'dame un gancho')..." class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl pl-3 pr-20 py-2.5 text-xs text-white placeholder:text-slate-600 outline-none transition shadow-inner">
+                <div class="absolute right-1.5 flex items-center gap-1">
+                  <button type="button" id="btnBlexIaVoice" onclick="toggleBlexIaVoiceDictation()" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition cursor-pointer" title="Dictar por voz">
+                    <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button type="button" id="btnBlexIaSend" onclick="sendBlexIaChatMessage()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black p-1.5 rounded-lg shadow transition cursor-pointer" title="Enviar mensaje">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
             </div>
+
           </div>
 
           <!-- 6-Step Progress Stepper (0 a 5) -->
@@ -4427,5 +4504,7 @@
     </div>
   </div>
 
+  <script src="ai-hooks-data.js?v=1789524500000"></script>
+  <script src="app.js?v=1789524500000"></script>
 </body>
 </html>

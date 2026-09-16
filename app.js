@@ -1255,6 +1255,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateIdeasHeaderBadge();
   setInterval(renderChallengeCountdown, 60000);
   initTeleprompterProEngine();
+  if (typeof initBlexIaChat === 'function') initBlexIaChat();
   
   // Matrix is the 1st foreground view
   switchView('matrix');
@@ -8433,6 +8434,7 @@ async function aiCallOllama(prompt, systemInstruction = '', temperature = 0.7) {
 }
 
 function initAiStudio() {
+  if (typeof initBlexIaChat === "function") initBlexIaChat();
   checkAiServerHealth();
   populateAiClientDropdowns();
   renderAiCatalog();
@@ -13788,5 +13790,502 @@ async function forceCleanSyncFromCloud() {
     } catch(e) {
       location.reload();
     }
+  }
+}
+
+// =============================================================================
+// BLEX IA CHAT ASSISTANT - ENGINE & INTERACTIVE CONVERSATIONAL AGENT
+// =============================================================================
+
+let blexIaState = {
+  messages: [
+    {
+      id: "msg-welcome",
+      sender: "blex",
+      text: "¡Hola! Soy **BLEX IA**, tu asistente integral de creación, guionaje y producción en BLEX Studio.\n\nPuedes hablarme libremente en lenguaje natural para pedirme:\n• 🎣 **Idear o mejorar ganchos e historias** para tus reels.\n• 📅 **Agendar rodajes o publicaciones** en el calendario (ej: *\"agenda rodaje el viernes a las 3pm\"*).\n• 📝 **Crear notas de producción** (ej: *\"anota recordar llevar trípode y camisa negra\"*).\n• 🪝 **Buscar en el catálogo de 64 ganchos virales**.\n• 🧠 **Consultar o actualizar el cerebro y ADN de marca**.\n\n¿En qué te ayudo ahora?",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actions: []
+    }
+  ],
+  isThinking: false,
+  isListeningVoice: false
+};
+
+let blexIaSpeechRecognition = null;
+
+function initBlexIaChat() {
+  renderBlexIaChat();
+}
+
+function renderBlexIaChat() {
+  const container = document.getElementById("blexIaChatMessages");
+  if (!container) return;
+
+  container.innerHTML = blexIaState.messages.map(msg => {
+    const isUser = msg.sender === "user";
+    const timeStr = msg.timestamp || "";
+    
+    // Format message text (markdown bold, lists, quotes)
+    let formattedText = escapeHtml(msg.text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="text-slate-200">$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="bg-slate-950 px-1 py-0.5 rounded text-amber-300 font-mono text-[11px]">$1</code>')
+      .replace(/^• (.*?)$/gm, '<div class="flex items-start gap-1.5 pl-1 my-0.5"><span class="text-amber-400 shrink-0">•</span><span>$1</span></div>')
+      .replace(/\n/g, '<br>');
+
+    // Render action pills / buttons if present
+    let actionButtonsHtml = "";
+    if (msg.actions && msg.actions.length > 0) {
+      actionButtonsHtml = '<div class="flex flex-wrap gap-1.5 pt-2 mt-2 border-t border-slate-800/80">' +
+        msg.actions.map(act => {
+          if (act.type === "transcriptor") {
+            return '<button type="button" onclick="insertBlexIaTextToTranscriptor(' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📥 Usar en Transcriptor</button>';
+          } else if (act.type === "step") {
+            const stepNames = { 1: "🎣 Gancho", 2: "📖 Historia", 3: "💡 Moraleja", 4: "📣 CTA" };
+            const stepLabel = stepNames[act.step] || ("Paso " + act.step);
+            return '<button type="button" onclick="applyBlexIaToWizardStep(' + act.step + ', ' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="sparkles" class="w-3 h-3"></i> ⚡ Aplicar a ' + stepLabel + '</button>';
+          } else if (act.type === "calendar_link") {
+            return '<button type="button" onclick="switchView(\'calendar\')" class="text-[10px] font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="calendar" class="w-3 h-3"></i> 📅 Ver en Calendario</button>';
+          } else if (act.type === "note_link") {
+            return '<button type="button" onclick="openNotesModal()" class="text-[10px] font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📝 Ver Notas</button>';
+          }
+          return "";
+        }).join("") +
+      "</div>";
+    }
+
+    if (isUser) {
+      return `
+        <div class="flex justify-end gap-2 items-end">
+          <div class="max-w-[85%] bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-2xl rounded-br-none p-3 shadow-md space-y-1">
+            <p class="leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.text)}</p>
+            <span class="block text-[9px] text-purple-200/80 text-right">${timeStr}</span>
+          </div>
+          <div class="w-6 h-6 rounded-full bg-slate-800 border border-purple-500/40 flex items-center justify-center text-[10px] text-purple-300 shrink-0 mb-0.5">
+            👤
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="flex justify-start gap-2 items-start">
+          <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-[11px] font-black shrink-0 mt-1 shadow-sm">
+            🦁
+          </div>
+          <div class="max-w-[90%] bg-slate-950/90 border border-slate-800 text-slate-200 rounded-2xl rounded-tl-none p-3 shadow-md space-y-1.5">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-900 pb-1">
+              <span class="font-bold text-[11px] text-amber-400">BLEX IA</span>
+              <span class="text-[9px] text-slate-500">${timeStr}</span>
+            </div>
+            <div class="leading-relaxed text-slate-300 font-normal">${formattedText}</div>
+            ${actionButtonsHtml}
+          </div>
+        </div>
+      `;
+    }
+  }).join("");
+
+  if (blexIaState.isThinking) {
+    container.innerHTML += `
+      <div class="flex justify-start gap-2 items-center">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-[11px] font-black shrink-0 shadow-sm animate-pulse">
+          🦁
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2 flex items-center gap-2 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span>BLEX IA procesando y ejecutando...</span>
+        </div>
+      </div>
+    `;
+  }
+
+  container.scrollTop = container.scrollHeight;
+  if (typeof lucide !== "undefined") { lucide.createIcons(); } else if (typeof window !== "undefined" && window.lucide) { window.lucide.createIcons(); }
+}
+
+function handleBlexIaKeydown(event) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendBlexIaChatMessage();
+  }
+}
+
+function sendBlexIaQuickPrompt(promptText) {
+  const input = document.getElementById("blexIaChatInput");
+  if (input) {
+    input.value = promptText;
+    sendBlexIaChatMessage(promptText);
+  }
+}
+
+async function sendBlexIaChatMessage(customPrompt = null) {
+  const input = document.getElementById("blexIaChatInput");
+  const userText = (customPrompt || (input ? input.value : "")).trim();
+
+  if (!userText || blexIaState.isThinking) return;
+
+  if (input && !customPrompt) {
+    input.value = "";
+  }
+
+  // Add User Message
+  blexIaState.messages.push({
+    id: "msg-" + Date.now(),
+    sender: "user",
+    text: userText,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  });
+
+  blexIaState.isThinking = true;
+  renderBlexIaChat();
+
+  // Gather live context
+  const todayCol = getColombiaTodayDateString();
+  const currentClient = (state.activeClient && state.activeClient !== "ALL") ? state.activeClient : (state.clients && state.clients[0] ? state.clients[0] : "Jennil");
+  const currentNiche = typeof getEffectiveNiche === "function" ? getEffectiveNiche() : "Finanzas, Riqueza & Crecimiento";
+  const currentTopic = document.getElementById("aiWizardInputTopic")?.value?.trim() || wizardState.topic || "";
+  const clientBrain = (typeof getActiveClientBrainData === "function") ? getActiveClientBrainData(currentClient) : null;
+  const recentEvents = (state.calendarEvents || []).slice(0, 5).map(e => `• ${e.date} (${e.type}): ${e.title} [${e.client}]`).join("\n");
+  const recentScripts = (state.scripts || []).slice(0, 3).map(s => `• #${s.number || "?"}: ${s.ideaGanadora} [${s.client}]`).join("\n");
+
+  // Build full system prompt
+  const systemPrompt = [
+    "Eres BLEX IA, el asistente director de contenido, guionista de élite y copiloto operativo de BLEX STUDIO para creación de reels virales en Instagram y TikTok.",
+    "",
+    "INFORMACIÓN EN TIEMPO REAL DEL SISTEMA:",
+    "- Fecha actual (Colombia): " + todayCol,
+    "- Cliente activo: " + currentClient,
+    "- Nicho seleccionado: " + currentNiche,
+    (currentTopic ? "- Idea/Transcripción actual en pantalla: \"" + currentTopic + "\"" : "- Idea/Transcripción actual: Ninguna aún."),
+    (clientBrain ? "- ADN de Marca / Tono configurado: \"" + (clientBrain.tone || "Directo y autoritario") + "\"" : ""),
+    (recentEvents ? "- Próximos eventos en calendario:\n" + recentEvents : ""),
+    (recentScripts ? "- Últimos guiones en matriz:\n" + recentScripts : ""),
+    "",
+    "CAPACIDADES Y COMANDOS DE ACCIÓN EN LA PLATAFORMA:",
+    "Tienes control total de la plataforma BLEX STUDIO. Cuando el usuario te pida ejecutar una acción, incluye una o más etiquetas de comando estructuradas al final de tu respuesta:",
+    "1. AGENDAR EN CALENDARIO: [ACCION_CALENDARIO: {\"title\": \"Título de la actividad\", \"date\": \"YYYY-MM-DD\", \"type\": \"RODAJE|PUBLICACION|CREACION\", \"client\": \"" + currentClient + "\", \"notes\": \"Detalles\"}]",
+    "2. CREAR NOTA: [ACCION_NOTA: {\"client\": \"" + currentClient + "\", \"text\": \"Contenido de la nota\"}]",
+    "3. ACTUALIZAR CEREBRO IA: [ACCION_CEREBRO: {\"client\": \"" + currentClient + "\", \"key\": \"tone|audience|keywords|notes\", \"value\": \"Texto nuevo\"}]",
+    "4. INSERTAR EN TRANSCRIPTOR / IDEA: [ACCION_TRANSCRIPTOR: {\"text\": \"Texto completo de la idea o transcripción\"}]",
+    "5. INSERTAR GANCHO (Paso 1): [ACCION_GANCHO: {\"text\": \"Texto del gancho magnético\"}]",
+    "6. INSERTAR HISTORIA (Paso 2): [ACCION_HISTORIA: {\"text\": \"Texto de la historia de 3 a 30 seg\"}]",
+    "7. INSERTAR MORALEJA (Paso 3): [ACCION_MORALEJA: {\"text\": \"Texto de la moraleja de 30 a 40 seg\"}]",
+    "8. INSERTAR CTA (Paso 4): [ACCION_CTA: {\"text\": \"Texto del CTA con palabra clave\"}]",
+    "",
+    "REGLAS DE RESPUESTA:",
+    "- Responde siempre en español, con tono seguro, profesional, enérgico y directo (estilo BLEX STUDIO).",
+    "- Si te piden ideas, ganchos o guiones, da opciones concretas y accionables aplicando la fórmula de los 64 ganchos virales.",
+    "- Si te piden agendar o anotar, confirma que lo has hecho y adjunta la etiqueta de acción correspondiente."
+  ].join("\n");
+
+  try {
+    const aiResponseRaw = await aiCallOllama(userText, systemPrompt, 0.7);
+    
+    // Parse actions
+    const detectedActions = [];
+    let cleanResponseText = aiResponseRaw || "";
+
+    // 1. Calendar Action
+    const calMatches = cleanResponseText.matchAll(/\[ACCION_CALENDARIO:\s*(\{.*?\})\]/gis);
+    for (const m of calMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.title && payload.date) {
+          executeBlexIaPlatformAction("CALENDAR", payload);
+          detectedActions.push({ type: "calendar_link", title: payload.title });
+        }
+      } catch(e) {}
+    }
+
+    // 2. Note Action
+    const noteMatches = cleanResponseText.matchAll(/\[ACCION_NOTA:\s*(\{.*?\})\]/gis);
+    for (const m of noteMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("NOTE", payload);
+          detectedActions.push({ type: "note_link" });
+        }
+      } catch(e) {}
+    }
+
+    // 3. Brain Action
+    const brainMatches = cleanResponseText.matchAll(/\[ACCION_CEREBRO:\s*(\{.*?\})\]/gis);
+    for (const m of brainMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.key && payload.value) {
+          executeBlexIaPlatformAction("BRAIN", payload);
+        }
+      } catch(e) {}
+    }
+
+    // 4. Transcriptor Action
+    const transMatches = cleanResponseText.matchAll(/\[ACCION_TRANSCRIPTOR:\s*(\{.*?\})\]/gis);
+    for (const m of transMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("TRANSCRIPTOR", payload);
+          detectedActions.push({ type: "transcriptor", text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // 5. Hook Action
+    const hookMatches = cleanResponseText.matchAll(/\[ACCION_GANCHO:\s*(\{.*?\})\]/gis);
+    for (const m of hookMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("STEP_HOOK", payload);
+          detectedActions.push({ type: "step", step: 1, text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // 6. Story Action
+    const storyMatches = cleanResponseText.matchAll(/\[ACCION_HISTORIA:\s*(\{.*?\})\]/gis);
+    for (const m of storyMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("STEP_STORY", payload);
+          detectedActions.push({ type: "step", step: 2, text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // 7. Moral Action
+    const moralMatches = cleanResponseText.matchAll(/\[ACCION_MORALEJA:\s*(\{.*?\})\]/gis);
+    for (const m of moralMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("STEP_MORAL", payload);
+          detectedActions.push({ type: "step", step: 3, text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // 8. CTA Action
+    const ctaMatches = cleanResponseText.matchAll(/\[ACCION_CTA:\s*(\{.*?\})\]/gis);
+    for (const m of ctaMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          executeBlexIaPlatformAction("STEP_CTA", payload);
+          detectedActions.push({ type: "step", step: 4, text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // Clean tags from visible text
+    cleanResponseText = cleanResponseText
+      .replace(/\[ACCION_[A-Z]+:\s*\{.*?\}\]/gis, "")
+      .trim();
+
+    if (!cleanResponseText) {
+      cleanResponseText = "¡Entendido! He procesado tu solicitud con éxito.";
+    }
+
+    blexIaState.messages.push({
+      id: "msg-" + Date.now(),
+      sender: "blex",
+      text: cleanResponseText,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actions: detectedActions
+    });
+
+  } catch(err) {
+    console.error("BLEX IA chat error:", err);
+    blexIaState.messages.push({
+      id: "msg-" + Date.now(),
+      sender: "blex",
+      text: "No pude conectar directamente con el modelo local en este momento. Recuerda que puedes interactuar paso a paso en el creador o agendar tus actividades directamente en los botones.",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actions: []
+    });
+  } finally {
+    blexIaState.isThinking = false;
+    renderBlexIaChat();
+  }
+}
+
+function executeBlexIaPlatformAction(type, data) {
+  const currentClient = data.client || state.activeClient || (state.clients && state.clients[0] ? state.clients[0] : "Jennil");
+
+  if (type === "CALENDAR") {
+    if (!state.calendarEvents) state.calendarEvents = [];
+    const newEvent = {
+      id: "cal-" + Date.now(),
+      client: currentClient,
+      type: data.type || "RODAJE",
+      title: data.title || "Actividad programada por BLEX IA",
+      date: data.date,
+      time: data.time || "15:00",
+      platform: data.platform || "Instagram",
+      status: "PROGRAMADO",
+      reminder: "exact",
+      notes: data.notes || "Agendado automáticamente por BLEX IA",
+      createdAt: new Date().toISOString()
+    };
+    state.calendarEvents.push(newEvent);
+    saveState();
+    if (typeof renderCalendarView === "function") renderCalendarView();
+    showToastNotification("📅 ¡Actividad \"" + newEvent.title + "\" agendada para el " + newEvent.date + "!", "check-circle");
+    if (typeof dispatchEmailNotification === "function") dispatchEmailNotification(newEvent);
+  } else if (type === "NOTE") {
+    if (!state.notes) state.notes = {};
+    if (!state.notes[currentClient]) state.notes[currentClient] = [];
+    
+    const newNote = {
+      id: "note-" + Date.now(),
+      title: data.title || (data.text.slice(0, 35) + "..."),
+      content: data.text,
+      client: currentClient,
+      date: new Date().toISOString()
+    };
+    state.notes[currentClient].push(newNote);
+    saveState();
+    showToastNotification("📝 Nota guardada para " + currentClient, "check-circle");
+  } else if (type === "BRAIN") {
+    if (!state.aiBrain) state.aiBrain = {};
+    if (!state.aiBrain[currentClient]) state.aiBrain[currentClient] = { ...DEFAULT_BRAIN_KNOWLEDGE, docs: [] };
+    if (data.key && data.value) {
+      state.aiBrain[currentClient][data.key] = data.value;
+      saveState();
+      showToastNotification("🧠 Cerebro de " + currentClient + " actualizado (" + data.key + ")", "check-circle");
+    }
+  } else if (type === "TRANSCRIPTOR") {
+    const input = document.getElementById("aiWizardInputTopic");
+    if (input && data.text) {
+      input.value = data.text;
+      wizardState.topic = data.text;
+    }
+  } else if (type === "STEP_HOOK") {
+    const input = document.getElementById("wizSelectedGancho");
+    const finalInput = document.getElementById("wizFinalHook");
+    if (input) input.value = data.text;
+    if (finalInput) finalInput.value = data.text;
+    wizardState.selectedHook = data.text;
+  } else if (type === "STEP_STORY") {
+    const input = document.getElementById("wizSelectedHistoria");
+    const finalInput = document.getElementById("wizFinalStory");
+    if (input) input.value = data.text;
+    if (finalInput) finalInput.value = data.text;
+    wizardState.selectedStory = data.text;
+  } else if (type === "STEP_MORAL") {
+    const input = document.getElementById("wizSelectedMoraleja");
+    const finalInput = document.getElementById("wizFinalMoral");
+    if (input) input.value = data.text;
+    if (finalInput) finalInput.value = data.text;
+    wizardState.selectedMoral = data.text;
+  } else if (type === "STEP_CTA") {
+    const input = document.getElementById("wizSelectedCTA");
+    const finalInput = document.getElementById("wizFinalCTA");
+    if (input) input.value = data.text;
+    if (finalInput) finalInput.value = data.text;
+    wizardState.selectedCTA = data.text;
+  }
+}
+
+function insertBlexIaTextToTranscriptor(text) {
+  const input = document.getElementById("aiWizardInputTopic");
+  if (input) {
+    input.value = text;
+    wizardState.topic = text;
+    showToastNotification("📥 Texto insertado en el transcriptor / idea", "check-circle");
+    input.focus();
+  }
+}
+
+function applyBlexIaToWizardStep(stepNum, text) {
+  goToWizardStep(stepNum);
+  if (stepNum === 1) {
+    const input = document.getElementById("wizSelectedGancho");
+    if (input) input.value = text;
+    wizardState.selectedHook = text;
+  } else if (stepNum === 2) {
+    const input = document.getElementById("wizSelectedHistoria");
+    if (input) input.value = text;
+    wizardState.selectedStory = text;
+  } else if (stepNum === 3) {
+    const input = document.getElementById("wizSelectedMoraleja");
+    if (input) input.value = text;
+    wizardState.selectedMoral = text;
+  } else if (stepNum === 4) {
+    const input = document.getElementById("wizSelectedCTA");
+    if (input) input.value = text;
+    wizardState.selectedCTA = text;
+  }
+  showToastNotification("⚡ Aplicado al Paso " + stepNum, "check-circle");
+}
+
+function clearBlexIaChat() {
+  blexIaState.messages = [
+    {
+      id: "msg-welcome",
+      sender: "blex",
+      text: "¡Conversación reiniciada! Soy **BLEX IA**. ¿En qué puedo ayudarte ahora?",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actions: []
+    }
+  ];
+  renderBlexIaChat();
+}
+
+function toggleBlexIaVoiceDictation() {
+  const btn = document.getElementById("btnBlexIaVoice");
+  const input = document.getElementById("blexIaChatInput");
+
+  if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+    alert("Tu navegador no soporta reconocimiento de voz por micrófono.");
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (blexIaState.isListeningVoice && blexIaSpeechRecognition) {
+    blexIaSpeechRecognition.stop();
+    blexIaState.isListeningVoice = false;
+    if (btn) btn.className = "p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition cursor-pointer";
+    return;
+  }
+
+  try {
+    blexIaSpeechRecognition = new SpeechRecognition();
+    blexIaSpeechRecognition.lang = "es-CO";
+    blexIaSpeechRecognition.continuous = false;
+    blexIaSpeechRecognition.interimResults = false;
+
+    blexIaSpeechRecognition.onstart = () => {
+      blexIaState.isListeningVoice = true;
+      if (btn) btn.className = "p-1.5 text-rose-400 bg-rose-950/60 border border-rose-500/40 rounded-lg transition animate-pulse cursor-pointer";
+      if (input) input.placeholder = "🎙️ Escuchando tu voz...";
+    };
+
+    blexIaSpeechRecognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      if (input && transcript) {
+        input.value = (input.value ? input.value + " " : "") + transcript;
+      }
+    };
+
+    blexIaSpeechRecognition.onerror = () => {
+      blexIaState.isListeningVoice = false;
+      if (btn) btn.className = "p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition cursor-pointer";
+      if (input) input.placeholder = "Escribe a BLEX IA (ej: 'anota rodaje el viernes', 'dame un gancho')...";
+    };
+
+    blexIaSpeechRecognition.onend = () => {
+      blexIaState.isListeningVoice = false;
+      if (btn) btn.className = "p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition cursor-pointer";
+      if (input) input.placeholder = "Escribe a BLEX IA (ej: 'anota rodaje el viernes', 'dame un gancho')...";
+    };
+
+    blexIaSpeechRecognition.start();
+  } catch(err) {
+    console.warn("Voice dictation error:", err);
   }
 }
