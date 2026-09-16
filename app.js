@@ -2977,6 +2977,7 @@ function updateSyncModalDetails() {
 function openSyncModal() {
   const modal = document.getElementById('syncModal');
   if (modal) modal.classList.remove('hidden');
+  loadCloudSnapshotsList();
   const codeInput = document.getElementById('syncPersonalCodeInput');
   if (codeInput) {
     codeInput.value = localStorage.getItem('blex_cloud_sync_code') || '';
@@ -14726,4 +14727,150 @@ function setupAssistantDragListeners() {
   window.addEventListener('mouseup', onPointerUp);
   window.addEventListener('touchend', onPointerUp);
   window.addEventListener('resize', () => applyAssistantPanelsSplit(assistantSplitState.ratio));
+}
+
+
+// =============================================================================
+// CLOUD SNAPSHOTS & 20-VERSION CLOUD HISTORY MANAGEMENT
+// =============================================================================
+
+async function loadCloudSnapshotsList() {
+  const container = document.getElementById('cloudSnapshotsList');
+  if (!container) return;
+
+  container.innerHTML = '<div class="p-4 text-center text-slate-400"><i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto text-purple-400 mb-1"></i><span>Consultando historial en la nube...</span></div>';
+  if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+
+  try {
+    const baseUrl = getEffectiveServerUrl();
+    const syncCode = localStorage.getItem('blex_cloud_sync_code');
+    const endpoint = baseUrl + '/api/sync?action=get_snapshots' + (syncCode ? '&channel=' + encodeURIComponent(syncCode) : '');
+    
+    const res = await fetch(endpoint);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    
+    let snapshots = json.snapshots || [];
+    
+    // Fallback to local snapshots if empty
+    if (snapshots.length === 0 && state.snapshots && state.snapshots.length > 0) {
+      snapshots = state.snapshots;
+    }
+
+    if (snapshots.length === 0) {
+      container.innerHTML = '<div class="p-4 text-center text-slate-500 bg-slate-950/60 rounded-xl border border-slate-800"><i data-lucide="archive" class="w-6 h-6 mx-auto text-slate-600 mb-1"></i><p class="text-xs">No hay versiones previas guardadas aún. Haz clic en <b>💾 Crear Respaldo Ahora</b> para registrar el primer punto.</p></div>';
+      if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+      return;
+    }
+
+    container.innerHTML = snapshots.map((snap, idx) => {
+      const isLatest = idx === 0;
+      const snapDate = snap.dateFormatted || new Date(snap.timestamp).toLocaleString('es-CO');
+      const scriptsCount = snap.scriptsCount ?? (snap.scriptsPreview ? snap.scriptsPreview.length : (snap.data?.scripts ? snap.data.scripts.length : 0));
+      const previewList = (snap.scriptsPreview || (snap.data?.scripts || []).map(s => ({ number: s.number, title: s.ideaGanadora || s.title }))).slice(0, 3);
+      
+      const previewHtml = previewList.map(s => `<span class="inline-block bg-slate-900 border border-slate-800 text-[10px] text-slate-300 px-1.5 py-0.5 rounded mr-1 mb-1">#${s.number} ${escapeHtml(s.title || '').slice(0, 30)}...</span>`).join('');
+
+      return `
+        <div class="bg-slate-950 border ${isLatest ? 'border-purple-500/50 shadow-md shadow-purple-950/40 ring-1 ring-purple-500/30' : 'border-slate-800 hover:border-slate-700'} p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition">
+          <div class="space-y-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-black text-white flex items-center gap-1">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>${snapDate}</span>
+              </span>
+              ${isLatest ? '<span class="text-[9px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">Más Reciente</span>' : ''}
+              <span class="text-[9px] font-semibold text-amber-300 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.2 rounded-full">${scriptsCount} Guiones</span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-medium truncate">${escapeHtml(snap.trigger || 'Copia de seguridad')}</div>
+            <div class="pt-1">${previewHtml}</div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" onclick="restoreCloudSnapshot('${snap.id}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95" title="Restaurar toda la información exacta a este momento">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+              <span>Restaurar</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (typeof refreshLucideIcons === 'function') refreshLucideIcons();
+
+  } catch (err) {
+    console.warn('loadCloudSnapshotsList error:', err);
+    container.innerHTML = '<div class="p-3 text-center text-rose-400 text-xs bg-rose-950/30 rounded-xl border border-rose-800/40">No se pudo consultar el historial en la nube. Puedes crear una copia ahora con el botón superior.</div>';
+  }
+}
+
+async function createManualCloudSnapshot() {
+  showToastNotification('💾 Creando punto de respaldo en la nube...', 'loader-2');
+  try {
+    const payload = JSON.parse(getFullAppStateJSON());
+    payload.updatedAt = new Date().toISOString();
+    payload.snapshotTrigger = "Punto de Respaldo Creado Manualmente";
+    payload.forceOverwriteFile = true;
+
+    const baseUrl = getEffectiveServerUrl();
+    const syncCode = localStorage.getItem('blex_cloud_sync_code');
+    const endpoint = baseUrl + '/api/sync' + (syncCode ? '?channel=' + encodeURIComponent(syncCode) : '');
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) {
+        applyCloudData(json.data, null, false);
+      }
+      showToastNotification('✅ ¡Punto de respaldo guardado en la nube con éxito! (' + payload.scripts.length + ' guiones)', 'check-circle');
+      loadCloudSnapshotsList();
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch (e) {
+    console.error('createManualCloudSnapshot error:', e);
+    showToastNotification('⚠️ Error al crear respaldo: ' + e.message, 'alert-circle');
+  }
+}
+
+async function restoreCloudSnapshot(snapshotId) {
+  if (!confirm('¿Deseas restaurar la información a esta versión? Se recuperarán los guiones y datos exactos de ese momento.')) {
+    return;
+  }
+
+  showToastNotification('🔄 Restaurando versión seleccionada...', 'loader-2');
+
+  try {
+    const baseUrl = getEffectiveServerUrl();
+    const syncCode = localStorage.getItem('blex_cloud_sync_code');
+    const endpoint = baseUrl + '/api/sync' + (syncCode ? '?channel=' + encodeURIComponent(syncCode) : '');
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'restore_snapshot', snapshotId })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) {
+        applyCloudData(json.data, null, false);
+        saveState();
+        if (typeof renderMatrix === 'function') renderMatrix();
+        if (typeof renderDashboardStats === 'function') renderDashboardStats();
+        if (typeof renderCalendarView === 'function') renderCalendarView();
+        showToastNotification('🎉 ¡Versión restaurada con éxito! (' + (json.data.scripts || []).length + ' guiones recuperados)', 'check-circle');
+        loadCloudSnapshotsList();
+      }
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch (err) {
+    console.error('restoreCloudSnapshot error:', err);
+    showToastNotification('⚠️ Error al restaurar versión: ' + err.message, 'alert-circle');
+  }
 }
