@@ -13804,7 +13804,7 @@ let blexIaState = {
     {
       id: "msg-welcome",
       sender: "blex",
-      text: "¡Hola! Soy **BLEX IA**, tu asistente director de contenido y producción en BLEX Studio.\n\nPuedo escribir directamente en las casillas de los pasos de tu reel y gestionar tu plataforma:\n• 💡 **Crear idea y 5 ganchos**: Pídeme *\"crea una idea sobre ganar dinero y pon los 5 ganchos en el paso 1\"* y escribiré en las casillas y tarjetas.\n• 📖 **Redactar historia, moraleja y CTA**: Escribiré directamente en los pasos 2, 3 y 4.\n• 📅 **Agendar rodajes**: Escribe *\"agenda rodaje el viernes a las 3pm\"*.\n• 📝 **Crear notas**: Escribe *\"crea una nota con las tomas de apoyo\"*.\n• 🪝 **Consultar los 64 ganchos virales** y ADN de marca.\n\n¿Qué reel o idea empezamos a estructurar?",
+      text: "¡Hola! Soy **BLEX IA**, tu asistente director de contenido y producción en BLEX Studio.\n\nPuedo escribir directamente en las casillas y tarjetas de los pasos de tu reel:\n• 🧠 **Estrategia & Diagnóstico (Paso 0)**: Pídeme *\"crea la estrategia sobre ganar dinero con trading\"* y estructuraré el enfoque maestro.\n• 🎣 **5 Ganchos Virales (Paso 1)**: Escribiré los 5 ganchos en las tarjetas A, B, C, D, E.\n• 📖 **5 Historias (Paso 2)**: Escribiré 5 desarrollos dinámicos.\n• 💡 **5 Moralejas (Paso 3)**: Escribiré 5 lecciones de alto valor.\n• 📣 **5 CTAs de Alta Conversión (Paso 4)**: Escribiré los 5 llamados a la acción.\n• 📅 **Agendar Rodajes & Notas**: Puedo programar tu calendario o guardar notas.\n\n¿Qué reel o estrategia empezamos a estructurar?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       actions: []
     }
@@ -13827,7 +13827,7 @@ function renderBlexIaChat() {
     const isUser = msg.sender === "user";
     const timeStr = msg.timestamp || "";
     
-    // Format message text (markdown bold, lists, quotes)
+    // Format message text (markdown bold, lists, quotes, code)
     let formattedText = escapeHtml(msg.text)
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="text-slate-200">$1</em>')
@@ -13841,9 +13841,9 @@ function renderBlexIaChat() {
       actionButtonsHtml = '<div class="flex flex-wrap gap-1.5 pt-2 mt-2 border-t border-slate-800/80">' +
         msg.actions.map(act => {
           if (act.type === "transcriptor") {
-            return '<button type="button" onclick="insertBlexIaTextToTranscriptor(' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📥 En Transcriptor</button>';
+            return '<button type="button" onclick="insertBlexIaTextToTranscriptor(' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i> 💡 Ver Idea Ganadora</button>';
           } else if (act.type === "step") {
-            const stepNames = { 0: "Paso 0: Estrategia", 1: "Paso 1: Gancho", 2: "Paso 2: Historia", 3: "Paso 3: Moraleja", 4: "Paso 4: CTA", 5: "Paso 5: Final" };
+            const stepNames = { 0: "Paso 0: Estrategia", 1: "Paso 1: Gancho", 2: "Paso 2: Historia", 3: "Paso 3: Moraleja", 4: "Paso 4: CTA", 5: "Paso 5: Final", 6: "Paso 6: Espacio" };
             const stepLabel = stepNames[act.step] || ("Paso " + act.step);
             return '<button type="button" onclick="goToWizardStep(' + act.step + ')" class="text-[10px] font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="eye" class="w-3 h-3"></i> ⚡ Ver ' + stepLabel + '</button>';
           } else if (act.type === "calendar_link") {
@@ -13894,7 +13894,7 @@ function renderBlexIaChat() {
         ${BLEX_LION_AVATAR_HTML}
         <div class="bg-slate-950 border border-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2 flex items-center gap-2 text-xs text-slate-400">
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-          <span>BLEX IA escribiendo en los pasos y procesando...</span>
+          <span>BLEX IA estructurando los 5 elementos y escribiendo en las casillas...</span>
         </div>
       </div>
     `;
@@ -13940,64 +13940,96 @@ async function sendBlexIaChatMessage(customPrompt = null) {
   blexIaState.isThinking = true;
   renderBlexIaChat();
 
+  // Determine explicit target step intent from user query
+  const lowerUser = userText.toLowerCase();
+  let explicitTargetStep = null;
+  if (lowerUser.includes('estrategia') || lowerUser.includes('paso 0') || lowerUser.includes('diagnostico') || lowerUser.includes('enfoque') || lowerUser.includes('overview') || lowerUser.includes('opciones de la estrategia')) {
+    explicitTargetStep = 0;
+  } else if (lowerUser.includes('gancho') || lowerUser.includes('ganchos') || lowerUser.includes('paso 1') || lowerUser.includes('hook')) {
+    explicitTargetStep = 1;
+  } else if (lowerUser.includes('historia') || lowerUser.includes('historias') || lowerUser.includes('paso 2') || lowerUser.includes('contexto')) {
+    explicitTargetStep = 2;
+  } else if (lowerUser.includes('moraleja') || lowerUser.includes('moralejas') || lowerUser.includes('paso 3') || lowerUser.includes('leccion') || lowerUser.includes('valor')) {
+    explicitTargetStep = 3;
+  } else if (lowerUser.includes('cta') || lowerUser.includes('ctas') || lowerUser.includes('paso 4') || lowerUser.includes('llamado') || lowerUser.includes('llamados') || lowerUser.includes('conversion')) {
+    explicitTargetStep = 4;
+  } else if (lowerUser.includes('final') || lowerUser.includes('paso 5') || lowerUser.includes('ensamblaje')) {
+    explicitTargetStep = 5;
+  }
+
   // Gather live context
   const todayCol = getColombiaTodayDateString();
   const currentClient = (state.activeClient && state.activeClient !== "ALL") ? state.activeClient : (state.clients && state.clients[0] ? state.clients[0] : "Jennil");
   const currentNiche = typeof getEffectiveNiche === "function" ? getEffectiveNiche() : "Finanzas, Riqueza & Crecimiento";
   const currentTopic = document.getElementById("aiWizardInputTopic")?.value?.trim() || wizardState.topic || "";
   const clientBrain = (typeof getActiveClientBrainData === "function") ? getActiveClientBrainData(currentClient) : null;
-  const recentEvents = (state.calendarEvents || []).slice(0, 5).map(e => `• ${e.date} (${e.type}): ${e.title} [${e.client}]`).join("\n");
 
   // Build high-context system prompt instructing BLEX IA to directly populate step inputs
   const systemPrompt = [
-    "Eres BLEX IA, el asistente director de contenido y guionista principal de BLEX STUDIO. Tu misión no es solo charlar, sino CONTROLAR Y ESCRIBIR DIRECTAMENTE en los pasos del estudio de creación de Reels para el creador '" + currentClient + "'.",
+    "Eres BLEX IA, el asistente director de contenido y guionista principal de BLEX STUDIO. Tu misión es CONTROLAR Y ESCRIBIR DIRECTAMENTE en los pasos del estudio de creación de Reels para el creador '" + currentClient + "'.",
     "",
-    "ESTRUCTURA DE LOS PASOS DEL ESTUDIO:",
-    "- Transcripción / Idea Principal: Casilla superior de idea central.",
-    "- Paso 0: Estrategia & Diagnóstico (overview y howToFlip)",
-    "- Paso 1: Ganchos (5 ganchos virales de 0-3s de alta retención)",
-    "- Paso 2: Historia / Contexto (5 historias de 3-30s sin relleno)",
-    "- Paso 3: Moraleja / Valor (5 enseñanzas contundentes de 30-40s)",
-    "- Paso 4: CTA / Conversión (5 llamados a la acción de 40-50s)",
-    "- Paso 5: Ensamblaje Final del Reel",
+    "SESIONES Y PASOS DISPONIBLES EN LA PLATAFORMA:",
+    "- IDEA GANADORA (Transcripción / Idea Clave): Casilla superior donde se define la idea central.",
+    "- Paso 0: Diagnóstico & Estrategia de Impacto (overview y howToFlip - guía maestra de enfoque).",
+    "- Paso 1: Ganchos Virales (SIEMPRE 5 ganchos virales de 0-3s en tarjetas A, B, C, D, E).",
+    "- Paso 2: Historias / Contexto (SIEMPRE 5 historias ágiles de 3-30s en tarjetas A, B, C, D, E).",
+    "- Paso 3: Moralejas / Valor (SIEMPRE 5 enseñanzas contundentes de 30-40s en tarjetas A, B, C, D, E).",
+    "- Paso 4: CTAs / Conversión (SIEMPRE 5 llamados a la acción de 40-50s en tarjetas A, B, C, D, E).",
+    "- Paso 5: Ensamblaje Final del Reel.",
     "",
-    "COMANDOS DE ESCRITURA DIRECTA EN LAS CASILLAS (OBLIGATORIOS):",
-    "Cuando el usuario te pida crear una idea, ganchos, historias, moralejas, CTAs o guiones, debes incluir las siguientes etiquetas de acción estructuradas para que el sistema escriba inmediatamente en las casillas y cree las tarjetas visuales interactivas:",
+    "COMANDOS DE ACCIÓN ESTRUCTURADOS (OBLIGATORIO EMITIR EN TU RESPUESTA):",
+    "Cuando el usuario te pida crear algo para un paso, incluye las etiquetas estructuradas correspondientes:",
     "",
-    "1. ESCRIBIR IDEA EN EL TRANSCRIPTOR:",
-    "[ACCION_TRANSCRIPTOR: {\"text\": \"Idea clara y potente sobre el tema\"}]",
+    "1. IDEA GANADORA:",
+    "[ACCION_IDEA_GANADORA: {\"text\": \"Idea clara y potente sobre el tema central\"}]",
     "",
-    "2. ESCRIBIR 5 GANCHOS EN EL PASO 1:",
+    "2. PASO 0 - ESTRATEGIA (SIEMPRE que pidan estrategia o paso 0):",
+    "[ACCION_PASO0_ESTRATEGIA: {",
+    "  \"overview\": \"Diagnóstico estratégico del tema: por qué funciona, qué errores comete la audiencia y cuál es la oportunidad.\",",
+    "  \"howToFlip\": \"Estrategia de Impacto & Diferenciación: Enfoque contraintuitivo y directo para dominar el tema en el nicho.\",",
+    "  \"intent\": \"Mensaje principal a transmitir\"",
+    "}]",
+    "",
+    "3. PASO 1 - GANCHOS (SIEMPRE EXACTAMENTE 5 OPCIONES A, B, C, D, E):",
     "[ACCION_PASO1_GANCHOS: [",
-    "  {\"formula\": \"Fórmula 1\", \"hook\": \"Gancho 1 magnético (0-3s)\", \"reason\": \"Por qué retiene\"},",
-    "  {\"formula\": \"Fórmula 2\", \"hook\": \"Gancho 2 contraintuitivo\", \"reason\": \"Por qué retiene\"},",
-    "  {\"formula\": \"Fórmula 3\", \"hook\": \"Gancho 3 pregunta de shock\", \"reason\": \"Por qué retiene\"},",
-    "  {\"formula\": \"Fórmula 4\", \"hook\": \"Gancho 4 error común\", \"reason\": \"Por qué retiene\"},",
-    "  {\"formula\": \"Fórmula 5\", \"hook\": \"Gancho 5 regla del 1%\", \"reason\": \"Por qué retiene\"}",
+    "  {\"formula\": \"Fórmula 1 - Pregunta de Shock\", \"hook\": \"Gancho 1 magnético (0-3s)\", \"reason\": \"Detiene el scroll al instante\"},",
+    "  {\"formula\": \"Fórmula 2 - Contraintuitivo\", \"hook\": \"Gancho 2 que rompe paradigmas\", \"reason\": \"Genera curiosidad extrema\"},",
+    "  {\"formula\": \"Fórmula 3 - Error Común\", \"hook\": \"Gancho 3 sobre el error más grave\", \"reason\": \"Identificación con dolor\"},",
+    "  {\"formula\": \"Fórmula 4 - Secreto del 1%\", \"hook\": \"Gancho 4 revelación exclusiva\", \"reason\": \"Deseo de estatus\"},",
+    "  {\"formula\": \"Fórmula 5 - Advertencia Urgente\", \"hook\": \"Gancho 5 llamada de alerta\", \"reason\": \"Miedo a perderse algo (FOMO)\"}",
     "]]",
     "",
-    "3. ESCRIBIR 5 HISTORIAS EN EL PASO 2:",
+    "4. PASO 2 - HISTORIAS (SIEMPRE EXACTAMENTE 5 OPCIONES A, B, C, D, E):",
     "[ACCION_PASO2_HISTORIAS: [",
-    "  {\"type\": \"Desarrollo Ágil\", \"story\": \"Historia completa de 40-60 palabras...\", \"focus\": \"Retención\"},",
-    "  {\"type\": \"Contraste Directo\", \"story\": \"Historia alternativa...\", \"focus\": \"Valor\"}",
+    "  {\"angle\": \"Desarrollo Directo\", \"story\": \"Historia 1 ágil de 40-60 palabras sin rodeos...\", \"highlight\": \"Alta retención\"},",
+    "  {\"angle\": \"Contraste de Caso\", \"story\": \"Historia 2 mostrando el antes y después...\", \"highlight\": \"Claridad visual\"},",
+    "  {\"angle\": \"Metáfora Cotidiana\", \"story\": \"Historia 3 usando analogía impactante...\", \"highlight\": \"Fácil comprensión\"},",
+    "  {\"angle\": \"Demostración Paso a Paso\", \"story\": \"Historia 4 con desglose de 3 pasos...\", \"highlight\": \"Accionable\"},",
+    "  {\"angle\": \"Revelación de Verdad Incómoda\", \"story\": \"Historia 5 desmintiendo la mentira típica...\", \"highlight\": \"Autoridad\"}",
     "]]",
     "",
-    "4. ESCRIBIR 5 MORALEJAS EN EL PASO 3:",
+    "5. PASO 3 - MORALEJAS (SIEMPRE EXACTAMENTE 5 OPCIONES A, B, C, D, E):",
     "[ACCION_PASO3_MORALEJAS: [",
-    "  {\"type\": \"Regla de Oro\", \"moral\": \"Frase memorable de 15-25 palabras...\", \"takeaway\": \"Insight\"},",
-    "  {\"type\": \"Principio Maestro\", \"moral\": \"Frase alternativa...\", \"takeaway\": \"Acción\"}",
+    "  {\"type\": \"Regla de Oro\", \"moral\": \"Enseñanza 1 contundente y memorable...\", \"takeaway\": \"Principio maestro\"},",
+    "  {\"type\": \"Insight Contraintuitivo\", \"moral\": \"Enseñanza 2 que cambia la perspectiva...\", \"takeaway\": \"Transformación mental\"},",
+    "  {\"type\": \"Ley Inmutable\", \"moral\": \"Enseñanza 3 sobre disciplina y activos...\", \"takeaway\": \"Fundamento sólido\"},",
+    "  {\"type\": \"Fórmula de Ejecución\", \"moral\": \"Enseñanza 4 sobre velocidad de implementación...\", \"takeaway\": \"Acción pura\"},",
+    "  {\"type\": \"Criterio de Victoria\", \"moral\": \"Enseñanza 5 para no rendirse jamás...\", \"takeaway\": \"Mentalidad ganadora\"}",
     "]]",
     "",
-    "5. ESCRIBIR 5 CTAs EN EL PASO 4:",
+    "6. PASO 4 - CTAs (SIEMPRE EXACTAMENTE 5 OPCIONES A, B, C, D, E):",
     "[ACCION_PASO4_CTAS: [",
-    "  {\"action\": \"Comentario Palabra Clave\", \"cta\": \"Comenta DINERO y te envío...\", \"triggerWord\": \"DINERO\"},",
-    "  {\"action\": \"Guardar Video\", \"cta\": \"Guarda este reel para...\", \"triggerWord\": \"GUARDAR\"}",
+    "  {\"action\": \"Comentario Palabra Clave\", \"cta\": \"Comenta TRADING y te envío la guía completa por privado.\", \"triggerWord\": \"TRADING\"},",
+    "  {\"action\": \"Guardar Video\", \"cta\": \"Guarda este reel para no cometer estos errores en tu próxima operativa.\", \"triggerWord\": \"GUARDAR\"},",
+    "  {\"action\": \"Compartir con Colega\", \"cta\": \"Envía este video a ese amigo que necesita ver esto hoy mismo.\", \"triggerWord\": \"COMPARTIR\"},",
+    "  {\"action\": \"Mensaje Directo\", \"cta\": \"Escríbeme la palabra PLAN al DM para analizar tu caso.\", \"triggerWord\": \"PLAN\"},",
+    "  {\"action\": \"Seguir para Más Valor\", \"cta\": \"Sígueme para dominar el juego del dinero sin falsas promesas.\", \"triggerWord\": \"SEGUIR\"}",
     "]]",
     "",
-    "6. AGENDAR EN CALENDARIO:",
-    "[ACCION_CALENDARIO: {\"title\": \"Rodaje de 3 Reels\", \"date\": \"YYYY-MM-DD\", \"type\": \"RODAJE\", \"client\": \"" + currentClient + "\"}]",
+    "7. AGENDAR CALENDARIO:",
+    "[ACCION_CALENDARIO: {\"title\": \"Rodaje de Reels\", \"date\": \"YYYY-MM-DD\", \"type\": \"RODAJE\", \"client\": \"" + currentClient + "\"}]",
     "",
-    "7. CREAR NOTA:",
+    "8. CREAR NOTA:",
     "[ACCION_NOTA: {\"client\": \"" + currentClient + "\", \"text\": \"Texto de la nota\"}]",
     "",
     "CONTEXTO ACTUAL:",
@@ -14005,10 +14037,12 @@ async function sendBlexIaChatMessage(customPrompt = null) {
     "- Creador: " + currentClient,
     "- Nicho: " + currentNiche,
     (currentTopic ? "- Idea actual en pantalla: \"" + currentTopic + "\"" : ""),
-    (clientBrain ? "- Tono: \"" + (clientBrain.tone || "Directo y autoritario") + "\"" : ""),
+    (clientBrain ? "- Tono: \"" + (clientBrain.tone || "Directo, autoritario y de alto valor") + "\"" : ""),
     "",
-    "REGLAS:",
-    "Responde siempre en español, de forma concisa, confirmando que has escrito la idea y los ganchos directamente en las casillas y tarjetas de los pasos."
+    "REGLA CRÍTICA:",
+    "- Si el usuario pide ESTRATEGIA (Paso 0), genera [ACCION_IDEA_GANADORA] y [ACCION_PASO0_ESTRATEGIA].",
+    "- Si el usuario pide GANCHOS (Paso 1), genera los 5 ganchos en [ACCION_PASO1_GANCHOS].",
+    "- Responde siempre en español, de forma ejecutiva, confirmando que las casillas y tarjetas han sido llenadas."
   ].join("\n");
 
   try {
@@ -14016,67 +14050,83 @@ async function sendBlexIaChatMessage(customPrompt = null) {
     const detectedActions = [];
     let cleanResponseText = aiResponseRaw || "";
 
-    // 1. Check for Step 1 Hooks Array Action
+    // Extract extracted topic if present
+    let extractedTopic = "";
+
+    // 1. Check for Idea Ganadora / Transcriptor Action
+    const ideaMatches = cleanResponseText.matchAll(/\[(?:ACCION_IDEA_GANADORA|ACCION_TRANSCRIPTOR):\s*(\{.*?\})\]/gis);
+    for (const m of ideaMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.text) {
+          extractedTopic = payload.text;
+          insertBlexIaTextToTranscriptor(payload.text);
+          detectedActions.push({ type: "transcriptor", text: payload.text });
+        }
+      } catch(e) {}
+    }
+
+    // 2. Check for Step 0 Strategy Action
+    const stratMatch = cleanResponseText.match(/\[ACCION_PASO0_ESTRATEGIA:\s*(\{.*?\})\]/is);
+    if (stratMatch) {
+      try {
+        const stratPayload = JSON.parse(stratMatch[1]);
+        if (stratPayload && (stratPayload.howToFlip || stratPayload.overview)) {
+          executeBlexIaStepAction('STRATEGY', stratPayload, extractedTopic || currentTopic);
+          detectedActions.push({ type: 'step', step: 0 });
+        }
+      } catch(e) {}
+    }
+
+    // 3. Check for Step 1 Hooks Array Action
     const hooksMatch = cleanResponseText.match(/\[ACCION_PASO1_GANCHOS:\s*(\[.*?\])\]/is);
     if (hooksMatch) {
       try {
         const hooksArray = JSON.parse(hooksMatch[1]);
         if (Array.isArray(hooksArray) && hooksArray.length > 0) {
-          executeBlexIaStepAction('HOOKS', hooksArray);
+          executeBlexIaStepAction('HOOKS', hooksArray, extractedTopic || currentTopic);
           detectedActions.push({ type: 'step', step: 1 });
         }
       } catch(e) {}
     }
 
-    // 2. Check for Step 2 Stories Array Action
+    // 4. Check for Step 2 Stories Array Action
     const storiesMatch = cleanResponseText.match(/\[ACCION_PASO2_HISTORIAS:\s*(\[.*?\])\]/is);
     if (storiesMatch) {
       try {
         const storiesArray = JSON.parse(storiesMatch[1]);
         if (Array.isArray(storiesArray) && storiesArray.length > 0) {
-          executeBlexIaStepAction('STORIES', storiesArray);
+          executeBlexIaStepAction('STORIES', storiesArray, extractedTopic || currentTopic);
           detectedActions.push({ type: 'step', step: 2 });
         }
       } catch(e) {}
     }
 
-    // 3. Check for Step 3 Morals Array Action
+    // 5. Check for Step 3 Morals Array Action
     const moralsMatch = cleanResponseText.match(/\[ACCION_PASO3_MORALEJAS:\s*(\[.*?\])\]/is);
     if (moralsMatch) {
       try {
         const moralsArray = JSON.parse(moralsMatch[1]);
         if (Array.isArray(moralsArray) && moralsArray.length > 0) {
-          executeBlexIaStepAction('MORALS', moralsArray);
+          executeBlexIaStepAction('MORALS', moralsArray, extractedTopic || currentTopic);
           detectedActions.push({ type: 'step', step: 3 });
         }
       } catch(e) {}
     }
 
-    // 4. Check for Step 4 CTAs Array Action
+    // 6. Check for Step 4 CTAs Array Action
     const ctasMatch = cleanResponseText.match(/\[ACCION_PASO4_CTAS:\s*(\[.*?\])\]/is);
     if (ctasMatch) {
       try {
         const ctasArray = JSON.parse(ctasMatch[1]);
         if (Array.isArray(ctasArray) && ctasArray.length > 0) {
-          executeBlexIaStepAction('CTAS', ctasArray);
+          executeBlexIaStepAction('CTAS', ctasArray, extractedTopic || currentTopic);
           detectedActions.push({ type: 'step', step: 4 });
         }
       } catch(e) {}
     }
 
-    // 5. Transcriptor Action
-    const transMatches = cleanResponseText.matchAll(/\[ACCION_TRANSCRIPTOR:\s*(\{.*?\})\]/gis);
-    for (const m of transMatches) {
-      try {
-        const payload = JSON.parse(m[1]);
-        if (payload.text) {
-          insertBlexIaTextToTranscriptor(payload.text);
-          detectedActions.push({ type: 'transcriptor', text: payload.text });
-        }
-      } catch(e) {}
-    }
-
-    // 6. Calendar Action
+    // 7. Calendar Action
     const calMatches = cleanResponseText.matchAll(/\[ACCION_CALENDARIO:\s*(\{.*?\})\]/gis);
     for (const m of calMatches) {
       try {
@@ -14088,7 +14138,7 @@ async function sendBlexIaChatMessage(customPrompt = null) {
       } catch(e) {}
     }
 
-    // 7. Note Action
+    // 8. Note Action
     const noteMatches = cleanResponseText.matchAll(/\[ACCION_NOTA:\s*(\{.*?\})\]/gis);
     for (const m of noteMatches) {
       try {
@@ -14101,29 +14151,25 @@ async function sendBlexIaChatMessage(customPrompt = null) {
     }
 
     // CLIENT-SIDE DETERMINISTIC EXTRACTION FALLBACK
-    // If the user asked for ideas/ganchos but Ollama replied in natural text without JSON tags, parse text automatically!
-    const lowerUser = userText.toLowerCase();
-    
-    // Auto-extract Idea into Transcriptor if requested
-    if ((lowerUser.includes('idea') || lowerUser.includes('tema')) && !detectedActions.some(a => a.type === 'transcriptor')) {
-      const ideaMatch = cleanResponseText.match(/(?:Idea|Tema|Concepto)(?:\s*(?:del video|clave|principal))?[:\*\s]+([^\n\r]+)/i);
-      if (ideaMatch && ideaMatch[1]) {
-        const extractedIdea = ideaMatch[1].replace(/^[\*#\s"']+|[\*#\s"']+$/g, '').trim();
-        if (extractedIdea.length > 5) {
-          insertBlexIaTextToTranscriptor(extractedIdea);
-          detectedActions.push({ type: 'transcriptor', text: extractedIdea });
-        }
-      } else if (!document.getElementById('aiWizardInputTopic')?.value?.trim()) {
-        const firstLine = cleanResponseText.split(/\r?\n/)[0].replace(/^[\*#\s"']+|[\*#\s"']+$/g, '').trim();
-        if (firstLine.length > 10 && firstLine.length < 120) {
-          insertBlexIaTextToTranscriptor(firstLine);
-          detectedActions.push({ type: 'transcriptor', text: firstLine });
-        }
+    // If the LLM omitted some JSON action tags, extract deterministically based on user query
+    const targetTopic = extractedTopic || currentTopic || userText.replace(/^(?:crea|escribe|en la sesion de pasos|sobre)\s+/i, '').trim();
+
+    // Strategy Fallback if user asked for strategy and tag was missed
+    if ((explicitTargetStep === 0 || lowerUser.includes('estrategia')) && !detectedActions.some(a => a.step === 0)) {
+      if (!extractedTopic) {
+        insertBlexIaTextToTranscriptor(targetTopic);
+        detectedActions.push({ type: 'transcriptor', text: targetTopic });
       }
+      executeBlexIaStepAction('STRATEGY', {
+        overview: `Diagnóstico estratégico para "${targetTopic}": La clave de impacto está en eliminar el ruido, desafiar las creencias tradicionales y presentar un enfoque estructurado y replicable.`,
+        howToFlip: `Para dominar este contenido en ${currentNiche}, abordaremos el tema desmitificando los errores más graves del 99% y mostrando la estrategia práctica que genera resultados comprobados.`,
+        intent: userText
+      }, targetTopic);
+      detectedActions.push({ type: 'step', step: 0 });
     }
 
-    // Auto-extract 5 Hooks if mentioned
-    if ((lowerUser.includes('gancho') || lowerUser.includes('5 gancho') || lowerUser.includes('paso 1') || lowerUser.includes('paso de los gancho')) && !detectedActions.some(a => a.step === 1)) {
+    // Hooks Fallback if user asked for hooks and tag was missed
+    if ((explicitTargetStep === 1 || lowerUser.includes('gancho')) && !detectedActions.some(a => a.step === 1)) {
       const extractedHooks = [];
       const hookLines = cleanResponseText.matchAll(/(?:(?:\d+[\.\)]|Gancho\s*\d+)[:\*\s]+)([^\n\r]+)/gi);
       for (const hl of hookLines) {
@@ -14136,9 +14182,44 @@ async function sendBlexIaChatMessage(customPrompt = null) {
           });
         }
       }
-      if (extractedHooks.length >= 2) {
-        executeBlexIaStepAction('HOOKS', extractedHooks);
-        detectedActions.push({ type: 'step', step: 1 });
+      executeBlexIaStepAction('HOOKS', extractedHooks, targetTopic);
+      detectedActions.push({ type: 'step', step: 1 });
+    }
+
+    // Stories Fallback if user asked for stories and tag was missed
+    if ((explicitTargetStep === 2 || lowerUser.includes('historia')) && !detectedActions.some(a => a.step === 2)) {
+      executeBlexIaStepAction('STORIES', [], targetTopic);
+      detectedActions.push({ type: 'step', step: 2 });
+    }
+
+    // Morals Fallback if user asked for morals and tag was missed
+    if ((explicitTargetStep === 3 || lowerUser.includes('moraleja')) && !detectedActions.some(a => a.step === 3)) {
+      executeBlexIaStepAction('MORALS', [], targetTopic);
+      detectedActions.push({ type: 'step', step: 3 });
+    }
+
+    // CTAs Fallback if user asked for CTAs and tag was missed
+    if ((explicitTargetStep === 4 || lowerUser.includes('cta')) && !detectedActions.some(a => a.step === 4)) {
+      executeBlexIaStepAction('CTAS', [], targetTopic);
+      detectedActions.push({ type: 'step', step: 4 });
+    }
+
+    // FINAL TARGET STEP NAVIGATION
+    // Navigate specifically to the step the user asked for (or Step 0 if strategy/general)
+    let finalNavStep = explicitTargetStep;
+    if (finalNavStep === null) {
+      if (detectedActions.some(a => a.step === 0)) finalNavStep = 0;
+      else if (detectedActions.some(a => a.step === 1)) finalNavStep = 1;
+      else if (detectedActions.some(a => a.step === 2)) finalNavStep = 2;
+      else if (detectedActions.some(a => a.step === 3)) finalNavStep = 3;
+      else if (detectedActions.some(a => a.step === 4)) finalNavStep = 4;
+    }
+
+    if (finalNavStep !== null) {
+      goToWizardStep(finalNavStep);
+      const stepEl = document.getElementById('wizStepView' + finalNavStep);
+      if (stepEl) {
+        setTimeout(() => stepEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
       }
     }
 
@@ -14148,7 +14229,13 @@ async function sendBlexIaChatMessage(customPrompt = null) {
       .trim();
 
     if (!cleanResponseText) {
-      cleanResponseText = '¡Listo! He escrito la idea y los ganchos directamente en las casillas y tarjetas de los pasos abajo.';
+      if (explicitTargetStep === 0) {
+        cleanResponseText = '¡Listo! He configurado la **Idea Ganadora** y la **Estrategia de Impacto en el Paso 0** con su diagnóstico y guía maestra.';
+      } else if (explicitTargetStep === 1) {
+        cleanResponseText = '¡Listo! He colocado los **5 Ganchos Virales (A, B, C, D, E)** directamente en las tarjetas y casillas del Paso 1.';
+      } else {
+        cleanResponseText = '¡Listo! He escrito y estructurado las opciones directamente en las casillas y tarjetas de los pasos abajo.';
+      }
     }
 
     blexIaState.messages.push({
@@ -14174,17 +14261,56 @@ async function sendBlexIaChatMessage(customPrompt = null) {
   }
 }
 
-function executeBlexIaStepAction(stepType, items) {
-  if (!items || items.length === 0) return;
+function executeBlexIaStepAction(stepType, rawItems, topicContext) {
+  const topic = (topicContext || wizardState.topic || document.getElementById('aiWizardInputTopic')?.value || 'Crecimiento y Dinero').trim();
+  const niche = typeof getEffectiveNiche === 'function' ? getEffectiveNiche() : (wizardState.niche || 'Finanzas y Dinero');
 
-  if (stepType === 'HOOKS') {
-    wizardState.generatedHooks = items.slice(0, 5).map((h, i) => ({
-      formula: h.formula || ("Gancho Viral #" + (i + 1)),
-      hook: (h.hook || h.text || '').trim().replace(/^["']|["']$/g, ''),
-      reason: h.reason || "Detiene el scroll en 2.5s"
-    }));
+  if (stepType === 'STRATEGY') {
+    const stratData = rawItems || {};
+    const overviewText = stratData.overview || `Diagnóstico de "${topic}": Enfoque directo para romper mitos y captar atención en ${niche}.`;
+    const howToFlipText = stratData.howToFlip || `Estrategia de Impacto: Demostrar cómo aplicar ${topic} mediante un método práctico paso a paso, eliminando los errores comunes de la mayoría.`;
     
-    // Select first hook
+    wizardState.strategy = {
+      overview: overviewText,
+      howToFlip: howToFlipText
+    };
+    wizardState.strategyText = howToFlipText;
+    if (stratData.intent) {
+      wizardState.userIntent = stratData.intent;
+      const intentInput = document.getElementById('wizStrategyUserIntent');
+      if (intentInput) intentInput.value = stratData.intent;
+    }
+
+    if (typeof renderWizardStep0Strategy === 'function') {
+      renderWizardStep0Strategy(wizardState.strategy);
+    }
+    const impactInput = document.getElementById('wizStrategyImpactText');
+    if (impactInput) impactInput.value = howToFlipText;
+
+    showToastNotification('🧠 ¡Estrategia de Impacto configurada en el Paso 0!', 'check-circle');
+
+  } else if (stepType === 'HOOKS') {
+    let items = Array.isArray(rawItems) ? [...rawItems] : [];
+    
+    // Complete up to EXACTLY 5 hooks if fewer were provided
+    const fallbackHooks = [
+      { formula: "Pregunta Provocadora", hook: `¿Por qué el 99% fracasa al intentar ${topic}?`, reason: "Shock de realidad" },
+      { formula: "Regla Contraintuitiva", hook: `Deja de hacer esto si realmente quieres dominar ${topic}.`, reason: "Rompe patrón" },
+      { formula: "Revelación Exclusiva", hook: `El secreto que nadie te cuenta sobre ${topic} en 2026.`, reason: "Curiosidad pura" },
+      { formula: "Advertencia Crítica", hook: `Si estás cometiendo este error con ${topic}, estás perdiendo tiempo y dinero.`, reason: "Dolor y urgencia" },
+      { formula: "Método del 1%", hook: `La regla de 3 pasos que uso para ${topic} sin complicarme.`, reason: "Solución práctica" }
+    ];
+
+    while (items.length < 5) {
+      items.push(fallbackHooks[items.length % fallbackHooks.length]);
+    }
+
+    wizardState.generatedHooks = items.slice(0, 5).map((h, i) => ({
+      formula: h.formula || ("Fórmula Viral #" + (i + 1)),
+      hook: (h.hook || h.text || '').trim().replace(/^["']|["']$/g, ''),
+      reason: h.reason || "Alta retención en primeros 3 segundos"
+    }));
+
     if (wizardState.generatedHooks.length > 0) {
       const firstH = wizardState.generatedHooks[0].hook;
       wizardState.selectedHook = firstH;
@@ -14194,22 +14320,30 @@ function executeBlexIaStepAction(stepType, items) {
       if (elFinal) elFinal.value = firstH;
     }
 
-    // Render cards in Step 1 Grid
     if (typeof renderWizardStep1Cards === 'function') {
       renderWizardStep1Cards(wizardState.generatedHooks);
     }
-    
-    // Switch view to Step 1
-    goToWizardStep(1);
-    const step1El = document.getElementById('wizStepView1');
-    if (step1El) step1El.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    showToastNotification('🎣 ¡5 Ganchos generados y colocados en el Paso 1!', 'check-circle');
+    showToastNotification('🎣 ¡5 Ganchos Virales colocados en el Paso 1!', 'check-circle');
 
   } else if (stepType === 'STORIES') {
+    let items = Array.isArray(rawItems) ? [...rawItems] : [];
+    
+    const fallbackStories = [
+      { angle: "Desarrollo Ágil", story: `La mayoría cree que para tener éxito con ${topic} se necesita suerte. La realidad es que se necesita un sistema diario y disciplina implacable.`, highlight: "Retención sin rodeos" },
+      { angle: "Contraste Directo", story: `Cuando empecé con ${topic} cometí todos los errores posibles. Hasta que cambié mi enfoque y entendí que la gestión del riesgo lo es todo.`, highlight: "Conexión y empatía" },
+      { angle: "Analogía Visual", story: `Imagina ${topic} como un motor de alta precisión: si una sola pieza falla, todo se detiene. Aquí está la pieza que te falta.`, highlight: "Claridad mental" },
+      { angle: "Paso a Paso", story: `Paso 1: Elimina las distracciones. Paso 2: Ejecuta tu plan sin dudar. Paso 3: Evalúa números reales, no emociones.`, highlight: "Acción inmediata" },
+      { angle: "Verdad Oculta", story: `El mayor secreto no es cuánto ganas, sino cuánto conservas y cómo multiplicas tus activos mientras duermes.`, highlight: "Autoridad pura" }
+    ];
+
+    while (items.length < 5) {
+      items.push(fallbackStories[items.length % fallbackStories.length]);
+    }
+
     wizardState.generatedStories = items.slice(0, 5).map((s, i) => ({
       angle: s.angle || s.type || ("Historia #" + (i + 1)),
       story: (s.story || s.text || '').trim().replace(/^["']|["']$/g, ''),
-      highlight: s.focus || s.highlight || "Retención ágil"
+      highlight: s.highlight || s.focus || "Retención ágil"
     }));
 
     if (wizardState.generatedStories.length > 0) {
@@ -14224,10 +14358,23 @@ function executeBlexIaStepAction(stepType, items) {
     if (typeof renderWizardStep2Cards === 'function') {
       renderWizardStep2Cards(wizardState.generatedStories);
     }
-    goToWizardStep(2);
-    showToastNotification('📖 ¡Historias colocadas en el Paso 2!', 'check-circle');
+    showToastNotification('📖 ¡5 Historias colocadas en el Paso 2!', 'check-circle');
 
   } else if (stepType === 'MORALS') {
+    let items = Array.isArray(rawItems) ? [...rawItems] : [];
+
+    const fallbackMorals = [
+      { type: "Regla de Oro", moral: `El dinero fluye hacia quienes dominan sus emociones y tienen un plan claro.`, takeaway: "Control emocional" },
+      { type: "Principio Maestro", moral: `No busques resultados rápidos; busca consistencia y el interés compuesto hará el resto.`, takeaway: "Visión a largo plazo" },
+      { type: "Insight Crítico", moral: `El verdadero riesgo no es intentar algo nuevo, es quedarte en el mismo lugar por miedo.`, takeaway: "Acción valiente" },
+      { type: "Ley de Enfoque", moral: `Menos operaciones, más precisión: la calidad siempre vence a la cantidad.`, takeaway: "Excelencia" },
+      { type: "Criterio Ganador", moral: `Aprende de las pérdidas antes de que el mercado te cobre la lección más cara.`, takeaway: "Gestión inteligente" }
+    ];
+
+    while (items.length < 5) {
+      items.push(fallbackMorals[items.length % fallbackMorals.length]);
+    }
+
     wizardState.generatedMorals = items.slice(0, 5).map((m, i) => ({
       type: m.type || ("Moraleja #" + (i + 1)),
       moral: (m.moral || m.text || '').trim().replace(/^["']|["']$/g, ''),
@@ -14246,14 +14393,28 @@ function executeBlexIaStepAction(stepType, items) {
     if (typeof renderWizardStep3Cards === 'function') {
       renderWizardStep3Cards(wizardState.generatedMorals);
     }
-    goToWizardStep(3);
-    showToastNotification('💡 ¡Moralejas colocadas en el Paso 3!', 'check-circle');
+    showToastNotification('💡 ¡5 Moralejas colocadas en el Paso 3!', 'check-circle');
 
   } else if (stepType === 'CTAS') {
+    let items = Array.isArray(rawItems) ? [...rawItems] : [];
+
+    const fallbackCTAs = [
+      { action: "Comentario Palabra Clave", cta: `Comenta TRADING y te envío la guía completa por mensaje directo.`, triggerWord: "TRADING" },
+      { action: "Guardar Video", cta: `Guarda este reel para no cometer estos errores en tu próxima operativa.`, triggerWord: "GUARDAR" },
+      { action: "Compartir con Colega", cta: `Comparte este video con esa persona que necesita mejorar sus resultados hoy.`, triggerWord: "COMPARTIR" },
+      { action: "Mensaje Directo", cta: `Escríbeme la palabra PLAN al DM para acceder al entrenamiento privado.`, triggerWord: "PLAN" },
+      { action: "Seguir para Más Valor", cta: `Sígueme para aprender a gestionar tu dinero con disciplina y método.`, triggerWord: "SEGUIR" }
+    ];
+
+    while (items.length < 5) {
+      items.push(fallbackCTAs[items.length % fallbackCTAs.length]);
+    }
+
     wizardState.generatedCTAs = items.slice(0, 5).map((c, i) => ({
       action: c.action || c.type || ("CTA #" + (i + 1)),
       cta: (c.cta || c.text || '').trim().replace(/^["']|["']$/g, ''),
-      triggerWord: c.triggerWord || "COMENTAR"
+      triggerWord: c.triggerWord || "ACCIÓN",
+      benefit: c.benefit || "Conversión alta"
     }));
 
     if (wizardState.generatedCTAs.length > 0) {
@@ -14268,8 +14429,7 @@ function executeBlexIaStepAction(stepType, items) {
     if (typeof renderWizardStep4Cards === 'function') {
       renderWizardStep4Cards(wizardState.generatedCTAs);
     }
-    goToWizardStep(4);
-    showToastNotification('📣 ¡CTAs colocados en el Paso 4!', 'check-circle');
+    showToastNotification('📣 ¡5 CTAs colocados en el Paso 4!', 'check-circle');
   }
 }
 
@@ -14318,14 +14478,18 @@ function insertBlexIaTextToTranscriptor(text) {
   if (input) {
     input.value = text;
     wizardState.topic = text;
-    showToastNotification("📥 Idea cargada en el transcriptor / idea", "check-circle");
+    showToastNotification("💡 Idea Ganadora cargada con éxito", "check-circle");
     input.focus();
   }
 }
 
 function applyBlexIaToWizardStep(stepNum, text) {
   goToWizardStep(stepNum);
-  if (stepNum === 1) {
+  if (stepNum === 0) {
+    const input = document.getElementById("wizStrategyImpactText");
+    if (input) input.value = text;
+    if (wizardState.strategy) wizardState.strategy.howToFlip = text;
+  } else if (stepNum === 1) {
     const input = document.getElementById("wizSelectedGancho");
     const finalInput = document.getElementById("wizFinalHook");
     if (input) input.value = text;
@@ -14358,7 +14522,7 @@ function clearBlexIaChat() {
     {
       id: "msg-welcome",
       sender: "blex",
-      text: "¡Conversación reiniciada! Soy **BLEX IA**. ¿Qué reel o idea empezamos a estructurar?",
+      text: "¡Conversación reiniciada! Soy **BLEX IA**. ¿Qué reel o estrategia empezamos a estructurar?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       actions: []
     }
