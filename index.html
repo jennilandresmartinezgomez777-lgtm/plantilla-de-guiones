@@ -1547,11 +1547,11 @@
         <div id="aiPanelWizard" class="space-y-4">
           
           <!-- Top Configuration Card (Audio Transcriptor en Vivo + Nicho + Tema) -->
-          <!-- ASISTENTE DE CREACIÓN DE REEL + BLEX IA CHAT INTERACTIVO -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <!-- ASISTENTE DE CREACIÓN DE REEL + BLEX IA CHAT INTERACTIVO (SPLIT RESIZABLE & EXPANDIBLE) -->
+          <div id="assistantSplitLayout" class="flex flex-col lg:flex-row gap-3 items-stretch w-full relative">
             
-            <!-- LEFT COLUMN: Transcriptor / Idea y Selección de Enfoque (lg:col-span-7) -->
-            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between space-y-4">
+            <!-- LEFT COLUMN: Transcriptor / Idea Ganadora y Selección de Enfoque (50% por defecto, expandible) -->
+            <div id="assistantLeftPanel" style="flex: 1 1 50%; min-width: 280px;" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between space-y-4 transition-[flex,max-width,width] duration-150">
               <div class="space-y-3.5">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div>
@@ -1560,9 +1560,16 @@
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">Escucha el audio de cualquier video o escribe tu idea, y créalo paso a paso.</p>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <button type="button" onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                      <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reiniciar
+                  <div class="flex items-center gap-1.5">
+                    <!-- Expand Left Button -->
+                    <button type="button" onclick="togglePanelExpand('left')" id="btnExpandLeftPanel" class="text-xs text-slate-400 hover:text-amber-300 bg-slate-950 border border-slate-800 hover:border-amber-500/40 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 cursor-pointer" title="Expandir hacia la derecha / Restaurar 50-50">
+                      <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                      <span class="hidden sm:inline text-[11px] font-medium" id="btnExpandLeftText">Expandir</span>
+                    </button>
+                    <!-- Reiniciar Button -->
+                    <button type="button" onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white bg-slate-950 border border-slate-800 hover:border-slate-700 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer" title="Reiniciar asistente">
+                      <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                      <span class="hidden sm:inline text-[11px]">Reiniciar</span>
                     </button>
                   </div>
                 </div>
@@ -1647,8 +1654,13 @@
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: BLEX IA Interactive Chat Assistant (lg:col-span-5) -->
-            <div class="lg:col-span-5 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between space-y-3 relative overflow-hidden">
+            <!-- DRAGGABLE SPLIT RESIZER DIVIDER (Desktop & Tablet) -->
+            <div id="assistantSplitResizer" class="hidden lg:flex flex-col items-center justify-center w-3 hover:w-3.5 bg-slate-950/80 hover:bg-amber-500/20 border-x border-slate-800 hover:border-amber-500/50 rounded-lg cursor-col-resize transition-all select-none group shrink-0" title="Arrastra a la izquierda o derecha para cambiar el tamaño (Doble clic para 50/50)">
+              <div class="w-1 h-8 rounded-full bg-slate-700 group-hover:bg-amber-400 transition-colors"></div>
+            </div>
+
+            <!-- RIGHT COLUMN: BLEX IA Interactive Chat Assistant (50% por defecto, expandible) -->
+            <div id="assistantRightPanel" style="flex: 1 1 50%; min-width: 280px;" class="bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-500/50 rounded-2xl p-4 shadow-xl flex flex-col justify-between space-y-3 relative overflow-hidden transition-[flex,max-width,width] duration-150">
               
               <!-- Subtle decorative glow -->
               <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -1670,8 +1682,17 @@
                     <p class="text-[10px] text-slate-400">Asistente Director de Contenido y Producción</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-1">
-                  <button type="button" onclick="clearBlexIaChat()" class="text-[11px] text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 p-1.5 rounded-lg transition cursor-pointer" title="Limpiar conversación">
+                <div class="flex items-center gap-1.5">
+                  <!-- Expand Right Button -->
+                  <button type="button" onclick="togglePanelExpand('right')" id="btnExpandRightPanel" class="text-xs text-slate-400 hover:text-amber-300 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 cursor-pointer" title="Expandir hacia la izquierda / Restaurar 50-50">
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline text-[11px] font-medium" id="btnExpandRightText">Expandir</span>
+                  </button>
+                  <!-- 50/50 Reset Button -->
+                  <button type="button" onclick="resetAssistantPanelsSplit()" class="text-xs text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 p-1.5 rounded-xl transition cursor-pointer" title="Restablecer tamaño igual (50/50)">
+                    <i data-lucide="columns" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button type="button" onclick="clearBlexIaChat()" class="text-[11px] text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 p-1.5 rounded-xl transition cursor-pointer" title="Limpiar conversación">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>

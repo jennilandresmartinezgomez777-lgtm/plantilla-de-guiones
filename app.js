@@ -13817,6 +13817,7 @@ let blexIaSpeechRecognition = null;
 
 function initBlexIaChat() {
   renderBlexIaChat();
+  initAssistantSplitResizer();
 }
 
 function renderBlexIaChat() {
@@ -14583,4 +14584,146 @@ function toggleBlexIaVoiceDictation() {
   } catch(err) {
     console.warn("Voice dictation error:", err);
   }
+}
+
+
+// =============================================================================
+// ASSISTANT & BLEX IA RESIZABLE / EXPANDABLE SPLIT PANELS (50/50 DEFAULT)
+// =============================================================================
+
+let assistantSplitState = {
+  ratio: 50, // 50% left, 50% right by default
+  expandedSide: null, // 'left', 'right', or null
+  isDragging: false
+};
+
+function initAssistantSplitResizer() {
+  const saved = localStorage.getItem('blex_assistant_split_ratio');
+  if (saved) {
+    const parsed = parseFloat(saved);
+    if (!isNaN(parsed) && parsed >= 20 && parsed <= 80) {
+      assistantSplitState.ratio = parsed;
+    }
+  }
+  applyAssistantPanelsSplit(assistantSplitState.ratio);
+  setupAssistantDragListeners();
+}
+
+function applyAssistantPanelsSplit(leftPercent) {
+  const leftPanel = document.getElementById('assistantLeftPanel');
+  const rightPanel = document.getElementById('assistantRightPanel');
+  if (!leftPanel || !rightPanel) return;
+
+  if (window.innerWidth < 1024) {
+    leftPanel.style.flex = '1 1 100%';
+    leftPanel.style.maxWidth = '100%';
+    rightPanel.style.flex = '1 1 100%';
+    rightPanel.style.maxWidth = '100%';
+    return;
+  }
+
+  const left = Math.max(20, Math.min(80, leftPercent));
+  const right = 100 - left;
+
+  leftPanel.style.flex = '0 0 calc(' + left + '% - 0.5rem)';
+  leftPanel.style.maxWidth = 'calc(' + left + '% - 0.5rem)';
+  rightPanel.style.flex = '0 0 calc(' + right + '% - 0.5rem)';
+  rightPanel.style.maxWidth = 'calc(' + right + '% - 0.5rem)';
+
+  updateExpandButtonsState();
+}
+
+function togglePanelExpand(side) {
+  if (assistantSplitState.expandedSide === side) {
+    assistantSplitState.expandedSide = null;
+    assistantSplitState.ratio = 50;
+    applyAssistantPanelsSplit(50);
+    localStorage.setItem('blex_assistant_split_ratio', '50');
+    showToastNotification('⚖️ Tamaño 50% / 50% restablecido', 'check-circle');
+  } else {
+    assistantSplitState.expandedSide = side;
+    if (side === 'left') {
+      assistantSplitState.ratio = 75;
+      applyAssistantPanelsSplit(75);
+      localStorage.setItem('blex_assistant_split_ratio', '75');
+      showToastNotification('⇱ Asistente expandido (75%)', 'check-circle');
+    } else if (side === 'right') {
+      assistantSplitState.ratio = 25;
+      applyAssistantPanelsSplit(25);
+      localStorage.setItem('blex_assistant_split_ratio', '25');
+      showToastNotification('⇲ BLEX IA expandido (75%)', 'check-circle');
+    }
+  }
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
+}
+
+function resetAssistantPanelsSplit() {
+  assistantSplitState.expandedSide = null;
+  assistantSplitState.ratio = 50;
+  applyAssistantPanelsSplit(50);
+  localStorage.setItem('blex_assistant_split_ratio', '50');
+  showToastNotification('⚖️ Paneles igualados al 50% / 50%', 'check-circle');
+  if (typeof lucide !== 'undefined') { lucide.createIcons(); } else if (typeof window !== 'undefined' && window.lucide) { window.lucide.createIcons(); }
+}
+
+function updateExpandButtonsState() {
+  const btnLeftText = document.getElementById('btnExpandLeftText');
+  const btnRightText = document.getElementById('btnExpandRightText');
+  if (btnLeftText) {
+    btnLeftText.innerText = assistantSplitState.ratio >= 70 ? 'Reducir' : 'Expandir';
+  }
+  if (btnRightText) {
+    btnRightText.innerText = assistantSplitState.ratio <= 30 ? 'Reducir' : 'Expandir';
+  }
+}
+
+function setupAssistantDragListeners() {
+  const resizer = document.getElementById('assistantSplitResizer');
+  const container = document.getElementById('assistantSplitLayout');
+  if (!resizer || !container) return;
+
+  let isDown = false;
+  let containerRect = null;
+
+  const onPointerDown = (e) => {
+    if (window.innerWidth < 1024) return;
+    isDown = true;
+    assistantSplitState.isDragging = true;
+    containerRect = container.getBoundingClientRect();
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    resizer.classList.add('bg-amber-500/40', 'border-amber-400');
+  };
+
+  const onPointerMove = (e) => {
+    if (!isDown || !containerRect) return;
+    const currentX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const offset = currentX - containerRect.left;
+    const percentage = (offset / containerRect.width) * 100;
+    const clamped = Math.max(20, Math.min(80, percentage));
+    
+    assistantSplitState.ratio = clamped;
+    assistantSplitState.expandedSide = null;
+    applyAssistantPanelsSplit(clamped);
+  };
+
+  const onPointerUp = () => {
+    if (!isDown) return;
+    isDown = false;
+    assistantSplitState.isDragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    resizer.classList.remove('bg-amber-500/40', 'border-amber-400');
+    localStorage.setItem('blex_assistant_split_ratio', String(Math.round(assistantSplitState.ratio)));
+  };
+
+  resizer.addEventListener('mousedown', onPointerDown);
+  resizer.addEventListener('touchstart', onPointerDown, { passive: true });
+  resizer.addEventListener('dblclick', resetAssistantPanelsSplit);
+
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('touchmove', onPointerMove, { passive: true });
+  window.addEventListener('mouseup', onPointerUp);
+  window.addEventListener('touchend', onPointerUp);
+  window.addEventListener('resize', () => applyAssistantPanelsSplit(assistantSplitState.ratio));
 }

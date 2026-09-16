@@ -5,30 +5,6 @@
   ],
   "scripts": [
     {
-      "id": "script-andres-presentacion",
-      "client": "Jennil",
-      "number": 1,
-      "status": "Por Grabar",
-      "formato": "Hablando a cámara",
-      "objetivo": "VENTA",
-      "actor": "Andrés",
-      "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
-      "linkReferencia": "",
-      "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
-      "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
-      "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
-      "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
-      "contextoAdicional": "Grabación en setup profesional / oficina",
-      "attachments": [],
-      "views": 0,
-      "comments": 0,
-      "rating": 0,
-      "completed": false,
-      "espacio": "",
-      "updatedAt": "2026-09-16T00:31:54.153Z",
-      "createdAt": "2026-09-15T00:00:00.000Z"
-    },
-    {
       "id": "script-trabajar-duro",
       "client": "Jennil",
       "number": 2,
@@ -77,12 +53,45 @@
       "createdAt": "2026-09-15T03:31:24.089Z"
     }
   ],
-  "deletedScripts": [],
+  "deletedScripts": [
+    {
+      "id": "script-andres-presentacion",
+      "client": "Jennil",
+      "number": 1,
+      "status": "Por Grabar",
+      "formato": "Hablando a cámara",
+      "objetivo": "VENTA",
+      "actor": "Andrés",
+      "ideaGanadora": "Presentación y Autoridad - Quién soy y Cómo funciona el Método",
+      "linkReferencia": "",
+      "gancho": "Hola, soy Andrés. Si estás cansado de intentar métodos que no dan resultados y quieres aprender un sistema real para escalar tus ingresos y dominar el mercado, esto es para ti.",
+      "historia": "Durante años he desarrollado y perfeccionado una metodología práctica para que cualquier persona, sin importar su punto de partida, pueda tener un sistema claro de toma de decisiones.\n\nNo se trata de suerte ni de fórmulas mágicas: es estructura, disciplina, herramientas profesionales y acompañamiento en vivo.",
+      "moraleja": "El éxito no llega por casualidad, llega cuando sigues un vehículo probado con las personas correctas.",
+      "cta": "Comenta la palabra BLEX o escríbeme por interno para acceder a la clase gratuita donde te muestro el paso a paso.",
+      "contextoAdicional": "Grabación en setup profesional / oficina",
+      "attachments": [],
+      "views": 0,
+      "comments": 0,
+      "rating": 0,
+      "completed": false,
+      "espacio": "",
+      "updatedAt": "2026-09-15T20:37:52.944Z",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "deletedAt": "2026-09-15T21:43:14.348Z"
+    }
+  ],
   "notes": {
-    "Jennil": [],
+    "Jennil": [
+      {
+        "id": "note-1789526538592",
+        "title": "Reel finalizado con estrategias, ga...",
+        "content": "Reel finalizado con estrategias, ganchos y enseñanzas sobre inversión inmobiliaria. Preparado para publicación.",
+        "client": "Jennil",
+        "date": "2026-09-16T02:42:18.592Z"
+      }
+    ],
     "Natalia": []
   },
-  "viralEvaluations": [],
   "calendarEvents": [
     {
       "id": "c1",
@@ -93,12 +102,37 @@
       "id": "c2",
       "title": "Publicación de Contenido",
       "date": "2026-09-17"
+    },
+    {
+      "id": "cal-1789526538576",
+      "client": "Jennil",
+      "type": "RODAJE",
+      "title": "Rodaje de Reels sobre Inversión Inmobiliaria",
+      "date": "2026-09-15",
+      "time": "15:00",
+      "platform": "Instagram",
+      "status": "PROGRAMADO",
+      "reminder": "exact",
+      "notes": "Agendado automáticamente por BLEX IA",
+      "createdAt": "2026-09-16T02:42:18.576Z"
     }
   ],
+  "viralEvaluations": [],
   "notificationEmails": {
-    "primary": "jennilandresmartinezgomez777@gmail.com",
-    "secondary": "ncolorado2511@outlook.com"
+    "primary": "",
+    "secondary": ""
+  },
+  "aiBrain": {
+    "Jennil": {
+      "tone": "Seguridad absoluta, directo, enérgico, sin rodeos ni tecnicismos aburridos. Hablarle a un amigo que necesita despertar financieramente.",
+      "audience": "Emprendedores, inversionistas y personas de 20 a 45 años que buscan libertad financiera, multiplicar ingresos y evitar las trampas del sistema tradicional.",
+      "keywords": "activos, libertad financiera, apalancamiento, mentalidad, retención, sistema, velocidad del dinero",
+      "forbidden": "dinero fácil, fórmula mágica, suerte, estafa, hacerse rico de la noche a la mañana",
+      "notes": "Enfoque en crear sistemas de negocio, salir de deudas malas, invertir en activos y construir fuentes de ingresos sostenibles.",
+      "examples": "[GANCHO] Si tienes menos de $1,000 en el banco, no hagas esto...\n[HISTORIA] El 90% de la gente piensa que ahorrar es suficiente...\n[MORALEJA] El dinero que no se mueve, pierde valor cada día...\n[CTA] Comenta 'SISTEMA' y te muestro el paso a paso.",
+      "docs": []
+    }
   },
   "challengeStartDate": "2026-09-13",
-  "updatedAt": "2026-09-16T00:31:54.153Z"
+  "updatedAt": "2026-09-16T02:48:01.203Z"
 }
