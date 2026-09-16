@@ -13794,15 +13794,17 @@ async function forceCleanSyncFromCloud() {
 }
 
 // =============================================================================
-// BLEX IA CHAT ASSISTANT - ENGINE & INTERACTIVE CONVERSATIONAL AGENT
+// BLEX IA CHAT ASSISTANT - ENGINE & DIRECT STEP WRITING & INTERACTIVE COPILOT
 // =============================================================================
+
+const BLEX_LION_AVATAR_HTML = '<div class="w-6 h-6 rounded-lg bg-slate-950 border border-amber-500/50 p-0.5 shadow-sm shrink-0 overflow-hidden flex items-center justify-center"><img src="logo.png" alt="León BLEX" class="w-full h-full object-cover rounded"></div>';
 
 let blexIaState = {
   messages: [
     {
       id: "msg-welcome",
       sender: "blex",
-      text: "¡Hola! Soy **BLEX IA**, tu asistente integral de creación, guionaje y producción en BLEX Studio.\n\nPuedes hablarme libremente en lenguaje natural para pedirme:\n• 🎣 **Idear o mejorar ganchos e historias** para tus reels.\n• 📅 **Agendar rodajes o publicaciones** en el calendario (ej: *\"agenda rodaje el viernes a las 3pm\"*).\n• 📝 **Crear notas de producción** (ej: *\"anota recordar llevar trípode y camisa negra\"*).\n• 🪝 **Buscar en el catálogo de 64 ganchos virales**.\n• 🧠 **Consultar o actualizar el cerebro y ADN de marca**.\n\n¿En qué te ayudo ahora?",
+      text: "¡Hola! Soy **BLEX IA**, tu asistente director de contenido y producción en BLEX Studio.\n\nPuedo escribir directamente en las casillas de los pasos de tu reel y gestionar tu plataforma:\n• 💡 **Crear idea y 5 ganchos**: Pídeme *\"crea una idea sobre ganar dinero y pon los 5 ganchos en el paso 1\"* y escribiré en las casillas y tarjetas.\n• 📖 **Redactar historia, moraleja y CTA**: Escribiré directamente en los pasos 2, 3 y 4.\n• 📅 **Agendar rodajes**: Escribe *\"agenda rodaje el viernes a las 3pm\"*.\n• 📝 **Crear notas**: Escribe *\"crea una nota con las tomas de apoyo\"*.\n• 🪝 **Consultar los 64 ganchos virales** y ADN de marca.\n\n¿Qué reel o idea empezamos a estructurar?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       actions: []
     }
@@ -13839,13 +13841,13 @@ function renderBlexIaChat() {
       actionButtonsHtml = '<div class="flex flex-wrap gap-1.5 pt-2 mt-2 border-t border-slate-800/80">' +
         msg.actions.map(act => {
           if (act.type === "transcriptor") {
-            return '<button type="button" onclick="insertBlexIaTextToTranscriptor(' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📥 Usar en Transcriptor</button>';
+            return '<button type="button" onclick="insertBlexIaTextToTranscriptor(' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📥 En Transcriptor</button>';
           } else if (act.type === "step") {
-            const stepNames = { 1: "🎣 Gancho", 2: "📖 Historia", 3: "💡 Moraleja", 4: "📣 CTA" };
+            const stepNames = { 0: "Paso 0: Estrategia", 1: "Paso 1: Gancho", 2: "Paso 2: Historia", 3: "Paso 3: Moraleja", 4: "Paso 4: CTA", 5: "Paso 5: Final" };
             const stepLabel = stepNames[act.step] || ("Paso " + act.step);
-            return '<button type="button" onclick="applyBlexIaToWizardStep(' + act.step + ', ' + JSON.stringify(act.text).replace(/"/g, '&quot;') + ')" class="text-[10px] font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="sparkles" class="w-3 h-3"></i> ⚡ Aplicar a ' + stepLabel + '</button>';
+            return '<button type="button" onclick="goToWizardStep(' + act.step + ')" class="text-[10px] font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="eye" class="w-3 h-3"></i> ⚡ Ver ' + stepLabel + '</button>';
           } else if (act.type === "calendar_link") {
-            return '<button type="button" onclick="switchView(\'calendar\')" class="text-[10px] font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="calendar" class="w-3 h-3"></i> 📅 Ver en Calendario</button>';
+            return '<button type="button" onclick="switchView(\'calendar\')" class="text-[10px] font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="calendar" class="w-3 h-3"></i> 📅 Ver Calendario</button>';
           } else if (act.type === "note_link") {
             return '<button type="button" onclick="openNotesModal()" class="text-[10px] font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"><i data-lucide="file-text" class="w-3 h-3"></i> 📝 Ver Notas</button>';
           }
@@ -13869,12 +13871,13 @@ function renderBlexIaChat() {
     } else {
       return `
         <div class="flex justify-start gap-2 items-start">
-          <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-[11px] font-black shrink-0 mt-1 shadow-sm">
-            🦁
-          </div>
+          ${BLEX_LION_AVATAR_HTML}
           <div class="max-w-[90%] bg-slate-950/90 border border-slate-800 text-slate-200 rounded-2xl rounded-tl-none p-3 shadow-md space-y-1.5">
             <div class="flex items-center justify-between gap-2 border-b border-slate-900 pb-1">
-              <span class="font-bold text-[11px] text-amber-400">BLEX IA</span>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-[11px] text-amber-400">BLEX IA</span>
+                <span class="text-[9px] text-emerald-400 font-semibold">• Director de Contenido</span>
+              </div>
               <span class="text-[9px] text-slate-500">${timeStr}</span>
             </div>
             <div class="leading-relaxed text-slate-300 font-normal">${formattedText}</div>
@@ -13888,12 +13891,10 @@ function renderBlexIaChat() {
   if (blexIaState.isThinking) {
     container.innerHTML += `
       <div class="flex justify-start gap-2 items-center">
-        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-[11px] font-black shrink-0 shadow-sm animate-pulse">
-          🦁
-        </div>
+        ${BLEX_LION_AVATAR_HTML}
         <div class="bg-slate-950 border border-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2 flex items-center gap-2 text-xs text-slate-400">
           <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-          <span>BLEX IA procesando y ejecutando...</span>
+          <span>BLEX IA escribiendo en los pasos y procesando...</span>
         </div>
       </div>
     `;
@@ -13946,147 +13947,208 @@ async function sendBlexIaChatMessage(customPrompt = null) {
   const currentTopic = document.getElementById("aiWizardInputTopic")?.value?.trim() || wizardState.topic || "";
   const clientBrain = (typeof getActiveClientBrainData === "function") ? getActiveClientBrainData(currentClient) : null;
   const recentEvents = (state.calendarEvents || []).slice(0, 5).map(e => `• ${e.date} (${e.type}): ${e.title} [${e.client}]`).join("\n");
-  const recentScripts = (state.scripts || []).slice(0, 3).map(s => `• #${s.number || "?"}: ${s.ideaGanadora} [${s.client}]`).join("\n");
 
-  // Build full system prompt
+  // Build high-context system prompt instructing BLEX IA to directly populate step inputs
   const systemPrompt = [
-    "Eres BLEX IA, el asistente director de contenido, guionista de élite y copiloto operativo de BLEX STUDIO para creación de reels virales en Instagram y TikTok.",
+    "Eres BLEX IA, el asistente director de contenido y guionista principal de BLEX STUDIO. Tu misión no es solo charlar, sino CONTROLAR Y ESCRIBIR DIRECTAMENTE en los pasos del estudio de creación de Reels para el creador '" + currentClient + "'.",
     "",
-    "INFORMACIÓN EN TIEMPO REAL DEL SISTEMA:",
-    "- Fecha actual (Colombia): " + todayCol,
-    "- Cliente activo: " + currentClient,
-    "- Nicho seleccionado: " + currentNiche,
-    (currentTopic ? "- Idea/Transcripción actual en pantalla: \"" + currentTopic + "\"" : "- Idea/Transcripción actual: Ninguna aún."),
-    (clientBrain ? "- ADN de Marca / Tono configurado: \"" + (clientBrain.tone || "Directo y autoritario") + "\"" : ""),
-    (recentEvents ? "- Próximos eventos en calendario:\n" + recentEvents : ""),
-    (recentScripts ? "- Últimos guiones en matriz:\n" + recentScripts : ""),
+    "ESTRUCTURA DE LOS PASOS DEL ESTUDIO:",
+    "- Transcripción / Idea Principal: Casilla superior de idea central.",
+    "- Paso 0: Estrategia & Diagnóstico (overview y howToFlip)",
+    "- Paso 1: Ganchos (5 ganchos virales de 0-3s de alta retención)",
+    "- Paso 2: Historia / Contexto (5 historias de 3-30s sin relleno)",
+    "- Paso 3: Moraleja / Valor (5 enseñanzas contundentes de 30-40s)",
+    "- Paso 4: CTA / Conversión (5 llamados a la acción de 40-50s)",
+    "- Paso 5: Ensamblaje Final del Reel",
     "",
-    "CAPACIDADES Y COMANDOS DE ACCIÓN EN LA PLATAFORMA:",
-    "Tienes control total de la plataforma BLEX STUDIO. Cuando el usuario te pida ejecutar una acción, incluye una o más etiquetas de comando estructuradas al final de tu respuesta:",
-    "1. AGENDAR EN CALENDARIO: [ACCION_CALENDARIO: {\"title\": \"Título de la actividad\", \"date\": \"YYYY-MM-DD\", \"type\": \"RODAJE|PUBLICACION|CREACION\", \"client\": \"" + currentClient + "\", \"notes\": \"Detalles\"}]",
-    "2. CREAR NOTA: [ACCION_NOTA: {\"client\": \"" + currentClient + "\", \"text\": \"Contenido de la nota\"}]",
-    "3. ACTUALIZAR CEREBRO IA: [ACCION_CEREBRO: {\"client\": \"" + currentClient + "\", \"key\": \"tone|audience|keywords|notes\", \"value\": \"Texto nuevo\"}]",
-    "4. INSERTAR EN TRANSCRIPTOR / IDEA: [ACCION_TRANSCRIPTOR: {\"text\": \"Texto completo de la idea o transcripción\"}]",
-    "5. INSERTAR GANCHO (Paso 1): [ACCION_GANCHO: {\"text\": \"Texto del gancho magnético\"}]",
-    "6. INSERTAR HISTORIA (Paso 2): [ACCION_HISTORIA: {\"text\": \"Texto de la historia de 3 a 30 seg\"}]",
-    "7. INSERTAR MORALEJA (Paso 3): [ACCION_MORALEJA: {\"text\": \"Texto de la moraleja de 30 a 40 seg\"}]",
-    "8. INSERTAR CTA (Paso 4): [ACCION_CTA: {\"text\": \"Texto del CTA con palabra clave\"}]",
+    "COMANDOS DE ESCRITURA DIRECTA EN LAS CASILLAS (OBLIGATORIOS):",
+    "Cuando el usuario te pida crear una idea, ganchos, historias, moralejas, CTAs o guiones, debes incluir las siguientes etiquetas de acción estructuradas para que el sistema escriba inmediatamente en las casillas y cree las tarjetas visuales interactivas:",
     "",
-    "REGLAS DE RESPUESTA:",
-    "- Responde siempre en español, con tono seguro, profesional, enérgico y directo (estilo BLEX STUDIO).",
-    "- Si te piden ideas, ganchos o guiones, da opciones concretas y accionables aplicando la fórmula de los 64 ganchos virales.",
-    "- Si te piden agendar o anotar, confirma que lo has hecho y adjunta la etiqueta de acción correspondiente."
+    "1. ESCRIBIR IDEA EN EL TRANSCRIPTOR:",
+    "[ACCION_TRANSCRIPTOR: {\"text\": \"Idea clara y potente sobre el tema\"}]",
+    "",
+    "2. ESCRIBIR 5 GANCHOS EN EL PASO 1:",
+    "[ACCION_PASO1_GANCHOS: [",
+    "  {\"formula\": \"Fórmula 1\", \"hook\": \"Gancho 1 magnético (0-3s)\", \"reason\": \"Por qué retiene\"},",
+    "  {\"formula\": \"Fórmula 2\", \"hook\": \"Gancho 2 contraintuitivo\", \"reason\": \"Por qué retiene\"},",
+    "  {\"formula\": \"Fórmula 3\", \"hook\": \"Gancho 3 pregunta de shock\", \"reason\": \"Por qué retiene\"},",
+    "  {\"formula\": \"Fórmula 4\", \"hook\": \"Gancho 4 error común\", \"reason\": \"Por qué retiene\"},",
+    "  {\"formula\": \"Fórmula 5\", \"hook\": \"Gancho 5 regla del 1%\", \"reason\": \"Por qué retiene\"}",
+    "]]",
+    "",
+    "3. ESCRIBIR 5 HISTORIAS EN EL PASO 2:",
+    "[ACCION_PASO2_HISTORIAS: [",
+    "  {\"type\": \"Desarrollo Ágil\", \"story\": \"Historia completa de 40-60 palabras...\", \"focus\": \"Retención\"},",
+    "  {\"type\": \"Contraste Directo\", \"story\": \"Historia alternativa...\", \"focus\": \"Valor\"}",
+    "]]",
+    "",
+    "4. ESCRIBIR 5 MORALEJAS EN EL PASO 3:",
+    "[ACCION_PASO3_MORALEJAS: [",
+    "  {\"type\": \"Regla de Oro\", \"moral\": \"Frase memorable de 15-25 palabras...\", \"takeaway\": \"Insight\"},",
+    "  {\"type\": \"Principio Maestro\", \"moral\": \"Frase alternativa...\", \"takeaway\": \"Acción\"}",
+    "]]",
+    "",
+    "5. ESCRIBIR 5 CTAs EN EL PASO 4:",
+    "[ACCION_PASO4_CTAS: [",
+    "  {\"action\": \"Comentario Palabra Clave\", \"cta\": \"Comenta DINERO y te envío...\", \"triggerWord\": \"DINERO\"},",
+    "  {\"action\": \"Guardar Video\", \"cta\": \"Guarda este reel para...\", \"triggerWord\": \"GUARDAR\"}",
+    "]]",
+    "",
+    "6. AGENDAR EN CALENDARIO:",
+    "[ACCION_CALENDARIO: {\"title\": \"Rodaje de 3 Reels\", \"date\": \"YYYY-MM-DD\", \"type\": \"RODAJE\", \"client\": \"" + currentClient + "\"}]",
+    "",
+    "7. CREAR NOTA:",
+    "[ACCION_NOTA: {\"client\": \"" + currentClient + "\", \"text\": \"Texto de la nota\"}]",
+    "",
+    "CONTEXTO ACTUAL:",
+    "- Fecha: " + todayCol,
+    "- Creador: " + currentClient,
+    "- Nicho: " + currentNiche,
+    (currentTopic ? "- Idea actual en pantalla: \"" + currentTopic + "\"" : ""),
+    (clientBrain ? "- Tono: \"" + (clientBrain.tone || "Directo y autoritario") + "\"" : ""),
+    "",
+    "REGLAS:",
+    "Responde siempre en español, de forma concisa, confirmando que has escrito la idea y los ganchos directamente en las casillas y tarjetas de los pasos."
   ].join("\n");
 
   try {
     const aiResponseRaw = await aiCallOllama(userText, systemPrompt, 0.7);
-    
-    // Parse actions
     const detectedActions = [];
     let cleanResponseText = aiResponseRaw || "";
 
-    // 1. Calendar Action
-    const calMatches = cleanResponseText.matchAll(/\[ACCION_CALENDARIO:\s*(\{.*?\})\]/gis);
-    for (const m of calMatches) {
+    // 1. Check for Step 1 Hooks Array Action
+    const hooksMatch = cleanResponseText.match(/\[ACCION_PASO1_GANCHOS:\s*(\[.*?\])\]/is);
+    if (hooksMatch) {
       try {
-        const payload = JSON.parse(m[1]);
-        if (payload.title && payload.date) {
-          executeBlexIaPlatformAction("CALENDAR", payload);
-          detectedActions.push({ type: "calendar_link", title: payload.title });
+        const hooksArray = JSON.parse(hooksMatch[1]);
+        if (Array.isArray(hooksArray) && hooksArray.length > 0) {
+          executeBlexIaStepAction('HOOKS', hooksArray);
+          detectedActions.push({ type: 'step', step: 1 });
         }
       } catch(e) {}
     }
 
-    // 2. Note Action
-    const noteMatches = cleanResponseText.matchAll(/\[ACCION_NOTA:\s*(\{.*?\})\]/gis);
-    for (const m of noteMatches) {
+    // 2. Check for Step 2 Stories Array Action
+    const storiesMatch = cleanResponseText.match(/\[ACCION_PASO2_HISTORIAS:\s*(\[.*?\])\]/is);
+    if (storiesMatch) {
       try {
-        const payload = JSON.parse(m[1]);
-        if (payload.text) {
-          executeBlexIaPlatformAction("NOTE", payload);
-          detectedActions.push({ type: "note_link" });
+        const storiesArray = JSON.parse(storiesMatch[1]);
+        if (Array.isArray(storiesArray) && storiesArray.length > 0) {
+          executeBlexIaStepAction('STORIES', storiesArray);
+          detectedActions.push({ type: 'step', step: 2 });
         }
       } catch(e) {}
     }
 
-    // 3. Brain Action
-    const brainMatches = cleanResponseText.matchAll(/\[ACCION_CEREBRO:\s*(\{.*?\})\]/gis);
-    for (const m of brainMatches) {
+    // 3. Check for Step 3 Morals Array Action
+    const moralsMatch = cleanResponseText.match(/\[ACCION_PASO3_MORALEJAS:\s*(\[.*?\])\]/is);
+    if (moralsMatch) {
       try {
-        const payload = JSON.parse(m[1]);
-        if (payload.key && payload.value) {
-          executeBlexIaPlatformAction("BRAIN", payload);
+        const moralsArray = JSON.parse(moralsMatch[1]);
+        if (Array.isArray(moralsArray) && moralsArray.length > 0) {
+          executeBlexIaStepAction('MORALS', moralsArray);
+          detectedActions.push({ type: 'step', step: 3 });
         }
       } catch(e) {}
     }
 
-    // 4. Transcriptor Action
+    // 4. Check for Step 4 CTAs Array Action
+    const ctasMatch = cleanResponseText.match(/\[ACCION_PASO4_CTAS:\s*(\[.*?\])\]/is);
+    if (ctasMatch) {
+      try {
+        const ctasArray = JSON.parse(ctasMatch[1]);
+        if (Array.isArray(ctasArray) && ctasArray.length > 0) {
+          executeBlexIaStepAction('CTAS', ctasArray);
+          detectedActions.push({ type: 'step', step: 4 });
+        }
+      } catch(e) {}
+    }
+
+    // 5. Transcriptor Action
     const transMatches = cleanResponseText.matchAll(/\[ACCION_TRANSCRIPTOR:\s*(\{.*?\})\]/gis);
     for (const m of transMatches) {
       try {
         const payload = JSON.parse(m[1]);
         if (payload.text) {
-          executeBlexIaPlatformAction("TRANSCRIPTOR", payload);
-          detectedActions.push({ type: "transcriptor", text: payload.text });
+          insertBlexIaTextToTranscriptor(payload.text);
+          detectedActions.push({ type: 'transcriptor', text: payload.text });
         }
       } catch(e) {}
     }
 
-    // 5. Hook Action
-    const hookMatches = cleanResponseText.matchAll(/\[ACCION_GANCHO:\s*(\{.*?\})\]/gis);
-    for (const m of hookMatches) {
+    // 6. Calendar Action
+    const calMatches = cleanResponseText.matchAll(/\[ACCION_CALENDARIO:\s*(\{.*?\})\]/gis);
+    for (const m of calMatches) {
+      try {
+        const payload = JSON.parse(m[1]);
+        if (payload.title && payload.date) {
+          executeBlexIaPlatformAction('CALENDAR', payload);
+          detectedActions.push({ type: 'calendar_link', title: payload.title });
+        }
+      } catch(e) {}
+    }
+
+    // 7. Note Action
+    const noteMatches = cleanResponseText.matchAll(/\[ACCION_NOTA:\s*(\{.*?\})\]/gis);
+    for (const m of noteMatches) {
       try {
         const payload = JSON.parse(m[1]);
         if (payload.text) {
-          executeBlexIaPlatformAction("STEP_HOOK", payload);
-          detectedActions.push({ type: "step", step: 1, text: payload.text });
+          executeBlexIaPlatformAction('NOTE', payload);
+          detectedActions.push({ type: 'note_link' });
         }
       } catch(e) {}
     }
 
-    // 6. Story Action
-    const storyMatches = cleanResponseText.matchAll(/\[ACCION_HISTORIA:\s*(\{.*?\})\]/gis);
-    for (const m of storyMatches) {
-      try {
-        const payload = JSON.parse(m[1]);
-        if (payload.text) {
-          executeBlexIaPlatformAction("STEP_STORY", payload);
-          detectedActions.push({ type: "step", step: 2, text: payload.text });
+    // CLIENT-SIDE DETERMINISTIC EXTRACTION FALLBACK
+    // If the user asked for ideas/ganchos but Ollama replied in natural text without JSON tags, parse text automatically!
+    const lowerUser = userText.toLowerCase();
+    
+    // Auto-extract Idea into Transcriptor if requested
+    if ((lowerUser.includes('idea') || lowerUser.includes('tema')) && !detectedActions.some(a => a.type === 'transcriptor')) {
+      const ideaMatch = cleanResponseText.match(/(?:Idea|Tema|Concepto)(?:\s*(?:del video|clave|principal))?[:\*\s]+([^\n\r]+)/i);
+      if (ideaMatch && ideaMatch[1]) {
+        const extractedIdea = ideaMatch[1].replace(/^[\*#\s"']+|[\*#\s"']+$/g, '').trim();
+        if (extractedIdea.length > 5) {
+          insertBlexIaTextToTranscriptor(extractedIdea);
+          detectedActions.push({ type: 'transcriptor', text: extractedIdea });
         }
-      } catch(e) {}
+      } else if (!document.getElementById('aiWizardInputTopic')?.value?.trim()) {
+        const firstLine = cleanResponseText.split(/\r?\n/)[0].replace(/^[\*#\s"']+|[\*#\s"']+$/g, '').trim();
+        if (firstLine.length > 10 && firstLine.length < 120) {
+          insertBlexIaTextToTranscriptor(firstLine);
+          detectedActions.push({ type: 'transcriptor', text: firstLine });
+        }
+      }
     }
 
-    // 7. Moral Action
-    const moralMatches = cleanResponseText.matchAll(/\[ACCION_MORALEJA:\s*(\{.*?\})\]/gis);
-    for (const m of moralMatches) {
-      try {
-        const payload = JSON.parse(m[1]);
-        if (payload.text) {
-          executeBlexIaPlatformAction("STEP_MORAL", payload);
-          detectedActions.push({ type: "step", step: 3, text: payload.text });
+    // Auto-extract 5 Hooks if mentioned
+    if ((lowerUser.includes('gancho') || lowerUser.includes('5 gancho') || lowerUser.includes('paso 1') || lowerUser.includes('paso de los gancho')) && !detectedActions.some(a => a.step === 1)) {
+      const extractedHooks = [];
+      const hookLines = cleanResponseText.matchAll(/(?:(?:\d+[\.\)]|Gancho\s*\d+)[:\*\s]+)([^\n\r]+)/gi);
+      for (const hl of hookLines) {
+        let hText = hl[1].replace(/^[\*#\s"']+|[\*#\s"']+$/g, '').trim();
+        if (hText.length > 8 && !hText.toLowerCase().startsWith('historia') && !hText.toLowerCase().startsWith('moraleja') && !hText.toLowerCase().startsWith('cta')) {
+          extractedHooks.push({
+            formula: "Fórmula Viral #" + (extractedHooks.length + 1),
+            hook: hText,
+            reason: "Alta retención en primeros 3 segundos"
+          });
         }
-      } catch(e) {}
+      }
+      if (extractedHooks.length >= 2) {
+        executeBlexIaStepAction('HOOKS', extractedHooks);
+        detectedActions.push({ type: 'step', step: 1 });
+      }
     }
 
-    // 8. CTA Action
-    const ctaMatches = cleanResponseText.matchAll(/\[ACCION_CTA:\s*(\{.*?\})\]/gis);
-    for (const m of ctaMatches) {
-      try {
-        const payload = JSON.parse(m[1]);
-        if (payload.text) {
-          executeBlexIaPlatformAction("STEP_CTA", payload);
-          detectedActions.push({ type: "step", step: 4, text: payload.text });
-        }
-      } catch(e) {}
-    }
-
-    // Clean tags from visible text
+    // Clean action tags from visible chat text
     cleanResponseText = cleanResponseText
-      .replace(/\[ACCION_[A-Z]+:\s*\{.*?\}\]/gis, "")
+      .replace(/\[ACCION_[A-Z0-9_]+:\s*(?:\[.*?\]|\{.*?\})\]/gis, '')
       .trim();
 
     if (!cleanResponseText) {
-      cleanResponseText = "¡Entendido! He procesado tu solicitud con éxito.";
+      cleanResponseText = '¡Listo! He escrito la idea y los ganchos directamente en las casillas y tarjetas de los pasos abajo.';
     }
 
     blexIaState.messages.push({
@@ -14102,13 +14164,112 @@ async function sendBlexIaChatMessage(customPrompt = null) {
     blexIaState.messages.push({
       id: "msg-" + Date.now(),
       sender: "blex",
-      text: "No pude conectar directamente con el modelo local en este momento. Recuerda que puedes interactuar paso a paso en el creador o agendar tus actividades directamente en los botones.",
+      text: "No pude conectar directamente con el modelo local en este momento. Puedes usar los botones de los pasos abajo o agendar directamente tus actividades.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       actions: []
     });
   } finally {
     blexIaState.isThinking = false;
     renderBlexIaChat();
+  }
+}
+
+function executeBlexIaStepAction(stepType, items) {
+  if (!items || items.length === 0) return;
+
+  if (stepType === 'HOOKS') {
+    wizardState.generatedHooks = items.slice(0, 5).map((h, i) => ({
+      formula: h.formula || ("Gancho Viral #" + (i + 1)),
+      hook: (h.hook || h.text || '').trim().replace(/^["']|["']$/g, ''),
+      reason: h.reason || "Detiene el scroll en 2.5s"
+    }));
+    
+    // Select first hook
+    if (wizardState.generatedHooks.length > 0) {
+      const firstH = wizardState.generatedHooks[0].hook;
+      wizardState.selectedHook = firstH;
+      const elSelected = document.getElementById('wizSelectedGancho');
+      const elFinal = document.getElementById('wizFinalHook');
+      if (elSelected) elSelected.value = firstH;
+      if (elFinal) elFinal.value = firstH;
+    }
+
+    // Render cards in Step 1 Grid
+    if (typeof renderWizardStep1Cards === 'function') {
+      renderWizardStep1Cards(wizardState.generatedHooks);
+    }
+    
+    // Switch view to Step 1
+    goToWizardStep(1);
+    const step1El = document.getElementById('wizStepView1');
+    if (step1El) step1El.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToastNotification('🎣 ¡5 Ganchos generados y colocados en el Paso 1!', 'check-circle');
+
+  } else if (stepType === 'STORIES') {
+    wizardState.generatedStories = items.slice(0, 5).map((s, i) => ({
+      angle: s.angle || s.type || ("Historia #" + (i + 1)),
+      story: (s.story || s.text || '').trim().replace(/^["']|["']$/g, ''),
+      highlight: s.focus || s.highlight || "Retención ágil"
+    }));
+
+    if (wizardState.generatedStories.length > 0) {
+      const firstS = wizardState.generatedStories[0].story;
+      wizardState.selectedStory = firstS;
+      const elSelected = document.getElementById('wizSelectedHistoria');
+      const elFinal = document.getElementById('wizFinalStory');
+      if (elSelected) elSelected.value = firstS;
+      if (elFinal) elFinal.value = firstS;
+    }
+
+    if (typeof renderWizardStep2Cards === 'function') {
+      renderWizardStep2Cards(wizardState.generatedStories);
+    }
+    goToWizardStep(2);
+    showToastNotification('📖 ¡Historias colocadas en el Paso 2!', 'check-circle');
+
+  } else if (stepType === 'MORALS') {
+    wizardState.generatedMorals = items.slice(0, 5).map((m, i) => ({
+      type: m.type || ("Moraleja #" + (i + 1)),
+      moral: (m.moral || m.text || '').trim().replace(/^["']|["']$/g, ''),
+      takeaway: m.takeaway || "Valor memorable"
+    }));
+
+    if (wizardState.generatedMorals.length > 0) {
+      const firstM = wizardState.generatedMorals[0].moral;
+      wizardState.selectedMoral = firstM;
+      const elSelected = document.getElementById('wizSelectedMoraleja');
+      const elFinal = document.getElementById('wizFinalMoral');
+      if (elSelected) elSelected.value = firstM;
+      if (elFinal) elFinal.value = firstM;
+    }
+
+    if (typeof renderWizardStep3Cards === 'function') {
+      renderWizardStep3Cards(wizardState.generatedMorals);
+    }
+    goToWizardStep(3);
+    showToastNotification('💡 ¡Moralejas colocadas en el Paso 3!', 'check-circle');
+
+  } else if (stepType === 'CTAS') {
+    wizardState.generatedCTAs = items.slice(0, 5).map((c, i) => ({
+      action: c.action || c.type || ("CTA #" + (i + 1)),
+      cta: (c.cta || c.text || '').trim().replace(/^["']|["']$/g, ''),
+      triggerWord: c.triggerWord || "COMENTAR"
+    }));
+
+    if (wizardState.generatedCTAs.length > 0) {
+      const firstC = wizardState.generatedCTAs[0].cta;
+      wizardState.selectedCTA = firstC;
+      const elSelected = document.getElementById('wizSelectedCTA');
+      const elFinal = document.getElementById('wizFinalCTA');
+      if (elSelected) elSelected.value = firstC;
+      if (elFinal) elFinal.value = firstC;
+    }
+
+    if (typeof renderWizardStep4Cards === 'function') {
+      renderWizardStep4Cards(wizardState.generatedCTAs);
+    }
+    goToWizardStep(4);
+    showToastNotification('📣 ¡CTAs colocados en el Paso 4!', 'check-circle');
   }
 }
 
@@ -14149,44 +14310,6 @@ function executeBlexIaPlatformAction(type, data) {
     state.notes[currentClient].push(newNote);
     saveState();
     showToastNotification("📝 Nota guardada para " + currentClient, "check-circle");
-  } else if (type === "BRAIN") {
-    if (!state.aiBrain) state.aiBrain = {};
-    if (!state.aiBrain[currentClient]) state.aiBrain[currentClient] = { ...DEFAULT_BRAIN_KNOWLEDGE, docs: [] };
-    if (data.key && data.value) {
-      state.aiBrain[currentClient][data.key] = data.value;
-      saveState();
-      showToastNotification("🧠 Cerebro de " + currentClient + " actualizado (" + data.key + ")", "check-circle");
-    }
-  } else if (type === "TRANSCRIPTOR") {
-    const input = document.getElementById("aiWizardInputTopic");
-    if (input && data.text) {
-      input.value = data.text;
-      wizardState.topic = data.text;
-    }
-  } else if (type === "STEP_HOOK") {
-    const input = document.getElementById("wizSelectedGancho");
-    const finalInput = document.getElementById("wizFinalHook");
-    if (input) input.value = data.text;
-    if (finalInput) finalInput.value = data.text;
-    wizardState.selectedHook = data.text;
-  } else if (type === "STEP_STORY") {
-    const input = document.getElementById("wizSelectedHistoria");
-    const finalInput = document.getElementById("wizFinalStory");
-    if (input) input.value = data.text;
-    if (finalInput) finalInput.value = data.text;
-    wizardState.selectedStory = data.text;
-  } else if (type === "STEP_MORAL") {
-    const input = document.getElementById("wizSelectedMoraleja");
-    const finalInput = document.getElementById("wizFinalMoral");
-    if (input) input.value = data.text;
-    if (finalInput) finalInput.value = data.text;
-    wizardState.selectedMoral = data.text;
-  } else if (type === "STEP_CTA") {
-    const input = document.getElementById("wizSelectedCTA");
-    const finalInput = document.getElementById("wizFinalCTA");
-    if (input) input.value = data.text;
-    if (finalInput) finalInput.value = data.text;
-    wizardState.selectedCTA = data.text;
   }
 }
 
@@ -14195,7 +14318,7 @@ function insertBlexIaTextToTranscriptor(text) {
   if (input) {
     input.value = text;
     wizardState.topic = text;
-    showToastNotification("📥 Texto insertado en el transcriptor / idea", "check-circle");
+    showToastNotification("📥 Idea cargada en el transcriptor / idea", "check-circle");
     input.focus();
   }
 }
@@ -14204,19 +14327,27 @@ function applyBlexIaToWizardStep(stepNum, text) {
   goToWizardStep(stepNum);
   if (stepNum === 1) {
     const input = document.getElementById("wizSelectedGancho");
+    const finalInput = document.getElementById("wizFinalHook");
     if (input) input.value = text;
+    if (finalInput) finalInput.value = text;
     wizardState.selectedHook = text;
   } else if (stepNum === 2) {
     const input = document.getElementById("wizSelectedHistoria");
+    const finalInput = document.getElementById("wizFinalStory");
     if (input) input.value = text;
+    if (finalInput) finalInput.value = text;
     wizardState.selectedStory = text;
   } else if (stepNum === 3) {
     const input = document.getElementById("wizSelectedMoraleja");
+    const finalInput = document.getElementById("wizFinalMoral");
     if (input) input.value = text;
+    if (finalInput) finalInput.value = text;
     wizardState.selectedMoral = text;
   } else if (stepNum === 4) {
     const input = document.getElementById("wizSelectedCTA");
+    const finalInput = document.getElementById("wizFinalCTA");
     if (input) input.value = text;
+    if (finalInput) finalInput.value = text;
     wizardState.selectedCTA = text;
   }
   showToastNotification("⚡ Aplicado al Paso " + stepNum, "check-circle");
@@ -14227,7 +14358,7 @@ function clearBlexIaChat() {
     {
       id: "msg-welcome",
       sender: "blex",
-      text: "¡Conversación reiniciada! Soy **BLEX IA**. ¿En qué puedo ayudarte ahora?",
+      text: "¡Conversación reiniciada! Soy **BLEX IA**. ¿Qué reel o idea empezamos a estructurar?",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       actions: []
     }
